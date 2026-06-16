@@ -4,6 +4,6 @@
     {"source": "/client/:slug", "destination": "/client/index.html"},
     {"source": "/trainer", "destination": "/trainer/index.html"},
     {"source": "/admin", "destination": "/admin/index.html"},
-    {"source": "/", "destination": "/index.html"}
+    {"source": "/", "destination": "/home.html"}
   ]
 }

@@ -206,13 +206,7 @@ async function init(){
   document.getElementById("cg").textContent=r1.data.goal||"";
   if(r2.data&&r2.data.length)buildProg(r2.data);
   curDay=Object.keys(PROG)[0]||"";
-  // Check subscription FIRST before showing anything
-  var hasAccess=await checkSubscription(CLIENT);
-  if(!hasAccess){
-    document.getElementById("loading").style.display="none";
-    showPaywall(CLIENT,r1.data.name);
-    return;
-  }
+  // No paywall — clients receive link after paying through website
   document.getElementById("loading").style.display="none";
   document.getElementById("main").style.display="block";
   if(!curDay){document.getElementById("view-log").textContent="No program yet. Ask your trainer.";return;}

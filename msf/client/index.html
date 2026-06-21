@@ -499,7 +499,7 @@ function showPaywall(clientSlug,clientName){
 var nutTargets={calories:0,protein:0,carbs:0,fats:0};
 var nutMeals=[];
 var nutLogs={};
-var nutDate=new Date().toISOString().split("T")[0];
+var nutDate=todayStr();
 
 var DAY_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
 var DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -507,6 +507,12 @@ var DAY_NAMES=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Satu
 function getDayKey(dateStr){
   var d=new Date(dateStr+"T12:00:00");
   return DAY_KEYS[d.getDay()];
+}
+
+// Local calendar date (YYYY-MM-DD) in the device's own timezone, not UTC
+function todayStr(){
+  var d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 
 async function renderNutrition(){
@@ -533,10 +539,7 @@ async function renderNutrition(){
   var prevBtn=el("button","date-btn","\u2190");
   prevBtn.onclick=function(){nutDate=offsetDate(nutDate,-1);loadNutDay();};
   var nextBtn=el("button","date-btn","\u2192");
-  nextBtn.onclick=function(){
-    var today=new Date().toISOString().split("T")[0];
-    if(nutDate<today){nutDate=offsetDate(nutDate,1);loadNutDay();}
-  };
+  nextBtn.onclick=function(){nutDate=offsetDate(nutDate,1);loadNutDay();};
   var dateLbl=el("div","date-lbl");dateLbl.id="nut-date-lbl";
   dateNav.appendChild(prevBtn);dateNav.appendChild(dateLbl);dateNav.appendChild(nextBtn);
   vn.appendChild(dateNav);
@@ -580,7 +583,7 @@ function renderNutUI(){
   // Date label
   var lbl=document.getElementById("nut-date-lbl");
   if(lbl){
-    var today=new Date().toISOString().split("T")[0];
+    var today=todayStr();
     if(nutDate===today)lbl.textContent="Today";
     else{
       var d=new Date(nutDate+"T12:00:00");

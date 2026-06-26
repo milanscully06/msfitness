@@ -173,6 +173,20 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .tday-wd{font-family:var(--display);font-weight:700;font-size:15px;color:var(--sage)}
 .tday-wempty{font-size:13px;color:var(--ink-3)}
 
+/* progress photos */
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:4px}
+.ptile{aspect-ratio:3/4;border-radius:14px;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line);position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:8px;cursor:pointer}
+.ptile::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent 55%)}
+.pdate{font-size:10px;color:#fff;font-weight:600;letter-spacing:.02em;position:relative;z-index:2;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.padd{aspect-ratio:3/4;border-radius:14px;border:1px dashed var(--line-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--ink-3);background:var(--surface)}
+.padd:active{border-color:var(--sage);color:var(--ink);transform:scale(.98)}
+.pp{font-size:11px;font-weight:600}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:24px}
+.lb.show{display:flex}
+.lb img{max-width:100%;max-height:76vh;border-radius:12px;object-fit:contain}
+.lb-x{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-2);background:rgba(0,0,0,.45);color:var(--ink);font-size:17px;cursor:pointer}
+.lb-del{margin-top:20px;padding:11px 26px;border:1px solid rgba(203,122,109,.42);border-radius:12px;background:rgba(203,122,109,.12);color:var(--bad);font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer}
+
 /* ===== FOOD (nutrition) ===== */
 .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .date-btn{width:40px;height:40px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);
@@ -271,6 +285,13 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
       <div class="pw-sub">Your personalised coaching</div>
       <a class="pw-btn" id="pw-link" href="">Start free trial</a>
     </div>
+  </div>
+
+  <input type="file" accept="image/*" id="photo-input" style="display:none">
+  <div class="lb" id="lightbox">
+    <button class="lb-x" onclick="closeLB()">✕</button>
+    <img id="lb-img" alt="">
+    <button class="lb-del" onclick="deletePhoto()">Delete photo</button>
   </div>
 
   <nav class="nav">
@@ -667,6 +688,51 @@ async function saveWeight(){
   renderProgress();
 }
 
+function resizeImage(file,maxDim,q){
+  return new Promise(function(resolve){
+    try{
+      var img=new Image();
+      img.onload=function(){
+        var w=img.width,h=img.height;
+        if(w>=h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+        else if(h>w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+        var c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        c.toBlob(function(b){resolve(b||file);},"image/jpeg",q);
+      };
+      img.onerror=function(){resolve(file);};
+      img.src=URL.createObjectURL(file);
+    }catch(e){resolve(file);}
+  });
+}
+
+async function uploadPhoto(file){
+  sync(true);
+  var blob=await resizeImage(file,1200,0.82);
+  var rid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2));
+  var path=CLIENT+"/"+rid+".jpg";
+  var up=await sb.storage.from("progress-photos").upload(path,blob,{contentType:"image/jpeg"});
+  if(up.error){sync(false);alert("Couldn't upload photo: "+up.error.message);return;}
+  var ins=await sb.from("progress_photos").insert({client_slug:CLIENT,storage_path:path,taken_date:todayStr()});
+  sync(false);
+  if(ins.error){alert("Photo uploaded but not saved: "+ins.error.message);return;}
+  renderProgress();
+}
+
+var _lbPath=null;
+function openLB(url,path){if(!url)return;_lbPath=path;document.getElementById("lb-img").src=url;document.getElementById("lightbox").classList.add("show");}
+function closeLB(){document.getElementById("lightbox").classList.remove("show");document.getElementById("lb-img").src="";_lbPath=null;}
+async function deletePhoto(){
+  if(!_lbPath)return;
+  if(!confirm("Delete this photo?"))return;
+  sync(true);
+  await sb.storage.from("progress-photos").remove([_lbPath]);
+  await sb.from("progress_photos").delete().eq("client_slug",CLIENT).eq("storage_path",_lbPath);
+  sync(false);
+  closeLB();
+  renderProgress();
+}
+
 async function renderProgress(){
   var vp=document.getElementById("view-progress");
   vp.innerHTML="";
@@ -708,6 +774,29 @@ async function renderProgress(){
   rw.appendChild(inp);rw.appendChild(btn);
   logCard.appendChild(rw);
   vp.appendChild(logCard);
+
+  // ===== Progress photos =====
+  vp.appendChild(el("div","sec-label","Progress photos"));
+  var rp=await sb.from("progress_photos").select("*").eq("client_slug",CLIENT).order("taken_date",{ascending:false});
+  var photos=rp.data||[];
+  var grid=el("div","pgrid");
+  var addTile=el("div","padd");
+  addTile.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="pp">Add photo</span>';
+  addTile.onclick=function(){var pi=document.getElementById("photo-input");pi.onchange=function(){if(pi.files&&pi.files[0]){uploadPhoto(pi.files[0]);pi.value="";}};pi.click();};
+  grid.appendChild(addTile);
+  if(photos.length){
+    var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
+    var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
+    photos.forEach(function(p){
+      var tile=el("div","ptile");
+      var url=umap[p.storage_path];
+      if(url)tile.style.backgroundImage="url('"+url+"')";
+      tile.appendChild(el("div","pdate",new Date(p.taken_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"})));
+      tile.onclick=function(){openLB(url,p.storage_path);};
+      grid.appendChild(tile);
+    });
+  }
+  vp.appendChild(grid);
 
   // ===== Strength (existing lift chart) =====
   var allEx=[];

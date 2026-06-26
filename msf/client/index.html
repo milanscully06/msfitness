@@ -408,13 +408,26 @@ function goTab(tab){var b=document.getElementById("tbtn-"+tab);if(b)setTab(b,tab
 function greeting(){var h=new Date().getHours();return h<12?"Good morning":(h<18?"Good afternoon":"Good evening");}
 function firstName(){return ((document.getElementById("cn").textContent)||"").trim().split(" ")[0]||"there";}
 
+function todayProgKey(){
+  var abbr=DAY_KEYS[new Date().getDay()];          // e.g. "fri"
+  if(PROG[abbr])return abbr;                         // exact key match (fast path)
+  var keys=Object.keys(PROG);
+  for(var i=0;i<keys.length;i++){                    // match key OR label by weekday
+    var k=keys[i];
+    var kk=(k||"").toString().trim().toLowerCase();
+    var lbl=((PROG[k]&&PROG[k].label)||"").toString().trim().toLowerCase();
+    if(kk.slice(0,3)===abbr||lbl.slice(0,3)===abbr)return k;
+  }
+  return null;
+}
+
 async function renderToday(){
   var vt=document.getElementById("view-today");
   vt.innerHTML="";
   vt.appendChild(el("div","loader","\u2026"));
 
-  var todayKey=DAY_KEYS[new Date().getDay()];
-  var todayProg=PROG[todayKey]||null;
+  var todayKey=todayProgKey();
+  var todayProg=todayKey?PROG[todayKey]:null;
   var dStr=todayStr();
   var rT=await sb.from("nutrition_targets").select("*").eq("client_slug",CLIENT).maybeSingle();
   var rN=await sb.from("nutrition_logs").select("calories").eq("client_slug",CLIENT).eq("logged_date",dStr);

@@ -187,6 +187,37 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .lb-x{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-2);background:rgba(0,0,0,.45);color:var(--ink);font-size:17px;cursor:pointer}
 .lb-del{margin-top:20px;padding:11px 26px;border:1px solid rgba(203,122,109,.42);border-radius:12px;background:rgba(203,122,109,.12);color:var(--bad);font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer}
 
+/* food search + logged foods */
+.flog{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:9px}
+.flog-info{min-width:0}
+.flog-name{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.flog-mac{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.flog-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.flog-kcal{font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2)}
+.flog-del{width:28px;height:28px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-3);font-size:13px;cursor:pointer;flex-shrink:0}
+.flog-del:active{color:var(--bad)}
+.addfood-btn{width:100%;margin-top:6px;padding:14px;border:1px dashed var(--line-2);border-radius:14px;background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-weight:600;font-size:14px;cursor:pointer}
+.addfood-btn:active{border-color:var(--sage);color:var(--ink)}
+.food-search{display:none;margin-top:10px}
+.food-search.show{display:block;animation:rise .3s ease}
+.food-q{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:12px;padding:13px 15px;color:var(--ink);font-family:var(--body);font-size:16px;outline:none}
+.food-q:focus{border-color:var(--sage)}
+.food-q::placeholder{color:var(--ink-3)}
+.food-results{margin-top:8px}
+.food-hint{font-size:13px;color:var(--ink-3);padding:14px 4px;text-align:center;line-height:1.5}
+.fres{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.fres-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer}
+.fres-name{font-size:13.5px;font-weight:600;line-height:1.3}
+.fres-meta{font-size:11px;color:var(--ink-3);margin-top:3px}
+.fres-plus{font-size:20px;color:var(--sage);font-weight:600;flex-shrink:0;line-height:1}
+.fres-add{padding:0 14px 14px;border-top:1px solid var(--line)}
+.fres-add-row{display:flex;align-items:center;gap:10px;margin:12px 0 10px}
+.fres-grams{width:80px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:10px;color:var(--ink);font-family:var(--display);font-weight:600;font-size:16px;text-align:center;outline:none}
+.fres-grams:focus{border-color:var(--sage)}
+.fres-unit{font-size:13px;color:var(--ink-2)}
+.fres-addbtn{margin-left:auto;padding:10px 22px;border:none;border-radius:10px;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer}
+.fres-calc{font-size:12px;color:var(--sage);font-weight:600;font-family:var(--display)}
+
 /* ===== FOOD (nutrition) ===== */
 .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .date-btn{width:40px;height:40px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);
@@ -862,6 +893,7 @@ function showPaywall(clientSlug,clientName){
 var nutTargets={calories:0,protein:0,carbs:0,fats:0};
 var nutMeals=[];
 var nutLogs={};
+var foodLogs=[];
 var nutDate=todayStr();
 
 var DAY_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
@@ -912,8 +944,12 @@ async function renderNutrition(){
   vn.appendChild(barWrap);
 
   // Meal cards
-  var mealWrap=el("div","");mealWrap.id="meal-cards";mealWrap.style.padding="0 16px";
+  var mealWrap=el("div","");mealWrap.id="meal-cards";
   vn.appendChild(mealWrap);
+
+  // Logged foods + food search
+  var fxWrap=el("div","");fxWrap.id="food-extra";
+  vn.appendChild(fxWrap);
 
   loadNutDay();
 }
@@ -939,6 +975,9 @@ async function loadNutDay(){
   nutLogs={};
   if(res.data)res.data.forEach(function(r){nutLogs[r.meal_id]=r;});
 
+  var rf=await sb.from("food_logs").select("*").eq("client_slug",CLIENT).eq("logged_date",nutDate).order("created_at",{ascending:true});
+  foodLogs=rf.data||[];
+
   renderNutUI();
 }
 
@@ -959,6 +998,10 @@ function renderNutUI(){
   Object.values(nutLogs).forEach(function(l){
     totals.calories+=l.calories||0;totals.protein+=l.protein||0;
     totals.carbs+=l.carbs||0;totals.fats+=l.fats||0;
+  });
+  foodLogs.forEach(function(f){
+    totals.calories+=f.calories||0;totals.protein+=f.protein||0;
+    totals.carbs+=f.carbs||0;totals.fats+=f.fats||0;
   });
 
   // Macro bars
@@ -989,6 +1032,9 @@ function renderNutUI(){
       bars.appendChild(row);
     });
   }
+
+  // Logged foods + Add food (always render, even on no-meal-plan days)
+  renderFoodExtra();
 
   // Meal cards
   var mc=document.getElementById("meal-cards");
@@ -1042,6 +1088,120 @@ async function toggleMeal(meal){
     if(res.data)nutLogs[meal.id]=res.data;
   }
   renderNutUI();
+}
+function renderFoodExtra(){
+  var fx=document.getElementById("food-extra");
+  if(!fx)return;
+  fx.innerHTML="";
+  if(foodLogs.length){
+    fx.appendChild(el("div","sec-label","Logged foods"));
+    foodLogs.forEach(function(f){
+      var row=el("div","flog");
+      var info=el("div","flog-info");
+      info.appendChild(el("div","flog-name",f.name));
+      info.appendChild(el("div","flog-mac",(f.grams?(Math.round(f.grams)+"g \u00b7 "):"")+"P "+Math.round(f.protein||0)+" \u00b7 C "+Math.round(f.carbs||0)+" \u00b7 F "+Math.round(f.fats||0)));
+      var right=el("div","flog-right");
+      right.appendChild(el("div","flog-kcal",Math.round(f.calories||0)+" kcal"));
+      var del=el("button","flog-del","\u2715");
+      del.onclick=function(){removeFood(f.id);};
+      right.appendChild(del);
+      row.appendChild(info);row.appendChild(right);
+      fx.appendChild(row);
+    });
+  }
+  var addBtn=el("button","addfood-btn","\uFF0B  Add food \u2014 search anything");
+  addBtn.onclick=function(){var ps=document.getElementById("food-search");ps.classList.toggle("show");if(ps.classList.contains("show")){var fq=document.getElementById("food-q");if(fq)fq.focus();}};
+  fx.appendChild(addBtn);
+  var panel=el("div","food-search");panel.id="food-search";
+  var inp=el("input");inp.className="food-q";inp.id="food-q";inp.type="text";inp.placeholder="Search any food\u2026";inp.setAttribute("autocomplete","off");
+  var t=null;
+  inp.onkeyup=function(){clearTimeout(t);var q=this.value;t=setTimeout(function(){doFoodSearch(q);},400);};
+  panel.appendChild(inp);
+  var resed=el("div","food-results");resed.id="food-results";
+  panel.appendChild(resed);
+  fx.appendChild(panel);
+}
+
+async function searchFood(q){
+  var url="https://world.openfoodfacts.org/cgi/search.pl?search_terms="+encodeURIComponent(q)+"&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,nutriments";
+  var res=await fetch(url);
+  var data=await res.json();
+  var out=[],seen={};
+  (data.products||[]).forEach(function(p){
+    var n=p.nutriments||{};
+    var kcal=n["energy-kcal_100g"];
+    var name=(p.product_name||"").trim();
+    if(!name||kcal==null||isNaN(kcal))return;
+    var key=name.toLowerCase();
+    if(seen[key])return;seen[key]=1;
+    out.push({
+      name:name+(p.brands?(" \u00b7 "+p.brands.split(",")[0].trim()):""),
+      kcal100:Math.round(kcal),
+      p100:Math.round(n.proteins_100g||0),
+      c100:Math.round(n.carbohydrates_100g||0),
+      f100:Math.round(n.fat_100g||0)
+    });
+  });
+  return out.slice(0,15);
+}
+
+async function doFoodSearch(q){
+  var box=document.getElementById("food-results");if(!box)return;
+  if(!q||q.trim().length<2){box.innerHTML="";return;}
+  box.innerHTML='<div class="food-hint">Searching\u2026</div>';
+  var results;
+  try{results=await searchFood(q.trim());}
+  catch(e){box.innerHTML='<div class="food-hint">Couldn\u2019t search just now \u2014 check your connection and try again.</div>';return;}
+  if(box.innerHTML.indexOf("Searching")===-1)return;
+  box.innerHTML="";
+  if(!results.length){box.innerHTML='<div class="food-hint">No matches for \u201c'+q.trim()+'\u201d. Try a simpler term.</div>';return;}
+  results.forEach(function(r){
+    var item=el("div","fres");
+    var head=el("div","fres-head");
+    var l=el("div","");
+    l.appendChild(el("div","fres-name",r.name));
+    l.appendChild(el("div","fres-meta",r.kcal100+" kcal \u00b7 P"+r.p100+" C"+r.c100+" F"+r.f100+" per 100g"));
+    head.appendChild(l);
+    head.appendChild(el("div","fres-plus","\uFF0B"));
+    head.onclick=function(){toggleAddRow(item,r);};
+    item.appendChild(head);
+    box.appendChild(item);
+  });
+}
+
+function toggleAddRow(item,r){
+  var ex=item.querySelector(".fres-add");
+  if(ex){ex.remove();return;}
+  var add=el("div","fres-add");
+  var row=el("div","fres-add-row");
+  var gi=el("input");gi.className="fres-grams";gi.type="number";gi.inputMode="decimal";gi.value="100";gi.min="0";
+  var unit=el("span","fres-unit","grams");
+  var calc=el("div","fres-calc");
+  function upd(){var g=parseFloat(gi.value)||0;calc.textContent=Math.round(r.kcal100*g/100)+" kcal \u00b7 P"+Math.round(r.p100*g/100)+" C"+Math.round(r.c100*g/100)+" F"+Math.round(r.f100*g/100);}
+  gi.oninput=upd;upd();
+  var addB=el("button","fres-addbtn","Add");
+  addB.onclick=function(){var g=parseFloat(gi.value)||0;if(g<=0){alert("Enter an amount in grams.");return;}addFood(r,g);};
+  row.appendChild(gi);row.appendChild(unit);row.appendChild(addB);
+  add.appendChild(row);add.appendChild(calc);
+  item.appendChild(add);
+}
+
+async function addFood(r,grams){
+  sync(true);
+  var row={client_slug:CLIENT,logged_date:nutDate,name:r.name,grams:grams,
+    calories:Math.round(r.kcal100*grams/100),protein:Math.round(r.p100*grams/100),
+    carbs:Math.round(r.c100*grams/100),fats:Math.round(r.f100*grams/100)};
+  var ins=await sb.from("food_logs").insert(row);
+  sync(false);
+  if(ins.error){alert("Couldn't add food: "+ins.error.message);return;}
+  loadNutDay();
+}
+
+async function removeFood(id){
+  sync(true);
+  await sb.from("food_logs").delete().eq("id",id);
+  sync(false);
+  loadNutDay();
 }
 // ── END NUTRITION ────────────────────────────────────────────────────────────────────
 

@@ -91,6 +91,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .toggle.on::after{left:20px;background:var(--bg)}
 
 .del-btn{width:28px;height:28px;border:1px solid rgba(201,122,109,.4);border-radius:8px;background:rgba(201,122,109,.1);cursor:pointer;color:var(--bad);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.day-swap{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 8px;-webkit-appearance:none;cursor:pointer;max-width:160px}
+.day-swap:focus{outline:none;border-color:var(--sage)}
 
 </style>
 </head>
@@ -150,6 +152,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div class="modal-sub">Update details or modify their program</div>
   <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="en"></div>
   <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="eg"></div>
+  <div class="form-group">
+    <label class="form-label">URL slug (lowercase, no spaces)</label>
+    <input class="form-input" id="e-slug" placeholder="e.g. jake">
+    <div style="font-size:11px;color:var(--bad);margin-top:5px;line-height:1.5">Changing this sets their link to /client/<span id="e-sp">slug</span> and moves all their programs, meals, weight, food logs, photos &amp; lift history across. Their old link stops working.</div>
+  </div>
   <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
   <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
   <div id="edit-days"></div>
@@ -248,11 +255,20 @@ function renderDays(mode) {
   days.forEach(function(day, di) {
     var block = el("div","day-block");
     // Header
-    var hdr = el("div",""); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px";
-    hdr.appendChild(el("span","day-block-title","Day "+(di+1)));
+    var WD={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
+    var hdr = el("div",""); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px";
+    hdr.appendChild(el("span","day-block-title","Day "+(di+1)+(WD[day.key]?" · "+WD[day.key]:"")));
+    var hr = el("div",""); hr.style.cssText="display:flex;align-items:center;gap:6px";
+    if(days.length>1){
+      var sw=el("select","day-swap");
+      var ph=el("option","","⇄ swap"); ph.value=""; sw.appendChild(ph);
+      days.forEach(function(od,oi){ if(oi!==di){ var o=el("option","",(WD[od.key]?WD[od.key]+" — ":"Day "+(oi+1)+" — ")+(od.label||"untitled")); o.value=String(oi); sw.appendChild(o); } });
+      sw.onchange=(function(i,m){return function(){ var ti=parseInt(this.value); if(isNaN(ti))return; var d=m==="add"?addDays:editDays; var a=d[i],b=d[ti]; var t={label:a.label,focus:a.focus,sections:a.sections}; a.label=b.label;a.focus=b.focus;a.sections=b.sections; b.label=t.label;b.focus=t.focus;b.sections=t.sections; renderDays(m); };})(di,mode);
+      hr.appendChild(sw);
+    }
     var db = el("button","del-btn","✕");
     db.onclick = (function(i,m){return function(){var d=m==="add"?addDays:editDays;d.splice(i,1);renderDays(m);};})(di,mode);
-    hdr.appendChild(db); block.appendChild(hdr);
+    hr.appendChild(db); hdr.appendChild(hr); block.appendChild(hdr);
     // Label + Focus
     var li = el("input","form-input"); li.placeholder="Day label (e.g. Monday)"; li.value=day.label;
     li.oninput = (function(i,m){return function(){(m==="add"?addDays:editDays)[i].label=this.value;};})(di,mode);
@@ -318,7 +334,13 @@ function renderMealDays(mode) {
   DAYS.forEach(function(day) {
     var dayMeals = meals[day.k]||[];
     var block = el("div","day-block");
-    block.appendChild(el("div","day-block-title",day.l));
+    var mh = el("div",""); mh.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px";
+    mh.appendChild(el("div","day-block-title",day.l));
+    var msw=el("select","day-swap");
+    var mph=el("option","","⇄ swap with"); mph.value=""; msw.appendChild(mph);
+    DAYS.forEach(function(od){ if(od.k!==day.k){ var o=el("option","",od.l); o.value=od.k; msw.appendChild(o); } });
+    msw.onchange=(function(srcK,m){return function(){ var tgtK=this.value; if(!tgtK)return; var M=m==="add"?addMealDays:editMealDays; var tmp=M[srcK]; M[srcK]=M[tgtK]; M[tgtK]=tmp; renderMealDays(m); };})(day.k,mode);
+    mh.appendChild(msw); block.appendChild(mh);
     dayMeals.forEach(function(meal, mi) {
       var mb = el("div","meal-block");
       // Meal name
@@ -382,6 +404,10 @@ async function openEdit(slug) {
   document.getElementById("edit-title").textContent = "Edit — " + r1.data.name;
   document.getElementById("en").value = r1.data.name;
   document.getElementById("eg").value = r1.data.goal||"";
+  var esl = document.getElementById("e-slug");
+  esl.value = r1.data.slug;
+  document.getElementById("e-sp").textContent = r1.data.slug;
+  esl.oninput = function(){ this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,""); document.getElementById("e-sp").textContent=this.value||"slug"; };
   if (r3.data) {
     document.getElementById("e-cal").value = r3.data.calories||"";
     document.getElementById("e-pro").value = r3.data.protein||"";
@@ -473,7 +499,42 @@ async function saveNew() {
 async function saveEdit() {
   var name=document.getElementById("en").value.trim();
   var goal=document.getElementById("eg").value.trim();
-  await sb.from("clients").update({name:name,goal:goal}).eq("slug",editSlug);
+  var newSlug=(document.getElementById("e-slug").value||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
+  if(!name){showErr("Name is required");return;}
+  if(!newSlug){showErr("URL slug can't be empty");return;}
+
+  if(newSlug!==editSlug){
+    var oldSlug=editSlug;
+    var clash=await sb.from("clients").select("slug").eq("slug",newSlug).maybeSingle();
+    if(clash.data){showErr("The slug '"+newSlug+"' is already used by another client.");return;}
+    var c=await sb.from("clients").update({slug:newSlug,name:name,goal:goal}).eq("slug",oldSlug);
+    if(c.error){showErr("Couldn't change slug: "+c.error.message);return;}
+    // migrate every table that references the slug
+    await sb.from("programs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("meal_templates").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("nutrition_targets").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("body_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("nutrition_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("food_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("progress_photos").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("lift_logs").update({client:newSlug}).eq("client",oldSlug);
+    // keep lift history linked to the program: re-prefix exercise ids (one update per distinct exercise)
+    var lr=await sb.from("lift_logs").select("ex_id").eq("client",newSlug);
+    if(lr.data){
+      var done={};
+      for(var i=0;i<lr.data.length;i++){
+        var oldEx=lr.data[i].ex_id;
+        if(!oldEx||done[oldEx]||oldEx.indexOf(oldSlug+"_")!==0)continue;
+        done[oldEx]=1;
+        var newEx=newSlug+oldEx.slice(oldSlug.length);
+        await sb.from("lift_logs").update({ex_id:newEx}).eq("client",newSlug).eq("ex_id",oldEx);
+      }
+    }
+    editSlug=newSlug;
+  } else {
+    await sb.from("clients").update({name:name,goal:goal}).eq("slug",editSlug);
+  }
+
   await sb.from("programs").delete().eq("client_slug",editSlug);
   var progRows=daysToRows(editSlug,editDays);
   if(progRows.length) await sb.from("programs").insert(progRows);

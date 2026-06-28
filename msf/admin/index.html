@@ -507,9 +507,14 @@ async function saveEdit() {
     var oldSlug=editSlug;
     var clash=await sb.from("clients").select("slug").eq("slug",newSlug).maybeSingle();
     if(clash.data){showErr("The slug '"+newSlug+"' is already used by another client.");return;}
-    var c=await sb.from("clients").update({slug:newSlug,name:name,goal:goal}).eq("slug",oldSlug);
-    if(c.error){showErr("Couldn't change slug: "+c.error.message);return;}
-    // migrate every table that references the slug
+    // Foreign keys block renaming the slug in place. So: create the new client row first,
+    // repoint every child table to it, then delete the old row (now safe — nothing references it).
+    var oldRow=await sb.from("clients").select("created_at").eq("slug",oldSlug).maybeSingle();
+    var newRow={slug:newSlug,name:name,goal:goal};
+    if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
+    var ins=await sb.from("clients").insert(newRow);
+    if(ins.error){showErr("Couldn't change slug: "+ins.error.message);return;}
+    // repoint every table that references the slug
     await sb.from("programs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("meal_templates").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("nutrition_targets").update({client_slug:newSlug}).eq("client_slug",oldSlug);
@@ -530,6 +535,9 @@ async function saveEdit() {
         await sb.from("lift_logs").update({ex_id:newEx}).eq("client",newSlug).eq("ex_id",oldEx);
       }
     }
+    // every child now points at the new slug — the old row is childless and safe to remove
+    var delOld=await sb.from("clients").delete().eq("slug",oldSlug);
+    if(delOld.error){showErr("Data moved to '"+newSlug+"', but the old '"+oldSlug+"' record couldn't be removed: "+delOld.error.message);return;}
     editSlug=newSlug;
   } else {
     await sb.from("clients").update({name:name,goal:goal}).eq("slug",editSlug);

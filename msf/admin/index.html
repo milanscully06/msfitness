@@ -575,6 +575,7 @@ async function saveEdit() {
     await sb.from("nutrition_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("food_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("progress_photos").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("extra_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("lift_logs").update({client:newSlug}).eq("client",oldSlug);
     // keep lift history linked to the program: re-prefix exercise ids (one update per distinct exercise)
     var lr=await sb.from("lift_logs").select("ex_id").eq("client",newSlug);

@@ -907,6 +907,7 @@ var nutTargets={calories:0,protein:0,carbs:0,fats:0};
 var nutMeals=[];
 var nutLogs={};
 var foodLogs=[];
+var extraNotes=[];
 var nutDate=todayStr();
 
 var DAY_KEYS=["sun","mon","tue","wed","thu","fri","sat"];
@@ -964,6 +965,10 @@ async function renderNutrition(){
   var fxWrap=el("div","");fxWrap.id="food-extra";
   vn.appendChild(fxWrap);
 
+  // Snacks & extras notes
+  var snWrap=el("div","");snWrap.id="snack-notes";
+  vn.appendChild(snWrap);
+
   loadNutDay();
 }
 
@@ -990,6 +995,9 @@ async function loadNutDay(){
 
   var rf=await sb.from("food_logs").select("*").eq("client_slug",CLIENT).eq("logged_date",nutDate).order("created_at",{ascending:true});
   foodLogs=rf.data||[];
+
+  var rx=await sb.from("extra_logs").select("*").eq("client_slug",CLIENT).eq("logged_date",nutDate).order("created_at",{ascending:true});
+  extraNotes=rx.data||[];
 
   renderNutUI();
 }
@@ -1048,6 +1056,9 @@ function renderNutUI(){
 
   // Logged foods + Add food (always render, even on no-meal-plan days)
   renderFoodExtra();
+
+  // Snacks & extras notes
+  renderNotes();
 
   // Meal cards
   var mc=document.getElementById("meal-cards");
@@ -1133,6 +1144,54 @@ function renderFoodExtra(){
   var resed=el("div","food-results");resed.id="food-results";
   panel.appendChild(resed);
   fx.appendChild(panel);
+}
+
+function renderNotes(){
+  var sn=document.getElementById("snack-notes");
+  if(!sn)return;
+  sn.innerHTML="";
+  sn.appendChild(el("div","sec-label","Snacks & extras"));
+  var hint=el("div","");hint.style.cssText="font-size:12px;color:rgba(244,238,228,.5);margin:-4px 0 10px;line-height:1.5";
+  hint.textContent="Anything extra you had — a coffee, a snack, a drink. Add each one so it shows up for your coach.";
+  sn.appendChild(hint);
+  extraNotes.forEach(function(n){
+    var row=el("div","flog");
+    var info=el("div","flog-info");
+    info.appendChild(el("div","flog-name",n.note));
+    var right=el("div","flog-right");
+    var del=el("button","flog-del","\u2715");
+    del.onclick=function(){delNote(n.id);};
+    right.appendChild(del);
+    row.appendChild(info);row.appendChild(right);
+    sn.appendChild(row);
+  });
+  var addRow=el("div","");addRow.style.cssText="display:flex;gap:8px;margin-top:8px";
+  var inp=el("input");inp.id="note-q";inp.type="text";inp.placeholder="e.g. oat latte, handful of nuts\u2026";inp.setAttribute("autocomplete","off");
+  inp.style.cssText="flex:1;background:#181513;border:1px solid rgba(244,238,228,.16);border-radius:10px;color:#F4EEE4;font-family:inherit;font-size:14px;padding:11px 12px;outline:none";
+  inp.onkeydown=function(e){if(e.key==="Enter"){addNote();}};
+  addRow.appendChild(inp);
+  var addBtn=el("button","","\uFF0B Add");
+  addBtn.style.cssText="background:#9DB49A;color:#0E0C0B;border:none;border-radius:10px;font-weight:700;font-size:13px;padding:11px 16px;cursor:pointer;white-space:nowrap";
+  addBtn.onclick=function(){addNote();};
+  addRow.appendChild(addBtn);
+  sn.appendChild(addRow);
+}
+
+async function addNote(){
+  var inp=document.getElementById("note-q");
+  if(!inp)return;
+  var txt=(inp.value||"").trim();
+  if(!txt)return;
+  inp.value="";
+  var ins=await sb.from("extra_logs").insert({client_slug:CLIENT,logged_date:nutDate,note:txt}).select().single();
+  if(ins.data)extraNotes.push(ins.data);
+  renderNotes();
+}
+
+async function delNote(id){
+  await sb.from("extra_logs").delete().eq("id",id);
+  extraNotes=extraNotes.filter(function(n){return n.id!==id;});
+  renderNotes();
 }
 
 async function searchFood(q){

@@ -98,6 +98,25 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .chart-sel{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;color:var(--ink);font-family:var(--body);font-size:14px;margin-bottom:12px;-webkit-appearance:none}
 .chart-sel:focus{outline:none;border-color:var(--sage)}
 .chart-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.lift-tbl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.lift-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lift-row:last-child{border-bottom:none}
+.lift-head{background:var(--surface-2)}
+.lift-head>div{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.lt-ex{font-size:13px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lt-last{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;text-align:right}
+.lt-chg{font-size:12px;font-weight:700;white-space:nowrap;text-align:right;min-width:78px}
+.chg-up{color:var(--sage)}
+.chg-dn{color:var(--bad)}
+.chg-none{color:var(--ink-3)}
+.food-tbl{display:flex;flex-direction:column;gap:8px}
+.food-day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+.food-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.food-date{font-size:13px;font-weight:600;color:var(--ink)}
+.food-cal{font-size:13px;font-weight:700;color:var(--sage);white-space:nowrap}
+.food-cal.over{color:var(--bad)}
+.food-notes{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
+.food-note{font-size:12px;color:var(--ink-2);line-height:1.5}
 </style>
 </head>
 <body>
@@ -272,11 +291,14 @@ async function renderClient(slug){
   var r1=await sb.from("lift_logs").select("*").eq("client",slug).order("logged_at",{ascending:true});
   var r2=await sb.from("programs").select("ex_id,ex_name").eq("client_slug",slug);
   var rb=await sb.from("body_logs").select("client_slug,logged_date,weight").eq("client_slug",slug);
-  var rn=await sb.from("nutrition_logs").select("client_slug,logged_date").eq("client_slug",slug);
-  var rf=await sb.from("food_logs").select("client_slug,logged_date").eq("client_slug",slug);
+  var rn=await sb.from("nutrition_logs").select("client_slug,logged_date,calories").eq("client_slug",slug);
+  var rf=await sb.from("food_logs").select("client_slug,logged_date,calories").eq("client_slug",slug);
   var rp=await sb.from("progress_photos").select("*").eq("client_slug",slug).order("taken_date",{ascending:false});
+  var rx=await sb.from("extra_logs").select("logged_date,note,created_at").eq("client_slug",slug);
+  var rt=await sb.from("nutrition_targets").select("calories").eq("client_slug",slug).maybeSingle();
   sync(false);
   var lift=r1.data||[],body=rb.data||[],nat=rn.data||[],food=rf.data||[],photos=rp.data||[];
+  var notes=rx.data||[],targetCal=(rt.data&&rt.data.calories)||0;
 
   var sessions=sessionCount(lift);
   var wt=weightTrend(body);
@@ -331,6 +353,30 @@ async function renderClient(slug){
   aw.appendChild(strip);
   dc.appendChild(aw);
 
+  // Recent food calories + snack notes
+  dc.appendChild(el("div","sec-label","Recent food & notes"));
+  var rdays=recentDays(nat,food,notes);
+  if(rdays.length){
+    var ft=el("div","food-tbl");
+    rdays.forEach(function(day){
+      var fd=el("div","food-day");
+      var fh=el("div","food-day-head");
+      fh.appendChild(el("span","food-date",new Date(day.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})));
+      var calTxt=day.cal>0?(Math.round(day.cal)+(targetCal?(" / "+targetCal):"")+" kcal"):"no meals logged";
+      fh.appendChild(el("span","food-cal"+(targetCal&&day.cal>targetCal?" over":""),calTxt));
+      fd.appendChild(fh);
+      if(day.notes.length){
+        var nl=el("div","food-notes");
+        day.notes.forEach(function(n){nl.appendChild(el("div","food-note","• "+n));});
+        fd.appendChild(nl);
+      }
+      ft.appendChild(fd);
+    });
+    dc.appendChild(ft);
+  }else{
+    dc.appendChild(el("div","wt-empty","No food or notes logged yet."));
+  }
+
   // Progress photos
   if(photos.length){
     dc.appendChild(el("div","sec-label","Progress photos"));
@@ -347,25 +393,65 @@ async function renderClient(slug){
     dc.appendChild(pg);
   }
 
-  // Lift progress
-  if(allEx.length){
-    dc.appendChild(el("div","sec-label","Lift progress"));
-    var sel=el("select","chart-sel");
-    allEx.forEach(function(e){var o=el("option","",e.name);o.value=e.id;sel.appendChild(o);});
-    sel.onchange=function(){loadTChart(slug,this.value);};
-    dc.appendChild(sel);
-    var box=el("div","chart-box");var canvas=el("canvas");canvas.id="tc";canvas.height=240;box.appendChild(canvas);dc.appendChild(box);
-    loadTChart(slug,allEx[0].id);
+  // Gym progress — every exercise, last weight × reps, change since last time
+  dc.appendChild(el("div","sec-label","Gym progress"));
+  var lrows=liftTable(lift);
+  if(lrows.length){
+    var tbl=el("div","lift-tbl");
+    var th=el("div","lift-row lift-head");
+    th.appendChild(el("div","lt-ex","Exercise"));
+    th.appendChild(el("div","lt-last","Last"));
+    th.appendChild(el("div","lt-chg","Change"));
+    tbl.appendChild(th);
+    lrows.forEach(function(r){
+      var tr=el("div","lift-row");
+      tr.appendChild(el("div","lt-ex",r.name));
+      tr.appendChild(el("div","lt-last", r.weight>0?(fmtW(r.weight)+"kg × "+r.reps):(r.reps+" reps")));
+      var chg=el("div","lt-chg");
+      if(r.change===null)chg.innerHTML='<span class="chg-none">first</span>';
+      else if(r.change>0)chg.innerHTML='<span class="chg-up">▲ +'+fmtW(r.change)+'kg</span>';
+      else if(r.change<0)chg.innerHTML='<span class="chg-dn">▼ −'+fmtW(Math.abs(r.change))+'kg</span>';
+      else chg.innerHTML='<span class="chg-none">—</span>';
+      tr.appendChild(chg);
+      tbl.appendChild(tr);
+    });
+    dc.appendChild(tbl);
+  }else{
+    dc.appendChild(el("div","wt-empty","No gym sessions logged yet."));
   }
 }
 
-async function loadTChart(slug,exId){
-  var res=await sb.from("lift_logs").select("weight,logged_at").eq("client",slug).eq("ex_id",exId).eq("set_index",1).order("logged_at",{ascending:true});
-  var labels=(res.data||[]).map(function(r){return new Date(r.logged_at).toLocaleDateString("en-AU",{day:"numeric",month:"short"});});
-  var vals=(res.data||[]).map(function(r){return r.weight||0;});
-  var ctx=document.getElementById("tc");if(!ctx)return;
-  if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:"line",data:{labels:labels.length?labels:["No data"],datasets:[{data:vals.length?vals:[0],borderColor:"#9DB49A",backgroundColor:"rgba(157,180,154,.12)",borderWidth:2.5,pointBackgroundColor:"#9DB49A",pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.34)",maxTicksLimit:6}},y:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.34)",callback:function(v){return v+"kg";}},beginAtZero:false}}}});
+function fmtW(w){ return (Math.round((w||0)*10)/10).toString(); }
+
+function liftTable(lift){
+  var byEx={};
+  lift.forEach(function(r){
+    if(!byEx[r.ex_id])byEx[r.ex_id]={name:r.ex_name,dates:{}};
+    var d=r.logged_at?new Date(r.logged_at).toDateString():"?";
+    if(!byEx[r.ex_id].dates[d])byEx[r.ex_id].dates[d]=[];
+    byEx[r.ex_id].dates[d].push(r);
+  });
+  var out=[];
+  Object.keys(byEx).forEach(function(id){
+    var ex=byEx[id];
+    var dks=Object.keys(ex.dates).sort(function(a,b){return new Date(a)-new Date(b);});
+    if(!dks.length)return;
+    function top(rows){var t=rows[0];rows.forEach(function(r){if((r.weight||0)>(t.weight||0))t=r;});return t;}
+    var lastT=top(ex.dates[dks[dks.length-1]]);
+    var prevT=dks.length>1?top(ex.dates[dks[dks.length-2]]):null;
+    out.push({name:ex.name,weight:lastT.weight||0,reps:lastT.reps||0,change:prevT?((lastT.weight||0)-(prevT.weight||0)):null,lastMs:new Date(dks[dks.length-1]).getTime()});
+  });
+  out.sort(function(a,b){return b.lastMs-a.lastMs;});
+  return out;
+}
+
+function recentDays(nat,food,notes){
+  var by={};
+  function bump(d,c){if(!d)return;if(!by[d])by[d]={cal:0,notes:[]};by[d].cal+=c||0;}
+  (nat||[]).forEach(function(r){bump(r.logged_date,r.calories);});
+  (food||[]).forEach(function(r){bump(r.logged_date,r.calories);});
+  (notes||[]).forEach(function(r){if(!r.logged_date)return;if(!by[r.logged_date])by[r.logged_date]={cal:0,notes:[]};by[r.logged_date].notes.push(r.note);});
+  return Object.keys(by).sort().reverse().slice(0,7).map(function(d){return {date:d,cal:by[d].cal,notes:by[d].notes};});
 }
 
 loadDash();

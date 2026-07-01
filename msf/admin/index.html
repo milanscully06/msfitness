@@ -93,6 +93,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .del-btn{width:28px;height:28px;border:1px solid rgba(201,122,109,.4);border-radius:8px;background:rgba(201,122,109,.1);cursor:pointer;color:var(--bad);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .day-swap{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 8px;-webkit-appearance:none;cursor:pointer;max-width:160px}
 .day-swap:focus{outline:none;border-color:var(--sage)}
+.clip-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:12px}
+.clip-status{font-size:11px;color:var(--ink-2);font-weight:600}
+.clip-btn{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;white-space:nowrap}
+.clip-btn:hover{border-color:var(--ink-3)}
+.clip-btn.paste{border-color:var(--sage);color:var(--sage)}
 
 </style>
 </head>
@@ -187,6 +192,9 @@ var sb = supabase.createClient("https://idlwqbgsnjoikoyhifbr.supabase.co", "eyJh
 var editSlug = null;
 var addDays = [], editDays = [];
 var addMealDays = {}, editMealDays = {};
+var mealClip = null; // {scope:"meal"|"day"|"all", label, data}
+var progClip = null; // {scope:"day"|"all", label, data}
+function deep(x){ return JSON.parse(JSON.stringify(x)); }
 var DAYS = [{k:"mon",l:"Monday"},{k:"tue",l:"Tuesday"},{k:"wed",l:"Wednesday"},{k:"thu",l:"Thursday"},{k:"fri",l:"Friday"},{k:"sat",l:"Saturday"},{k:"sun",l:"Sunday"}];
 
 function el(tag, cls, txt) {
@@ -252,13 +260,27 @@ function renderDays(mode) {
   var days = mode==="add"?addDays:editDays;
   var container = document.getElementById(mode==="add"?"add-days":"edit-days");
   container.innerHTML = "";
+  // clipboard toolbar
+  var pbar=el("div","clip-bar");
+  pbar.appendChild(el("span","clip-status", progClip?("📋 "+progClip.label):"📋 Program clipboard empty"));
+  var pr2=el("div",""); pr2.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
+  var cpAll=el("button","clip-btn","⧉ Copy whole program");
+  cpAll.onclick=(function(m){return function(){ var d=m==="add"?addDays:editDays; if(!d.length)return; progClip={scope:"all",label:"Program · "+d.length+" days",data:deep(d)}; renderDays(m); };})(mode);
+  pr2.appendChild(cpAll);
+  if(progClip){
+    var pasteP=el("button","clip-btn paste", progClip.scope==="all"?"📥 Paste program":"📥 Paste day");
+    pasteP.onclick=(function(m){return function(){ var d=m==="add"?addDays:editDays; var ex=d.map(function(x){return x.key;}); var uk=function(pref){ if(pref&&ex.indexOf(pref)===-1)return pref; return "d"+Date.now()+Math.floor(Math.random()*10000); }; var list=progClip.scope==="all"?progClip.data:[progClip.data]; list.forEach(function(day){ var nd=deep(day); nd.key=uk(nd.key); ex.push(nd.key); d.push(nd); }); renderDays(m); };})(mode);
+    pr2.appendChild(pasteP);
+    var clrP=el("button","clip-btn","✕ Clear"); clrP.onclick=function(){progClip=null;renderDays(mode);}; pr2.appendChild(clrP);
+  }
+  pbar.appendChild(pr2); container.appendChild(pbar);
   days.forEach(function(day, di) {
     var block = el("div","day-block");
     // Header
     var WD={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
     var hdr = el("div",""); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px";
     hdr.appendChild(el("span","day-block-title","Day "+(di+1)+(WD[day.key]?" · "+WD[day.key]:"")));
-    var hr = el("div",""); hr.style.cssText="display:flex;align-items:center;gap:6px";
+    var hr = el("div",""); hr.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end";
     if(days.length>1){
       var sw=el("select","day-swap");
       var ph=el("option","","⇄ swap"); ph.value=""; sw.appendChild(ph);
@@ -266,6 +288,9 @@ function renderDays(mode) {
       sw.onchange=(function(i,m){return function(){ var ti=parseInt(this.value); if(isNaN(ti))return; var d=m==="add"?addDays:editDays; var a=d[i],b=d[ti]; var t={label:a.label,focus:a.focus,sections:a.sections}; a.label=b.label;a.focus=b.focus;a.sections=b.sections; b.label=t.label;b.focus=t.focus;b.sections=t.sections; renderDays(m); };})(di,mode);
       hr.appendChild(sw);
     }
+    var cpDay=el("button","clip-btn","⧉ Copy");
+    cpDay.onclick=(function(i,m){return function(){ var d=(m==="add"?addDays:editDays)[i]; var exc=d.sections.reduce(function(a,s){return a+s.exercises.length;},0); progClip={scope:"day",label:(d.label||"Day "+(i+1))+" · "+exc+" ex",data:deep(d)}; renderDays(m); };})(di,mode);
+    hr.appendChild(cpDay);
     var db = el("button","del-btn","✕");
     db.onclick = (function(i,m){return function(){var d=m==="add"?addDays:editDays;d.splice(i,1);renderDays(m);};})(di,mode);
     hr.appendChild(db); hdr.appendChild(hr); block.appendChild(hdr);
@@ -331,16 +356,40 @@ function renderMealDays(mode) {
   var meals = mode==="add"?addMealDays:editMealDays;
   var container = document.getElementById(mode==="add"?"add-meal-days":"edit-meal-days");
   container.innerHTML = "";
+  // clipboard toolbar
+  var cbar=el("div","clip-bar");
+  cbar.appendChild(el("span","clip-status", mealClip?("📋 "+mealClip.label):"📋 Meal clipboard empty"));
+  var cr2=el("div",""); cr2.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
+  var cpAllM=el("button","clip-btn","⧉ Copy all days");
+  cpAllM.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var cnt=0; DAYS.forEach(function(d){cnt+=(M[d.k]||[]).length;}); if(!cnt)return; mealClip={scope:"all",label:"All meals · "+cnt,data:deep(M)}; renderMealDays(m); };})(mode);
+  cr2.appendChild(cpAllM);
+  if(mealClip&&mealClip.scope==="all"){
+    var pasteAll=el("button","clip-btn paste","📥 Paste all days");
+    pasteAll.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var src=mealClip.data; DAYS.forEach(function(d){ if(!M[d.k])M[d.k]=[]; (src[d.k]||[]).forEach(function(x){M[d.k].push(deep(x));}); }); renderMealDays(m); };})(mode);
+    cr2.appendChild(pasteAll);
+  }
+  if(mealClip){ var clrM=el("button","clip-btn","✕ Clear"); clrM.onclick=function(){mealClip=null;renderMealDays(mode);}; cr2.appendChild(clrM); }
+  cbar.appendChild(cr2); container.appendChild(cbar);
   DAYS.forEach(function(day) {
     var dayMeals = meals[day.k]||[];
     var block = el("div","day-block");
-    var mh = el("div",""); mh.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px";
+    var mh = el("div",""); mh.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px";
     mh.appendChild(el("div","day-block-title",day.l));
+    var mctl=el("div",""); mctl.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap";
     var msw=el("select","day-swap");
     var mph=el("option","","⇄ swap with"); mph.value=""; msw.appendChild(mph);
     DAYS.forEach(function(od){ if(od.k!==day.k){ var o=el("option","",od.l); o.value=od.k; msw.appendChild(o); } });
     msw.onchange=(function(srcK,m){return function(){ var tgtK=this.value; if(!tgtK)return; var M=m==="add"?addMealDays:editMealDays; var tmp=M[srcK]; M[srcK]=M[tgtK]; M[tgtK]=tmp; renderMealDays(m); };})(day.k,mode);
-    mh.appendChild(msw); block.appendChild(mh);
+    mctl.appendChild(msw);
+    var cpd=el("button","clip-btn","⧉ Copy day");
+    cpd.onclick=(function(k,lbl,m){return function(){ var arr=(m==="add"?addMealDays:editMealDays)[k]||[]; if(!arr.length)return; mealClip={scope:"day",label:lbl+" · "+arr.length+" meals",data:deep(arr)}; renderMealDays(m); };})(day.k,day.l,mode);
+    mctl.appendChild(cpd);
+    if(mealClip&&(mealClip.scope==="meal"||mealClip.scope==="day")){
+      var pbtn=el("button","clip-btn paste", mealClip.scope==="meal"?"📥 Paste meal":"📥 Paste day");
+      pbtn.onclick=(function(k,m){return function(){ var M=m==="add"?addMealDays:editMealDays; if(!M[k])M[k]=[]; if(mealClip.scope==="meal"){M[k].push(deep(mealClip.data));}else{mealClip.data.forEach(function(x){M[k].push(deep(x));});} renderMealDays(m); };})(day.k,mode);
+      mctl.appendChild(pbtn);
+    }
+    mh.appendChild(mctl); block.appendChild(mh);
     dayMeals.forEach(function(meal, mi) {
       var mb = el("div","meal-block");
       // Meal name
@@ -365,10 +414,14 @@ function renderMealDays(mode) {
         wrap.appendChild(inp); mg.appendChild(wrap);
       });
       mb.appendChild(mg);
-      // Remove
+      // Copy / Remove
+      var mrow=el("div",""); mrow.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+      var cpm=el("button","clip-btn","⧉ Copy meal");
+      cpm.onclick=(function(k,i,lbl,m){return function(){ var meal=(m==="add"?addMealDays:editMealDays)[k][i]; mealClip={scope:"meal",label:(meal.name||"Meal")+" · "+lbl,data:deep(meal)}; renderMealDays(m); };})(day.k,mi,day.l,mode);
       var rd=el("button","add-btn","Remove meal"); rd.style.color="var(--bad)";
       rd.onclick=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2].splice(i,1);renderMealDays(m);};})(day.k,mi,mode);
-      mb.appendChild(rd);
+      mrow.appendChild(cpm); mrow.appendChild(rd);
+      mb.appendChild(mrow);
       block.appendChild(mb);
     });
     var ab=el("button","add-btn","+ Add meal");

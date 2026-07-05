@@ -98,6 +98,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .clip-btn{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;white-space:nowrap}
 .clip-btn:hover{border-color:var(--ink-3)}
 .clip-btn.paste{border-color:var(--sage);color:var(--sage)}
+.cond-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cond-pill{flex:1;min-width:88px;padding:8px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;cursor:pointer}
+.cond-pill-easy.on{background:rgba(157,180,154,.18);border-color:var(--sage);color:var(--sage)}
+.cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
+.cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
+.cond-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 10px;outline:none;margin-bottom:6px}
+.cond-in:focus{border-color:var(--sage)}
 
 </style>
 </head>
@@ -145,6 +152,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
     <div id="add-meal-days"></div>
   </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
+    <div id="add-cond-days"></div>
+  </div>
   <div style="display:flex;gap:8px;margin-top:20px">
     <button class="btn-green" style="flex:1" id="save-add-btn">Save client</button>
     <button class="btn-outline" id="cancel-add-btn">Cancel</button>
@@ -179,6 +190,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
     <div id="edit-meal-days"></div>
+  </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
+    <div id="edit-cond-days"></div>
   </div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
     <button class="btn-green" style="flex:1" id="save-edit-btn">Save changes</button>
@@ -352,6 +367,57 @@ function emptyMealDays() {
   return d;
 }
 
+// ===== CONDITIONING SCHEDULE =====
+var addCondDays = {}, editCondDays = {};
+function emptyCondDays(){ var d={}; DAYS.forEach(function(day){d[day.k]=[];}); return d; }
+
+function renderCondDays(mode){
+  var days = mode==="add"?addCondDays:editCondDays;
+  var container = document.getElementById(mode==="add"?"add-cond-days":"edit-cond-days");
+  container.innerHTML="";
+  DAYS.forEach(function(day){
+    var items = days[day.k]||[];
+    var block = el("div","day-block");
+    block.appendChild(el("div","day-block-title",day.l));
+    items.forEach(function(it,ii){
+      var mb = el("div","meal-block");
+      var pills = el("div","cond-pills");
+      [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+        var pill = el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
+        pill.onclick=(function(k,dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].kind=k; renderCondDays(m); };})(p[0],day.k,ii,mode);
+        pills.appendChild(pill);
+      });
+      mb.appendChild(pills);
+      var ti=el("input");ti.className="cond-in";ti.placeholder="Session — e.g. Threshold bike";ti.value=it.title||"";
+      ti.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].title=this.value; };})(day.k,ii,mode);
+      mb.appendChild(ti);
+      var de=el("input");de.className="cond-in";de.placeholder="Protocol / detail — e.g. 5 on/1 off \u00b7 4\u21928 sets \u00b7 RPE 7-8";de.value=it.detail||"";
+      de.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].detail=this.value; };})(day.k,ii,mode);
+      mb.appendChild(de);
+      var rm=el("button","add-btn","Remove");rm.style.color="var(--bad)";
+      rm.onclick=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk].splice(i,1); renderCondDays(m); };})(day.k,ii,mode);
+      mb.appendChild(rm);
+      block.appendChild(mb);
+    });
+    var ab=el("button","add-btn","+ Add conditioning");
+    ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:""}); renderCondDays(m); };})(day.k,mode);
+    block.appendChild(ab);
+    container.appendChild(block);
+  });
+}
+
+async function saveCond(slug, condDays){
+  await sb.from("conditioning_plan").delete().eq("client_slug",slug);
+  var rows=[];
+  DAYS.forEach(function(day){
+    (condDays[day.k]||[]).forEach(function(it,i){
+      if(!it.title)return;
+      rows.push({client_slug:slug,day_of_week:day.k,item_order:i,kind:it.kind||"easy",title:it.title,detail:it.detail||null});
+    });
+  });
+  if(rows.length) await sb.from("conditioning_plan").insert(rows);
+}
+
 function renderMealDays(mode) {
   var meals = mode==="add"?addMealDays:editMealDays;
   var container = document.getElementById(mode==="add"?"add-meal-days":"edit-meal-days");
@@ -432,7 +498,7 @@ function renderMealDays(mode) {
 
 // ── OPEN ADD ──
 function openAdd() {
-  addDays = []; addMealDays = emptyMealDays();
+  addDays = []; addMealDays = emptyMealDays(); addCondDays = emptyCondDays();
   document.getElementById("an").value="";
   document.getElementById("ag").value="";
   document.getElementById("asl").value="";
@@ -443,6 +509,7 @@ function openAdd() {
   document.getElementById("a-fat").value="";
   renderDays("add");
   renderMealDays("add");
+  renderCondDays("add");
   openModal("modal-add");
 }
 
@@ -453,6 +520,7 @@ async function openEdit(slug) {
   var r2 = await sb.from("programs").select("*").eq("client_slug",slug).order("exercise_order");
   var r3 = await sb.from("nutrition_targets").select("*").eq("client_slug",slug).single();
   var r4 = await sb.from("meal_templates").select("*").eq("client_slug",slug).order("meal_order");
+  var r5 = await sb.from("conditioning_plan").select("*").eq("client_slug",slug).order("item_order");
   if (!r1.data) return;
   document.getElementById("edit-title").textContent = "Edit — " + r1.data.name;
   document.getElementById("en").value = r1.data.name;
@@ -484,8 +552,16 @@ async function openEdit(slug) {
   DAYS.forEach(function(day){
     if(editMealDays[day.k])editMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);});
   });
+  // Build conditioning schedule
+  editCondDays = emptyCondDays();
+  (r5.data||[]).forEach(function(it){
+    var d = it.day_of_week||"mon";
+    if(!editCondDays[d])editCondDays[d]=[];
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
   renderDays("edit");
   renderMealDays("edit");
+  renderCondDays("edit");
   openModal("modal-edit");
 }
 
@@ -544,6 +620,7 @@ async function saveNew() {
   var progRows=daysToRows(slug,addDays);
   if(progRows.length){var pr=await sb.from("programs").insert(progRows);if(pr.error){showErr("Program error: "+pr.error.message);return;}}
   await saveNutrition(slug,"a",addMealDays);
+  await saveCond(slug,addCondDays);
   closeModal("modal-add");
   showSucc(name+" added! Link: /client/"+slug);
   loadClients();
@@ -576,6 +653,8 @@ async function saveEdit() {
     await sb.from("food_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("progress_photos").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("extra_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("conditioning_plan").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("conditioning_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("lift_logs").update({client:newSlug}).eq("client",oldSlug);
     // keep lift history linked to the program: re-prefix exercise ids (one update per distinct exercise)
     var lr=await sb.from("lift_logs").select("ex_id").eq("client",newSlug);
@@ -601,6 +680,7 @@ async function saveEdit() {
   var progRows=daysToRows(editSlug,editDays);
   if(progRows.length) await sb.from("programs").insert(progRows);
   await saveNutrition(editSlug,"e",editMealDays);
+  await saveCond(editSlug,editCondDays);
   closeModal("modal-edit");
   showSucc(name+" updated!");
   loadClients();

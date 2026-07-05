@@ -275,6 +275,33 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .ni span{font-size:10px;font-weight:600;letter-spacing:.02em}
 .ni::before{content:'';position:absolute;top:-13px;width:22px;height:2px;border-radius:2px;background:var(--sage);opacity:0;transition:opacity .2s}
 .ni.active::before{opacity:1}
+/* ===== conditioning ===== */
+.cond-h{font-family:var(--display);font-weight:700;font-size:26px;color:var(--ink);margin:8px 0 16px;letter-spacing:-.01em}
+.cond-form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:22px;display:flex;flex-direction:column;gap:10px}
+.cond-pills{display:flex;gap:8px;flex-wrap:wrap}
+.cond-pill{flex:1;min-width:96px;padding:10px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.cond-pill-easy.on{background:rgba(157,180,154,.18);border-color:var(--sage);color:var(--sage)}
+.cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
+.cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
+.cond-in{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;width:100%}
+.cond-in:focus{border-color:var(--sage)}
+.cond-row{display:flex;gap:10px}
+.cond-row .cond-in{flex:1;min-width:0}
+.cond-log-btn{background:var(--sage);color:var(--bg);border:none;border-radius:12px;font-family:var(--body);font-size:15px;font-weight:700;padding:13px;cursor:pointer;margin-top:2px}
+.cond-card{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--line-2);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+.cond-card.cond-easy{border-left-color:var(--sage)}
+.cond-card.cond-hard{border-left-color:var(--bad)}
+.cond-card.cond-other{border-left-color:var(--ink-3)}
+.cond-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.cond-title{font-size:15px;font-weight:700;color:var(--ink)}
+.cond-date{font-size:12px;color:var(--ink-3);font-weight:600;white-space:nowrap}
+.cond-meta{font-size:13px;color:var(--ink-2);margin-top:5px;font-weight:600}
+.cond-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:6px;margin-top:8px}
+.cond-badge.cond-easy{background:rgba(157,180,154,.15);color:var(--sage)}
+.cond-badge.cond-hard{background:rgba(201,122,109,.15);color:var(--bad)}
+.cond-badge.cond-other{background:var(--surface-2);color:var(--ink-2)}
+.cond-notes{font-size:12px;color:var(--ink-2);margin-top:7px;line-height:1.5}
+.cond-del{background:none;border:none;color:var(--ink-3);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1}
 </style>
 </head>
 <body>
@@ -302,6 +329,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
     <div class="view" id="view-history"></div>
     <div class="view" id="view-progress"></div>
     <div class="view" id="view-nutrition"></div>
+    <div class="view" id="view-conditioning"></div>
   </main>
 
   <div id="not-found" class="empty" style="display:none">
@@ -333,6 +361,10 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
     <button class="ni" id="tbtn-log" onclick="setTab(this,'log')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11"/><rect x="2.5" y="8" width="4" height="4" rx="1" transform="rotate(45 4.5 10)"/><rect x="17.5" y="8" width="4" height="4" rx="1" transform="rotate(45 19.5 10)"/><path d="M3 12.2L4.6 13.8M19.4 10.2L21 11.8"/></svg>
       <span>Train</span>
+    </button>
+    <button class="ni" id="tbtn-conditioning" onclick="setTab(this,'conditioning')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg>
+      <span>Cardio</span>
     </button>
     <button class="ni" id="tbtn-nutrition" onclick="setTab(this,'nutrition')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7a2 2 0 0 0 2 2 2 2 0 0 0 2-2V3M7 12v9M16 3c-1.5 0-2.5 2-2.5 5s1 4 2.5 4 2.5-1 2.5-4-1-5-2.5-5zM16 12v9"/></svg>
@@ -400,11 +432,116 @@ function setTab(btn,tab){
   if(tab==="history")renderHistory();
   if(tab==="progress")renderProgress();
   if(tab==="nutrition")renderNutrition();
+  if(tab==="conditioning")renderConditioning();
 }
 
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
 
 function goTab(tab){var b=document.getElementById("tbtn-"+tab);if(b)setTab(b,tab);}
+
+// ===== CONDITIONING =====
+var condLogs=[], condKind="easy";
+var COND_LABEL={easy:"Easy aerobic",hard:"Hard conditioning",other:"Other"};
+
+function renderConditioning(){
+  var v=document.getElementById("view-conditioning");
+  if(!v)return;
+  v.innerHTML="";
+  v.appendChild(el("div","cond-h","Conditioning"));
+
+  var card=el("div","cond-form");
+  var pills=el("div","cond-pills");
+  [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+    var pill=el("button","cond-pill cond-pill-"+p[0]+(condKind===p[0]?" on":""),p[1]);
+    pill.onclick=(function(k){return function(){condKind=k;var all=document.querySelectorAll(".cond-pill");for(var i=0;i<all.length;i++)all[i].classList.remove("on");this.classList.add("on");};})(p[0]);
+    pills.appendChild(pill);
+  });
+  card.appendChild(pills);
+
+  var ti=el("input");ti.id="cond-title";ti.type="text";ti.placeholder="Session — e.g. Threshold bike";ti.className="cond-in";ti.setAttribute("autocomplete","off");
+  card.appendChild(ti);
+
+  var row=el("div","cond-row");
+  var dur=el("input");dur.id="cond-dur";dur.type="number";dur.placeholder="Duration (min)";dur.className="cond-in";dur.min="0";
+  var rpe=el("input");rpe.id="cond-rpe";rpe.type="number";rpe.placeholder="RPE (1-10)";rpe.className="cond-in";rpe.min="1";rpe.max="10";
+  row.appendChild(dur);row.appendChild(rpe);
+  card.appendChild(row);
+
+  var dt=el("input");dt.id="cond-date";dt.type="date";dt.className="cond-in";dt.value=todayStr();
+  card.appendChild(dt);
+
+  var nt=el("input");nt.id="cond-notes";nt.type="text";nt.placeholder="Notes — protocol, how it felt\u2026";nt.className="cond-in";nt.setAttribute("autocomplete","off");
+  card.appendChild(nt);
+
+  var btn=el("button","cond-log-btn","Log session");
+  btn.onclick=function(){logCond();};
+  card.appendChild(btn);
+  v.appendChild(card);
+
+  var list=el("div","");list.id="cond-list";
+  v.appendChild(list);
+  loadCond();
+}
+
+async function loadCond(){
+  var r=await sb.from("conditioning_logs").select("*").eq("client_slug",CLIENT).order("logged_date",{ascending:false}).order("created_at",{ascending:false});
+  condLogs=r.data||[];
+  drawCondList();
+}
+
+function drawCondList(){
+  var list=document.getElementById("cond-list");
+  if(!list)return;
+  list.innerHTML="";
+  if(!condLogs.length){list.appendChild(el("div","empty-txt","No conditioning sessions logged yet."));return;}
+  list.appendChild(el("div","sec-label","History"));
+  condLogs.forEach(function(c){
+    var kind=c.kind||"easy";
+    var cd=el("div","cond-card cond-"+kind);
+    var top=el("div","cond-top");
+    var left=el("div","");
+    left.appendChild(el("div","cond-title",c.title));
+    var meta=[];
+    if(c.duration_min)meta.push(c.duration_min+" min");
+    if(c.rpe)meta.push("RPE "+c.rpe);
+    if(meta.length)left.appendChild(el("div","cond-meta",meta.join(" \u00b7 ")));
+    top.appendChild(left);
+    var right=el("div","");right.style.cssText="display:flex;align-items:center;gap:8px";
+    right.appendChild(el("div","cond-date", c.logged_date===todayStr()?"Today":new Date(c.logged_date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})));
+    var del=el("button","cond-del","\u2715");
+    del.onclick=(function(id){return function(){delCond(id);};})(c.id);
+    right.appendChild(del);
+    top.appendChild(right);
+    cd.appendChild(top);
+    cd.appendChild(el("div","cond-badge cond-"+kind, COND_LABEL[kind]||kind));
+    if(c.notes)cd.appendChild(el("div","cond-notes",c.notes));
+    list.appendChild(cd);
+  });
+}
+
+async function logCond(){
+  var t=document.getElementById("cond-title");
+  var title=(t.value||"").trim();
+  if(!title){t.focus();return;}
+  var dur=parseInt(document.getElementById("cond-dur").value)||null;
+  var rpe=parseInt(document.getElementById("cond-rpe").value)||null;
+  var date=document.getElementById("cond-date").value||todayStr();
+  var notes=(document.getElementById("cond-notes").value||"").trim()||null;
+  var row={client_slug:CLIENT,logged_date:date,kind:condKind,title:title,duration_min:dur,rpe:rpe,notes:notes};
+  var ins=await sb.from("conditioning_logs").insert(row).select().single();
+  if(ins.error){alert("Couldn't save — try again.");return;}
+  document.getElementById("cond-title").value="";
+  document.getElementById("cond-dur").value="";
+  document.getElementById("cond-rpe").value="";
+  document.getElementById("cond-notes").value="";
+  loadCond();
+}
+
+async function delCond(id){
+  await sb.from("conditioning_logs").delete().eq("id",id);
+  condLogs=condLogs.filter(function(c){return c.id!==id;});
+  drawCondList();
+}
 function greeting(){var h=new Date().getHours();return h<12?"Good morning":(h<18?"Good afternoon":"Good evening");}
 function firstName(){return ((document.getElementById("cn").textContent)||"").trim().split(" ")[0]||"there";}
 

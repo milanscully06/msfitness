@@ -302,6 +302,19 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-badge.cond-other{background:var(--surface-2);color:var(--ink-2)}
 .cond-notes{font-size:12px;color:var(--ink-2);margin-top:7px;line-height:1.5}
 .cond-del{background:none;border:none;color:var(--ink-3);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1}
+#cond-sched:not(:empty){margin-bottom:22px}
+.sched-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.sched-row:last-child{border-bottom:none}
+.sched-row.today .sched-day{color:var(--sage)}
+.sched-day{width:36px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--ink-3);padding-top:3px}
+.sched-cell{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sched-empty{font-size:13px;color:var(--ink-3);padding-top:2px}
+.sched-item{border-radius:10px;padding:9px 12px;border:1px solid var(--line-2)}
+.sched-item.cond-easy{background:rgba(157,180,154,.1);border-color:rgba(157,180,154,.3)}
+.sched-item.cond-hard{background:rgba(201,122,109,.1);border-color:rgba(201,122,109,.3)}
+.sched-item.cond-other{background:var(--surface-2)}
+.sched-item-title{font-size:13px;font-weight:700;color:var(--ink)}
+.sched-item-detail{font-size:11px;color:var(--ink-2);margin-top:3px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -449,6 +462,9 @@ function renderConditioning(){
   v.innerHTML="";
   v.appendChild(el("div","cond-h","Conditioning"));
 
+  var sched=el("div","");sched.id="cond-sched";
+  v.appendChild(sched);
+
   var card=el("div","cond-form");
   var pills=el("div","cond-pills");
   [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
@@ -480,7 +496,36 @@ function renderConditioning(){
 
   var list=el("div","");list.id="cond-list";
   v.appendChild(list);
+  loadCondSched();
   loadCond();
+}
+
+async function loadCondSched(){
+  var sc=document.getElementById("cond-sched");
+  if(!sc)return;
+  var r=await sb.from("conditioning_plan").select("*").eq("client_slug",CLIENT).order("item_order");
+  var plan=r.data||[];
+  sc.innerHTML="";
+  if(!plan.length)return;
+  sc.appendChild(el("div","sec-label","This week"));
+  var byDay={};
+  plan.forEach(function(it){var d=it.day_of_week;if(!byDay[d])byDay[d]=[];byDay[d].push(it);});
+  var todayK=DAY_KEYS[new Date().getDay()];
+  [["mon","Mon"],["tue","Tue"],["wed","Wed"],["thu","Thu"],["fri","Fri"],["sat","Sat"],["sun","Sun"]].forEach(function(dd){
+    var items=byDay[dd[0]]||[];
+    var row=el("div","sched-row"+(dd[0]===todayK?" today":""));
+    row.appendChild(el("div","sched-day",dd[1]));
+    var cell=el("div","sched-cell");
+    if(!items.length){cell.appendChild(el("div","sched-empty","\u2014"));}
+    else items.forEach(function(it){
+      var chip=el("div","sched-item cond-"+(it.kind||"easy"));
+      chip.appendChild(el("div","sched-item-title",it.title));
+      if(it.detail)chip.appendChild(el("div","sched-item-detail",it.detail));
+      cell.appendChild(chip);
+    });
+    row.appendChild(cell);
+    sc.appendChild(row);
+  });
 }
 
 async function loadCond(){

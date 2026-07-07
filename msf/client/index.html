@@ -62,6 +62,21 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 
 /* eyebrow / section labels (shared) */
 .sec-label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 12px}
+.shop-btn{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;font-weight:700;padding:12px;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.shop-btn:hover{border-color:var(--sage)}
+.sl-overlay{position:fixed;inset:0;background:rgba(14,12,11,.72);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.sl-overlay.show{display:flex}
+.sl-panel{background:var(--bg);border:1px solid var(--line-2);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88vh;display:flex;flex-direction:column}
+.sl-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+.sl-title{font-family:var(--display);font-weight:700;font-size:20px;color:var(--ink)}
+.sl-x{background:var(--surface-2);border:none;border-radius:10px;color:var(--ink-2);font-size:15px;width:34px;height:34px;cursor:pointer;flex-shrink:0}
+.sl-body{overflow-y:auto;padding:6px 18px 28px}
+.sl-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.sl-item:last-child{border-bottom:none}
+.sl-item.checked{opacity:.38}
+.sl-item.checked .sl-name{text-decoration:line-through}
+.sl-name{font-size:14px;color:var(--ink);font-weight:600}
+.sl-qty{font-size:13px;color:var(--sage);font-weight:700;white-space:nowrap}
 
 /* ===== TRAIN (log) ===== */
 .day-scroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px;scrollbar-width:none}
@@ -364,6 +379,16 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
     <button class="lb-x" onclick="closeLB()">✕</button>
     <img id="lb-img" alt="">
     <button class="lb-del" onclick="deletePhoto()">Delete photo</button>
+  </div>
+
+  <div class="sl-overlay" id="shop-list">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title">Weekly shopping list</div>
+        <button class="sl-x" onclick="closeShopList()">✕</button>
+      </div>
+      <div class="sl-body" id="sl-body"></div>
+    </div>
   </div>
 
   <nav class="nav">
@@ -1135,6 +1160,11 @@ async function renderNutrition(){
   dateNav.appendChild(prevBtn);dateNav.appendChild(dateLbl);dateNav.appendChild(nextBtn);
   vn.appendChild(dateNav);
 
+  // Weekly shopping list
+  var slBtn=el("button","shop-btn","\uD83D\uDED2  Weekly shopping list");
+  slBtn.onclick=function(){openShopList();};
+  vn.appendChild(slBtn);
+
   // Macro bars
   var barWrap=el("div","macro-bar-wrap");barWrap.id="macro-bars";
   vn.appendChild(barWrap);
@@ -1158,6 +1188,82 @@ function offsetDate(dateStr,days){
   var d=new Date(dateStr+"T12:00:00");d.setDate(d.getDate()+days);
   return d.toISOString().split("T")[0];
 }
+
+// ===== WEEKLY SHOPPING LIST =====
+var SL_UNITS=["kg","g","mg","ml","l","tbsp","tsp","cup","cups","oz","lb","clove","cloves","slice","slices","handful","handfuls","can","cans","tin","tins","scoop","scoops","piece","pieces"];
+
+function slParse(line){
+  var m=line.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+  if(!m) return {item:line};
+  var qty=parseFloat(m[1]);
+  var rest=(m[2]||"").trim();
+  var um=rest.match(/^([a-zA-Z]+)\b\s*(.*)$/);
+  if(um){
+    var u=um[1].toLowerCase();
+    if(SL_UNITS.indexOf(u)!==-1) return {qty:qty,unit:u,item:(um[2]||"").trim()};
+  }
+  return {qty:qty,unit:"",item:rest};
+}
+
+function slFmtQty(qty,unit){
+  var q=Math.round(qty*100)/100;
+  if(unit==="g"&&q>=1000) return (Math.round(q/10)/100)+" kg";
+  if(unit==="ml"&&q>=1000) return (Math.round(q/10)/100)+" L";
+  return q+(unit?(" "+unit):"");
+}
+
+function buildShoppingList(rows){
+  var agg={}, vague=[], vseen={};
+  function pushVague(line){var k=line.toLowerCase();if(!vseen[k]){vseen[k]=1;vague.push(line);}}
+  rows.forEach(function(r){
+    (r.ingredients||"").split("\n").forEach(function(raw){
+      var line=raw.trim(); if(!line) return;
+      var p=slParse(line);
+      if(p.qty==null || !p.item){ pushVague(line); return; }
+      var key=p.item.toLowerCase()+"|"+p.unit;
+      if(!agg[key]) agg[key]={item:p.item,unit:p.unit,qty:0};
+      agg[key].qty+=p.qty;
+    });
+  });
+  var items=Object.keys(agg).map(function(k){return agg[k];});
+  items.sort(function(a,b){return a.item.toLowerCase()<b.item.toLowerCase()?-1:(a.item.toLowerCase()>b.item.toLowerCase()?1:0);});
+  return {items:items,vague:vague};
+}
+
+async function openShopList(){
+  var ov=document.getElementById("shop-list");
+  var body=document.getElementById("sl-body");
+  body.innerHTML='<div class="loader">Building list\u2026</div>';
+  ov.classList.add("show");
+  var r=await sb.from("meal_templates").select("ingredients").eq("client_slug",CLIENT);
+  var sl=buildShoppingList(r.data||[]);
+  body.innerHTML="";
+  if(!sl.items.length && !sl.vague.length){
+    body.appendChild(el("div","empty-txt","No meal-plan ingredients to build a list from yet."));
+    return;
+  }
+  var hint=el("div","");hint.style.cssText="font-size:12px;color:var(--ink-3);margin:4px 0 10px;line-height:1.5";
+  hint.textContent="Everything in your weekly meal plan, added up. Tap an item to check it off.";
+  body.appendChild(hint);
+  sl.items.forEach(function(it){
+    var row=el("div","sl-item");
+    row.appendChild(el("div","sl-name", it.item.charAt(0).toUpperCase()+it.item.slice(1)));
+    row.appendChild(el("div","sl-qty", slFmtQty(it.qty,it.unit)));
+    row.onclick=function(){row.classList.toggle("checked");};
+    body.appendChild(row);
+  });
+  if(sl.vague.length){
+    body.appendChild(el("div","sec-label","As needed"));
+    sl.vague.forEach(function(v){
+      var row=el("div","sl-item");
+      row.appendChild(el("div","sl-name",v));
+      row.onclick=function(){row.classList.toggle("checked");};
+      body.appendChild(row);
+    });
+  }
+}
+
+function closeShopList(){document.getElementById("shop-list").classList.remove("show");}
 
 async function loadNutDay(){
   var dayKey=getDayKey(nutDate);

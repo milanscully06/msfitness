@@ -43,6 +43,12 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .cli-goal{font-size:12px;color:var(--ink-3);margin-top:2px}
 .cli-link{font-size:11.5px;color:var(--sage);font-weight:600;margin-top:3px}
 .chevron{font-size:20px;color:var(--ink-3);flex-shrink:0}
+.folder-tabs{display:flex;gap:8px;margin-bottom:14px}
+.folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
+.folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cli-right{display:flex;align-items:center;gap:10px}
+.folder-move-btn{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink)}
 
 .empty{text-align:center;padding:3.5rem 1.5rem;color:var(--ink-2)}
 .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
@@ -120,6 +126,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
   <div class="success-bar" id="succ"></div>
   <div class="error-bar" id="err"></div>
+  <div class="folder-tabs" id="folder-tabs"></div>
   <div id="clist"><div class="loader">Loading clients...</div></div>
 </div>
 
@@ -238,15 +245,35 @@ document.getElementById("asl").oninput = function(){
 };
 
 // ── LOAD CLIENTS ──
+var allClients = [], clientFolder = "active";
+
 async function loadClients() {
   var res = await sb.from("clients").select("*").order("created_at");
+  allClients = res.data || [];
+  renderClients();
+}
+
+function renderClients() {
+  var tabsEl = document.getElementById("folder-tabs");
   var clist = document.getElementById("clist");
+  var actives = allClients.filter(function(c){return c.active!==false;});
+  var inactives = allClients.filter(function(c){return c.active===false;});
+
+  tabsEl.innerHTML = "";
+  var ta = el("button","folder-tab"+(clientFolder==="active"?" on":""),"Active ("+actives.length+")");
+  ta.onclick = function(){clientFolder="active";renderClients();};
+  var ti = el("button","folder-tab"+(clientFolder==="inactive"?" on":""),"Inactive ("+inactives.length+")");
+  ti.onclick = function(){clientFolder="inactive";renderClients();};
+  tabsEl.appendChild(ta); tabsEl.appendChild(ti);
+
   clist.innerHTML = "";
-  if (!res.data || !res.data.length) {
-    var d = el("div","empty"); d.innerHTML = '<div class="empty-icon">👥</div><div class="empty-txt">No clients yet.</div>';
+  var show = clientFolder==="active"?actives:inactives;
+  if (!show.length) {
+    var d = el("div","empty");
+    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">No '+clientFolder+' clients.</div>';
     clist.appendChild(d); return;
   }
-  res.data.forEach(function(c) {
+  show.forEach(function(c) {
     var init = c.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var item = el("div","client-list-item");
     item.onclick = (function(slug){ return function(){ openEdit(slug); }; })(c.slug);
@@ -257,9 +284,23 @@ async function loadClients() {
     info.appendChild(el("div","cli-goal",c.goal||"No goal"));
     info.appendChild(el("div","cli-link","/client/"+c.slug));
     left.appendChild(av); left.appendChild(info);
-    item.appendChild(left); item.appendChild(el("div","chevron","›"));
+    item.appendChild(left);
+    var right = el("div","cli-right");
+    var isActive = c.active!==false;
+    var tog = el("button","folder-move-btn", isActive?"Archive":"Restore");
+    tog.onclick = (function(slug,mk){ return function(ev){ toggleActive(slug,mk,ev); }; })(c.slug,!isActive);
+    right.appendChild(tog);
+    right.appendChild(el("div","chevron","›"));
+    item.appendChild(right);
     clist.appendChild(item);
   });
+}
+
+async function toggleActive(slug, makeActive, ev) {
+  if (ev) ev.stopPropagation();
+  await sb.from("clients").update({active:makeActive}).eq("slug",slug);
+  allClients.forEach(function(c){ if(c.slug===slug) c.active=makeActive; });
+  renderClients();
 }
 
 // ── PROGRAM BUILDER ──
@@ -639,9 +680,10 @@ async function saveEdit() {
     if(clash.data){showErr("The slug '"+newSlug+"' is already used by another client.");return;}
     // Foreign keys block renaming the slug in place. So: create the new client row first,
     // repoint every child table to it, then delete the old row (now safe — nothing references it).
-    var oldRow=await sb.from("clients").select("created_at").eq("slug",oldSlug).maybeSingle();
+    var oldRow=await sb.from("clients").select("created_at,active").eq("slug",oldSlug).maybeSingle();
     var newRow={slug:newSlug,name:name,goal:goal};
     if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
+    if(oldRow.data&&oldRow.data.active===false)newRow.active=false;
     var ins=await sb.from("clients").insert(newRow);
     if(ins.error){showErr("Couldn't change slug: "+ins.error.message);return;}
     // repoint every table that references the slug

@@ -812,10 +812,11 @@ async function saveEdit() {
     if(clash.data){showErr("The slug '"+newSlug+"' is already used by another client.");return;}
     // Foreign keys block renaming the slug in place. So: create the new client row first,
     // repoint every child table to it, then delete the old row (now safe — nothing references it).
-    var oldRow=await sb.from("clients").select("created_at,active").eq("slug",oldSlug).maybeSingle();
+    var oldRow=await sb.from("clients").select("created_at,active,folder").eq("slug",oldSlug).maybeSingle();
     var newRow={slug:newSlug,name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date};
     if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
     if(oldRow.data&&oldRow.data.active===false)newRow.active=false;
+    if(oldRow.data&&oldRow.data.folder)newRow.folder=oldRow.data.folder;
     var ins=await sb.from("clients").insert(newRow);
     if(ins.error){showErr("Couldn't change slug: "+ins.error.message);return;}
     // repoint every table that references the slug

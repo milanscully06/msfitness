@@ -84,6 +84,25 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .set-tag-input::placeholder{color:var(--ink-3)}
 
 .meal-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.clone-box{background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:13px 14px;margin-bottom:18px}
+
+/* ===== DESKTOP — use the screen, kill the scrolling ===== */
+@media (min-width:900px){
+  body{max-width:1240px;margin:0 auto}
+  .modal-overlay{align-items:center;padding:24px}
+  .modal-box{max-width:1120px;max-height:90vh;border-radius:20px;border:1px solid var(--line-2);padding:26px 26px 0}
+  .modal-actions{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:14px 0 18px;margin-top:24px;z-index:5}
+  /* day blocks side by side instead of one endless column */
+  #add-days,#edit-days{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:start}
+  #add-meal-days,#edit-meal-days,#add-cond-days,#edit-cond-days{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+  #add-days>.clip-bar,#edit-days>.clip-bar,#add-meal-days>.clip-bar,#edit-meal-days>.clip-bar{grid-column:1/-1}
+  .day-block{margin-bottom:0}
+  /* client list in columns */
+  #clist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .client-list-item{margin-bottom:0}
+  .folder-tabs{max-width:420px}
+  .form-input{font-size:14px;padding:10px 12px}
+}
 .macro-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
 .macro-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;text-align:center}
 .macro-inp{width:100%;padding:8px 4px;font-size:15px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2);color:var(--ink);text-align:center;-webkit-appearance:none}
@@ -134,6 +153,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div class="modal-box">
   <div class="modal-title">Add new client</div>
   <div class="modal-sub">Fill in their details and build their program</div>
+  <div class="clone-box">
+    <label class="form-label">Start from an existing client</label>
+    <select class="form-input" id="clone-src"><option value="">Blank — build from scratch</option></select>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5">Copies their program, meals, conditioning &amp; macro targets into the builders below. Tweak from there — nothing is linked afterwards.</div>
+  </div>
   <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="an" placeholder="e.g. Jake Thompson"></div>
   <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="ag" placeholder="e.g. Build muscle and lose fat"></div>
   <div class="form-group">
@@ -163,7 +187,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
     <div id="add-cond-days"></div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:20px">
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
     <button class="btn-green" style="flex:1" id="save-add-btn">Save client</button>
     <button class="btn-outline" id="cancel-add-btn">Cancel</button>
   </div>
@@ -202,7 +226,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
     <div id="edit-cond-days"></div>
   </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+  <div class="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
     <button class="btn-green" style="flex:1" id="save-edit-btn">Save changes</button>
     <button class="btn-red" id="del-btn">Delete</button>
     <button class="btn-outline" style="width:100%;margin-top:4px" id="cancel-edit-btn">Cancel</button>
@@ -540,6 +564,14 @@ function renderMealDays(mode) {
 // ── OPEN ADD ──
 function openAdd() {
   addDays = []; addMealDays = emptyMealDays(); addCondDays = emptyCondDays();
+  var cs = document.getElementById("clone-src");
+  cs.innerHTML = '<option value="">Blank — build from scratch</option>';
+  allClients.forEach(function(c){
+    var o = el("option","", c.name + (c.active===false?" (inactive)":""));
+    o.value = c.slug; cs.appendChild(o);
+  });
+  cs.value = "";
+  cs.onchange = function(){ cloneFrom(this.value); };
   document.getElementById("an").value="";
   document.getElementById("ag").value="";
   document.getElementById("asl").value="";
@@ -555,6 +587,50 @@ function openAdd() {
 }
 
 // ── OPEN EDIT ──
+async function cloneFrom(slug) {
+  var tgt = ["a-cal","a-pro","a-carb","a-fat"];
+  if (!slug) {
+    addDays = []; addMealDays = emptyMealDays(); addCondDays = emptyCondDays();
+    tgt.forEach(function(id){ document.getElementById(id).value = ""; });
+    renderDays("add"); renderMealDays("add"); renderCondDays("add");
+    return;
+  }
+  var r2 = await sb.from("programs").select("*").eq("client_slug",slug).order("exercise_order");
+  var r3 = await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
+  var r4 = await sb.from("meal_templates").select("*").eq("client_slug",slug).order("meal_order");
+  var r5 = await sb.from("conditioning_plan").select("*").eq("client_slug",slug).order("item_order");
+
+  addDays = buildEditDays(r2.data||[]);
+
+  addMealDays = emptyMealDays();
+  (r4.data||[]).forEach(function(m){
+    var d = m.day_of_week||"mon";
+    if(!addMealDays[d]) addMealDays[d]=[];
+    addMealDays[d].push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,meal_order:m.meal_order||0});
+  });
+  DAYS.forEach(function(day){
+    if(addMealDays[day.k]) addMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);});
+  });
+
+  addCondDays = emptyCondDays();
+  (r5.data||[]).forEach(function(it){
+    var d = it.day_of_week||"mon";
+    if(!addCondDays[d]) addCondDays[d]=[];
+    addCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
+
+  if (r3.data) {
+    document.getElementById("a-cal").value = r3.data.calories||"";
+    document.getElementById("a-pro").value = r3.data.protein||"";
+    document.getElementById("a-carb").value = r3.data.carbs||"";
+    document.getElementById("a-fat").value = r3.data.fats||"";
+  } else {
+    tgt.forEach(function(id){ document.getElementById(id).value = ""; });
+  }
+
+  renderDays("add"); renderMealDays("add"); renderCondDays("add");
+}
+
 async function openEdit(slug) {
   editSlug = slug;
   var r1 = await sb.from("clients").select("*").eq("slug",slug).single();

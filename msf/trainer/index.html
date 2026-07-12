@@ -102,6 +102,34 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .renew-l{font-size:12px;color:var(--ink-3);font-weight:600}
 .renew-v{font-family:var(--display);font-weight:700;font-size:15px;color:var(--ink)}
 .renew.soon .renew-v{color:var(--bad)}
+/* ===== FOLDERS ===== */
+.folder-bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.fchip{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line-2);border-radius:99px;font-size:12.5px;font-weight:600;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.fchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fchip-n{opacity:.6;font-weight:700}
+.fchip-x{opacity:.55;font-size:11px;padding:0 1px}
+.fchip-x:hover{opacity:1;color:var(--bad)}
+.fchip-new{border-style:dashed;color:var(--ink-3)}
+.card-folder{margin-top:11px;display:flex;align-items:center;gap:7px}
+.card-folder-l{font-size:11px;color:var(--ink-3);font-weight:600}
+.fsel{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 8px;-webkit-appearance:none;cursor:pointer}
+.fsel:focus{outline:none;border-color:var(--sage)}
+/* ===== DETAIL TWO-COLUMN ===== */
+.detail-grid{display:grid;grid-template-columns:1fr;gap:0}
+.dcol{min-width:0}
+
+/* ===== DESKTOP — full screen ===== */
+@media (min-width:1000px){
+  .app{max-width:1500px;padding:0 0 60px}
+  .topbar{padding:20px 28px 16px}
+  .cpills{padding:16px 28px 6px}
+  #dcontent{padding:0 28px}
+  #dcontent.overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
+  #dcontent.overview>.triage-bar,#dcontent.overview>.folder-bar{grid-column:1/-1}
+  #dcontent.overview>.tcard{margin-bottom:0}
+  .detail-grid{grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+  .stat-grid{grid-template-columns:repeat(4,1fr)}
+}
 
 .po-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
 .po-name{font-size:13.5px;font-weight:600}
@@ -173,6 +201,7 @@ var SB_URL="https://idlwqbgsnjoikoyhifbr.supabase.co";
 var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbHdxYmdzbmpvaWtveWhpZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NjI5MDksImV4cCI6MjA5NzAzODkwOX0.K6axtuPPxVHn5CtZ5kplw20P5YtLd7kpAAkylhk-QNg";
 var sb=supabase.createClient(SB_URL,SB_KEY);
 var clients=[],curClient=null,chart=null;
+var folders=[],curFolder="__all__";
 
 function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
 function sync(on){document.getElementById("sd").classList.toggle("syncing",!!on);}
@@ -293,6 +322,8 @@ function closeLB(){document.getElementById("lightbox").classList.remove("show");
 async function loadDash(){
   var res=await sb.from("clients").select("*").order("created_at");
   clients=(res.data||[]).filter(function(c){return c.active!==false;});
+  var rfo=await sb.from("folders").select("*").order("name");
+  folders=(rfo.data||[]).map(function(f){return f.name;});
   var pills=document.getElementById("cpills");pills.innerHTML="";
   if(!clients.length){document.getElementById("dcontent").innerHTML='<div class="empty">No clients yet.<br>Add them in the admin panel.</div>';return;}
   var ov=el("div","client-pill active","Overview");ov.onclick=function(){selAll(this);};pills.appendChild(ov);
@@ -347,11 +378,22 @@ async function renderOverview(){
   });
 
   dc.innerHTML="";
+  dc.className="overview";
 
-  // summary bar
-  var nRed=rows.filter(function(r){return r.t.status==="red";}).length;
-  var nAmb=rows.filter(function(r){return r.t.status==="amber";}).length;
-  var nGrn=rows.filter(function(r){return r.t.status==="green";}).length;
+  // folder bar
+  dc.appendChild(folderBar(rows));
+
+  // apply folder filter
+  var visible=rows.filter(function(r){
+    if(curFolder==="__all__")return true;
+    if(curFolder==="__unfiled__")return !r.c.folder;
+    return r.c.folder===curFolder;
+  });
+
+  // summary bar (reflects what's shown)
+  var nRed=visible.filter(function(r){return r.t.status==="red";}).length;
+  var nAmb=visible.filter(function(r){return r.t.status==="amber";}).length;
+  var nGrn=visible.filter(function(r){return r.t.status==="green";}).length;
   var bar=el("div","triage-bar");
   [["tri-red",nRed,"Needs you"],["tri-amber",nAmb,"Watch"],["tri-green",nGrn,"On track"]].forEach(function(s){
     var b=el("div","tri-sum "+s[0]);
@@ -361,7 +403,7 @@ async function renderOverview(){
   });
   dc.appendChild(bar);
 
-  rows.forEach(function(r){
+  visible.forEach(function(r){
     var c=r.c;
     var sessions=sessionCount(r.lr);
     var wt=weightTrend(r.br);
@@ -387,9 +429,83 @@ async function renderOverview(){
     grid.appendChild(statBox("Weight",wt?signed(wt.delta)+"<small>kg</small>":"—"));
     card.appendChild(grid);
 
+    // folder assignment
+    var fw=el("div","card-folder");
+    fw.onclick=function(ev){ev.stopPropagation();};
+    fw.appendChild(el("span","card-folder-l","Folder"));
+    var fs=el("select","fsel");
+    var o0=el("option","","— Unfiled —");o0.value="";fs.appendChild(o0);
+    folders.forEach(function(f){var o=el("option","",f);o.value=f;fs.appendChild(o);});
+    fs.value=c.folder||"";
+    fs.onchange=(function(slug){return function(){ setClientFolder(slug,this.value); };})(c.slug);
+    fw.appendChild(fs);
+    card.appendChild(fw);
+
     card.appendChild(el("div","tlink","/client/"+c.slug));
     dc.appendChild(card);
   });
+}
+
+// ── FOLDERS ──
+function folderBar(rows){
+  var bar=el("div","folder-bar");
+  function count(fn){return rows.filter(fn).length;}
+  var all=el("div","fchip"+(curFolder==="__all__"?" on":""));
+  all.appendChild(el("span","","All"));
+  all.appendChild(el("span","fchip-n",String(rows.length)));
+  all.onclick=function(){curFolder="__all__";renderOverview();};
+  bar.appendChild(all);
+
+  folders.forEach(function(f){
+    var chip=el("div","fchip"+(curFolder===f?" on":""));
+    chip.appendChild(el("span","",f));
+    chip.appendChild(el("span","fchip-n",String(count(function(r){return r.c.folder===f;}))));
+    var x=el("span","fchip-x","✕");
+    x.onclick=function(ev){ev.stopPropagation();deleteFolder(f);};
+    chip.appendChild(x);
+    chip.onclick=function(){curFolder=f;renderOverview();};
+    bar.appendChild(chip);
+  });
+
+  var unf=el("div","fchip"+(curFolder==="__unfiled__"?" on":""));
+  unf.appendChild(el("span","","Unfiled"));
+  unf.appendChild(el("span","fchip-n",String(count(function(r){return !r.c.folder;}))));
+  unf.onclick=function(){curFolder="__unfiled__";renderOverview();};
+  bar.appendChild(unf);
+
+  var nb=el("div","fchip fchip-new","+ New folder");
+  nb.onclick=function(){newFolder();};
+  bar.appendChild(nb);
+  return bar;
+}
+
+async function newFolder(){
+  var name=(prompt("Folder name — e.g. Comp Prep, Online, In-person")||"").trim();
+  if(!name)return;
+  if(folders.indexOf(name)!==-1){alert("That folder already exists.");return;}
+  var ins=await sb.from("folders").insert({name:name});
+  if(ins.error){alert("Couldn't create folder: "+ins.error.message);return;}
+  folders.push(name);folders.sort();
+  curFolder=name;
+  renderOverview();
+}
+
+async function deleteFolder(name){
+  var inIt=clients.filter(function(c){return c.folder===name;}).length;
+  if(!confirm("Delete the folder \""+name+"\"?"+(inIt?("\n\n"+inIt+" client"+(inIt>1?"s":"")+" will move back to Unfiled. Nobody is deleted."):"")))return;
+  await sb.from("clients").update({folder:null}).eq("folder",name);
+  await sb.from("folders").delete().eq("name",name);
+  clients.forEach(function(c){if(c.folder===name)c.folder=null;});
+  folders=folders.filter(function(f){return f!==name;});
+  if(curFolder===name)curFolder="__all__";
+  renderOverview();
+}
+
+async function setClientFolder(slug,folder){
+  var val=folder||null;
+  await sb.from("clients").update({folder:val}).eq("slug",slug);
+  clients.forEach(function(c){if(c.slug===slug)c.folder=val;});
+  renderOverview();
 }
 
 // ── COACH NOTES ──
@@ -432,7 +548,7 @@ async function delCoachNote(id,slug){
 
 // ── PER-CLIENT DEEP VIEW ──
 async function renderClient(slug){
-  var dc=document.getElementById("dcontent");dc.innerHTML="";dc.appendChild(el("div","loader","Loading…"));
+  var dc=document.getElementById("dcontent");dc.className="";dc.innerHTML="";dc.appendChild(el("div","loader","Loading…"));
   sync(true);
   var c=clients.find(function(x){return x.slug===slug;})||{name:slug,slug:slug};
   var r1=await sb.from("lift_logs").select("*").eq("client",slug).order("logged_at",{ascending:true});
@@ -488,8 +604,14 @@ async function renderClient(slug){
     dc.appendChild(rw);
   }
 
+  // Two-column detail on desktop
+  var dg=el("div","detail-grid");
+  var L=el("div","dcol"), R=el("div","dcol");
+  dg.appendChild(L);dg.appendChild(R);
+  dc.appendChild(dg);
+
   // Coach notes — private log + check-in record
-  dc.appendChild(el("div","sec-label","Coach notes"));
+  R.appendChild(el("div","sec-label","Coach notes"));
   var na=el("div","note-add");
   var nin=el("textarea","note-in");nin.id="cn-txt";nin.placeholder="What did you discuss? Agreed actions, excuses, wins…";
   na.appendChild(nin);
@@ -499,19 +621,19 @@ async function renderClient(slug){
   nsv.onclick=(function(s){return function(){addCoachNote(s);};})(slug);
   nrow.appendChild(ndt);nrow.appendChild(nsv);
   na.appendChild(nrow);
-  dc.appendChild(na);
+  R.appendChild(na);
 
   var nlist=el("div","");nlist.id="cn-list";
-  dc.appendChild(nlist);
+  R.appendChild(nlist);
   drawCoachNotes(cnotes,slug);
 
   if(flags.length){
-    dc.appendChild(el("div","sec-label","Ready to increase weight"));
-    flags.forEach(function(f){var row=el("div","po-item");row.appendChild(el("span","po-name",f));row.appendChild(el("span","po-tag","↑ Increase"));dc.appendChild(row);});
+    L.appendChild(el("div","sec-label","Ready to increase weight"));
+    flags.forEach(function(f){var row=el("div","po-item");row.appendChild(el("span","po-name",f));row.appendChild(el("span","po-tag","↑ Increase"));L.appendChild(row);});
   }
 
   // Weight
-  dc.appendChild(el("div","sec-label","Weight"));
+  L.appendChild(el("div","sec-label","Weight"));
   var wbox=el("div","wt-box");
   if(wt){
     var wh=el("div","wt-head");
@@ -523,10 +645,10 @@ async function renderClient(slug){
   }else{
     wbox.appendChild(el("div","wt-empty","No weigh-ins logged yet."));
   }
-  dc.appendChild(wbox);
+  L.appendChild(wbox);
 
   // Food logging adherence
-  dc.appendChild(el("div","sec-label","Food logging — last 30 days"));
+  R.appendChild(el("div","sec-label","Food logging — last 30 days"));
   var aw=el("div","adh-wrap");
   var at=el("div","adh-top");
   var ap=el("div","adh-pct");ap.innerHTML=adh.pct+'<small style="font-size:16px;color:var(--ink-3);font-weight:600">%</small>';
@@ -536,10 +658,10 @@ async function renderClient(slug){
   var strip=el("div","adh-strip");
   adhStrip(map).forEach(function(on){strip.appendChild(el("div","adh-dot"+(on?" on":"")));});
   aw.appendChild(strip);
-  dc.appendChild(aw);
+  R.appendChild(aw);
 
   // Recent food calories + snack notes
-  dc.appendChild(el("div","sec-label","Recent food & notes"));
+  R.appendChild(el("div","sec-label","Recent food & notes"));
   var rdays=recentDays(nat,food,notes);
   if(rdays.length){
     var ft=el("div","food-tbl");
@@ -557,14 +679,14 @@ async function renderClient(slug){
       }
       ft.appendChild(fd);
     });
-    dc.appendChild(ft);
+    R.appendChild(ft);
   }else{
-    dc.appendChild(el("div","wt-empty","No food or notes logged yet."));
+    R.appendChild(el("div","wt-empty","No food or notes logged yet."));
   }
 
   // Progress photos
   if(photos.length){
-    dc.appendChild(el("div","sec-label","Progress photos"));
+    R.appendChild(el("div","sec-label","Progress photos"));
     var pg=el("div","pgrid");
     var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
     var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
@@ -575,11 +697,11 @@ async function renderClient(slug){
       tile.onclick=(function(u){return function(){openLB(u);};})(url);
       pg.appendChild(tile);
     });
-    dc.appendChild(pg);
+    R.appendChild(pg);
   }
 
   // Gym progress — every exercise, last weight × reps, change since last time
-  dc.appendChild(el("div","sec-label","Gym progress"));
+  L.appendChild(el("div","sec-label","Gym progress"));
   var lrows=liftTable(lift);
   if(lrows.length){
     var tbl=el("div","lift-tbl");
@@ -600,9 +722,9 @@ async function renderClient(slug){
       tr.appendChild(chg);
       tbl.appendChild(tr);
     });
-    dc.appendChild(tbl);
+    L.appendChild(tbl);
   }else{
-    dc.appendChild(el("div","wt-empty","No gym sessions logged yet."));
+    L.appendChild(el("div","wt-empty","No gym sessions logged yet."));
   }
 }
 

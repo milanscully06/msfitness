@@ -64,6 +64,44 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .flag-up{background:rgba(157,180,154,.13);color:var(--sage)}
 .flag-warn{background:rgba(201,122,109,.13);color:var(--bad)}
 .tlink{font-size:11.5px;color:var(--ink-3);font-family:var(--body);margin-top:13px;letter-spacing:.02em}
+/* ===== TRIAGE ===== */
+.triage-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tri-sum{flex:1;min-width:92px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center}
+.tri-sum-n{font-family:var(--display);font-weight:800;font-size:22px;line-height:1}
+.tri-sum-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-top:5px}
+.tri-red .tri-sum-n{color:var(--bad)}
+.tri-amber .tri-sum-n{color:#CBA67D}
+.tri-green .tri-sum-n{color:var(--sage)}
+.tcard.st-red{border-left:3px solid var(--bad)}
+.tcard.st-amber{border-left:3px solid #CBA67D}
+.tcard.st-green{border-left:3px solid var(--sage)}
+.st-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-left:auto}
+.st-dot.red{background:var(--bad)}
+.st-dot.amber{background:#CBA67D}
+.st-dot.green{background:var(--sage)}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap}
+.chip.red{background:rgba(201,122,109,.14);color:var(--bad)}
+.chip.amber{background:rgba(203,166,125,.14);color:#CBA67D}
+.chip.info{background:var(--surface-2);color:var(--ink-2)}
+/* ===== COACH NOTES ===== */
+.note-add{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.note-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;resize:vertical;min-height:64px;margin-bottom:8px}
+.note-in:focus{border-color:var(--sage)}
+.note-row{display:flex;gap:8px;align-items:center}
+.note-date{flex:1;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink-2);font-family:var(--body);font-size:13px;padding:9px 10px;outline:none}
+.note-save{background:var(--sage);color:var(--bg);border:none;border-radius:10px;font-family:var(--body);font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.note-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.note-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.note-when{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.note-del{background:none;border:none;color:var(--ink-3);font-size:13px;cursor:pointer;padding:0 2px}
+.note-txt{font-size:13.5px;color:var(--ink-2);line-height:1.55;white-space:pre-wrap}
+/* ===== RENEWAL ===== */
+.renew{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:12px}
+.renew.soon{border-color:rgba(201,122,109,.45);background:rgba(201,122,109,.08)}
+.renew-l{font-size:12px;color:var(--ink-3);font-weight:600}
+.renew-v{font-family:var(--display);font-weight:700;font-size:15px;color:var(--ink)}
+.renew.soon .renew-v{color:var(--bad)}
 
 .po-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
 .po-name{font-size:13.5px;font-weight:600}
@@ -206,6 +244,47 @@ function weightChartSVG(pts){
 
 function statBox(lbl,valHTML){var b=el("div","stat-box");b.appendChild(el("div","stat-lbl",lbl));var v=el("div","stat-val");v.innerHTML=valHTML;b.appendChild(v);return b;}
 
+// ── TRIAGE ──
+function daysAgo(ms){ return ms==null?null:Math.floor((Date.now()-ms)/86400000); }
+function foodDays7(map){
+  var today=new Date();today.setHours(12,0,0,0);var n=0;
+  for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);if(map[ymd(d)])n++;}
+  return n;
+}
+function daysUntil(dateStr){
+  if(!dateStr)return null;
+  var end=new Date(dateStr+"T12:00:00");var t=new Date();t.setHours(12,0,0,0);
+  return Math.round((end-t)/86400000);
+}
+// Returns {status:"red"|"amber"|"green", chips:[{t,cls}]}
+function triage(c, inactive, f7, contactDays, renewDays){
+  var chips=[], red=false, amber=false;
+  // grace period — a client onboarded this week isn't "slipping"
+  var age = c.created_at ? daysAgo(new Date(c.created_at).getTime()) : 999;
+  var fresh = age!=null && age < 7;
+
+  if(!fresh){
+    if(inactive==null||inactive>=7){ red=true; chips.push({t:(inactive==null?"never logged in":inactive+"d inactive"),cls:"red"}); }
+    else if(inactive>=4){ amber=true; chips.push({t:inactive+"d inactive",cls:"amber"}); }
+
+    if(f7<=2){ red=true; chips.push({t:"food "+f7+"/7",cls:"red"}); }
+    else if(f7<=4){ amber=true; chips.push({t:"food "+f7+"/7",cls:"amber"}); }
+
+    if(contactDays==null||contactDays>=14){ red=true; chips.push({t:(contactDays==null?"never contacted":"no contact "+contactDays+"d"),cls:"red"}); }
+    else if(contactDays>=7){ amber=true; chips.push({t:"no contact "+contactDays+"d",cls:"amber"}); }
+  } else {
+    chips.push({t:"new client",cls:"info"});
+  }
+
+  if(renewDays!=null){
+    if(renewDays<0){ red=true; chips.push({t:"package ended",cls:"red"}); }
+    else if(renewDays<=14){ red=true; chips.push({t:"renews in "+renewDays+"d",cls:"red"}); }
+    else if(renewDays<=30){ chips.push({t:"renews in "+renewDays+"d",cls:"info"}); }
+  }
+
+  return {status: red?"red":(amber?"amber":"green"), chips:chips};
+}
+
 // ── PHOTO LIGHTBOX (view only) ──
 function openLB(url){if(!url)return;document.getElementById("lb-img").src=url;document.getElementById("lightbox").classList.add("show");}
 function closeLB(){document.getElementById("lightbox").classList.remove("show");document.getElementById("lb-img").src="";}
@@ -213,7 +292,7 @@ function closeLB(){document.getElementById("lightbox").classList.remove("show");
 // ── BOOT ──
 async function loadDash(){
   var res=await sb.from("clients").select("*").order("created_at");
-  clients=res.data||[];
+  clients=(res.data||[]).filter(function(c){return c.active!==false;});
   var pills=document.getElementById("cpills");pills.innerHTML="";
   if(!clients.length){document.getElementById("dcontent").innerHTML='<div class="empty">No clients yet.<br>Add them in the admin panel.</div>';return;}
   var ov=el("div","client-pill active","Overview");ov.onclick=function(){selAll(this);};pills.appendChild(ov);
@@ -243,44 +322,112 @@ async function renderOverview(){
   var rb=await sb.from("body_logs").select("client_slug,logged_date,weight");
   var rn=await sb.from("nutrition_logs").select("client_slug,logged_date");
   var rf=await sb.from("food_logs").select("client_slug,logged_date");
+  var rc=await sb.from("coach_notes").select("client_slug,note_date");
   sync(false);
   function byKey(arr,k){var m={};(arr||[]).forEach(function(r){var v=r[k];if(!m[v])m[v]=[];m[v].push(r);});return m;}
-  var liftBy=byKey(rl.data,"client"),bodyBy=byKey(rb.data,"client_slug"),natBy=byKey(rn.data,"client_slug"),foodBy=byKey(rf.data,"client_slug");
+  var liftBy=byKey(rl.data,"client"),bodyBy=byKey(rb.data,"client_slug"),natBy=byKey(rn.data,"client_slug"),foodBy=byKey(rf.data,"client_slug"),noteBy=byKey(rc.data,"client_slug");
+
+  // build a scored row per client, then sort by who needs attention
+  var rows=clients.map(function(c){
+    var lr=liftBy[c.slug]||[],br=bodyBy[c.slug]||[],nr=natBy[c.slug]||[],fr=foodBy[c.slug]||[],cn=noteBy[c.slug]||[];
+    var la=lastActiveMs(lr,br,nr,fr);
+    var inactive=daysAgo(la);
+    var map=loggedMapOf(nr,fr);
+    var f7=foodDays7(map);
+    var lastNote=cn.length?Math.max.apply(null,cn.map(function(n){return new Date(n.note_date+"T12:00:00").getTime();})):null;
+    var contactDays=daysAgo(lastNote);
+    var renewDays=daysUntil(c.end_date);
+    var t=triage(c,inactive,f7,contactDays,renewDays);
+    return {c:c,lr:lr,br:br,map:map,inactive:inactive,f7:f7,contactDays:contactDays,renewDays:renewDays,t:t};
+  });
+  var rank={red:0,amber:1,green:2};
+  rows.sort(function(a,b){
+    if(rank[a.t.status]!==rank[b.t.status])return rank[a.t.status]-rank[b.t.status];
+    return (b.inactive==null?999:b.inactive)-(a.inactive==null?999:a.inactive);
+  });
 
   dc.innerHTML="";
-  clients.forEach(function(c){
-    var lr=liftBy[c.slug]||[],br=bodyBy[c.slug]||[],nr=natBy[c.slug]||[],fr=foodBy[c.slug]||[];
-    var sessions=sessionCount(lr);
-    var la=lastActiveMs(lr,br,nr,fr);
-    var inactive=la!=null?Math.floor((Date.now()-la)/86400000):null;
-    var wt=weightTrend(br);
-    var adh=adh30(loggedMapOf(nr,fr));
-    var flags=getFlags(lr.slice().reverse());
 
-    var card=el("div","tcard");
+  // summary bar
+  var nRed=rows.filter(function(r){return r.t.status==="red";}).length;
+  var nAmb=rows.filter(function(r){return r.t.status==="amber";}).length;
+  var nGrn=rows.filter(function(r){return r.t.status==="green";}).length;
+  var bar=el("div","triage-bar");
+  [["tri-red",nRed,"Needs you"],["tri-amber",nAmb,"Watch"],["tri-green",nGrn,"On track"]].forEach(function(s){
+    var b=el("div","tri-sum "+s[0]);
+    b.appendChild(el("div","tri-sum-n",String(s[1])));
+    b.appendChild(el("div","tri-sum-l",s[2]));
+    bar.appendChild(b);
+  });
+  dc.appendChild(bar);
+
+  rows.forEach(function(r){
+    var c=r.c;
+    var sessions=sessionCount(r.lr);
+    var wt=weightTrend(r.br);
+    var adh=adh30(r.map);
+
+    var card=el("div","tcard st-"+r.t.status);
     card.onclick=(function(s){return function(){var pill=document.querySelector('.client-pill[data-slug="'+s+'"]');selOne(s,pill);};})(c.slug);
     var head=el("div","tc-head");head.appendChild(el("div","av",initials(c.name)));
     var hi=el("div");hi.appendChild(el("div","tc-name",c.name));hi.appendChild(el("div","tc-goal",c.goal||""));head.appendChild(hi);
+    head.appendChild(el("div","st-dot "+r.t.status));
     card.appendChild(head);
+
+    if(r.t.chips.length){
+      var cr=el("div","chip-row");
+      r.t.chips.forEach(function(ch){cr.appendChild(el("span","chip "+ch.cls,ch.t));});
+      card.appendChild(cr);
+    }
 
     var grid=el("div","stat-grid");
     grid.appendChild(statBox("Sessions",String(sessions)));
-    grid.appendChild(statBox("Last active",inactive==null?"—":(inactive===0?"Today":inactive+"d")));
+    grid.appendChild(statBox("Last active",r.inactive==null?"—":(r.inactive===0?"Today":r.inactive+"d")));
     grid.appendChild(statBox("Food logged",adh.pct+"<small>%</small>"));
     grid.appendChild(statBox("Weight",wt?signed(wt.delta)+"<small>kg</small>":"—"));
     card.appendChild(grid);
 
-    if(flags.length){
-      var fu=el("div","flag-row flag-up");fu.textContent="↑ Ready to increase: "+flags.slice(0,3).join(", ")+(flags.length>3?"…":"");
-      card.appendChild(fu);
-    }
-    if(inactive!=null&&inactive>=4){
-      var fw=el("div","flag-row flag-warn");fw.textContent="⚠ "+inactive+" days since last activity";
-      card.appendChild(fw);
-    }
     card.appendChild(el("div","tlink","/client/"+c.slug));
     dc.appendChild(card);
   });
+}
+
+// ── COACH NOTES ──
+var _cnotes=[];
+function drawCoachNotes(list,slug){
+  _cnotes=list||[];
+  var box=document.getElementById("cn-list");
+  if(!box)return;
+  box.innerHTML="";
+  if(!_cnotes.length){box.appendChild(el("div","wt-empty","No notes yet. Log your first call here."));return;}
+  _cnotes.forEach(function(n){
+    var card=el("div","note-card");
+    var h=el("div","note-head");
+    var d=new Date(n.note_date+"T12:00:00");
+    var ago=daysAgo(d.getTime());
+    h.appendChild(el("div","note-when", d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + (ago===0?" · today":(ago===1?" · 1d ago":" · "+ago+"d ago"))));
+    var del=el("button","note-del","✕");
+    del.onclick=(function(id,s){return function(){delCoachNote(id,s);};})(n.id,slug);
+    h.appendChild(del);
+    card.appendChild(h);
+    card.appendChild(el("div","note-txt",n.note));
+    box.appendChild(card);
+  });
+}
+async function addCoachNote(slug){
+  var t=document.getElementById("cn-txt");
+  var txt=(t.value||"").trim();
+  if(!txt){t.focus();return;}
+  var date=document.getElementById("cn-date").value||ymd(new Date());
+  var ins=await sb.from("coach_notes").insert({client_slug:slug,note_date:date,note:txt}).select().single();
+  if(ins.error){alert("Couldn't save note — try again.");return;}
+  t.value="";
+  var r=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  drawCoachNotes(r.data||[],slug);
+}
+async function delCoachNote(id,slug){
+  await sb.from("coach_notes").delete().eq("id",id);
+  drawCoachNotes(_cnotes.filter(function(n){return n.id!==id;}),slug);
 }
 
 // ── PER-CLIENT DEEP VIEW ──
@@ -296,9 +443,11 @@ async function renderClient(slug){
   var rp=await sb.from("progress_photos").select("*").eq("client_slug",slug).order("taken_date",{ascending:false});
   var rx=await sb.from("extra_logs").select("logged_date,note,created_at").eq("client_slug",slug);
   var rt=await sb.from("nutrition_targets").select("calories").eq("client_slug",slug).maybeSingle();
+  var rcn=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
   sync(false);
   var lift=r1.data||[],body=rb.data||[],nat=rn.data||[],food=rf.data||[],photos=rp.data||[];
   var notes=rx.data||[],targetCal=(rt.data&&rt.data.calories)||0;
+  var cnotes=rcn.data||[];
 
   var sessions=sessionCount(lift);
   var wt=weightTrend(body);
@@ -317,8 +466,44 @@ async function renderClient(slug){
   grid.appendChild(statBox("Weeks in",String(weeksIn)));
   grid.appendChild(statBox("Sessions",String(sessions)));
   grid.appendChild(statBox("Weight",wt?signed(wt.delta)+"<small>kg</small>":"—"));
-  grid.appendChild(statBox("Food logged",adh.pct+"<small>%</small>"));
+  var lastNoteMs=cnotes.length?new Date(cnotes[0].note_date+"T12:00:00").getTime():null;
+  var contactDays=daysAgo(lastNoteMs);
+  grid.appendChild(statBox("Last contact",contactDays==null?"—":(contactDays===0?"Today":contactDays+"d")));
   dc.appendChild(grid);
+
+  // Renewal
+  var renewDays=daysUntil(c.end_date);
+  if(c.end_date||c.package){
+    var rw=el("div","renew"+(renewDays!=null&&renewDays<=14?" soon":""));
+    var rl2=el("div","");
+    rl2.appendChild(el("div","renew-l",c.package||"Package"));
+    rl2.appendChild(el("div","renew-v", c.end_date?("Ends "+new Date(c.end_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})):"No end date"));
+    rw.appendChild(rl2);
+    if(renewDays!=null){
+      var rr=el("div","");rr.style.textAlign="right";
+      rr.appendChild(el("div","renew-l", renewDays<0?"Overdue":"Remaining"));
+      rr.appendChild(el("div","renew-v", renewDays<0?(Math.abs(renewDays)+"d ago"):(renewDays+" days")));
+      rw.appendChild(rr);
+    }
+    dc.appendChild(rw);
+  }
+
+  // Coach notes — private log + check-in record
+  dc.appendChild(el("div","sec-label","Coach notes"));
+  var na=el("div","note-add");
+  var nin=el("textarea","note-in");nin.id="cn-txt";nin.placeholder="What did you discuss? Agreed actions, excuses, wins…";
+  na.appendChild(nin);
+  var nrow=el("div","note-row");
+  var ndt=el("input","note-date");ndt.id="cn-date";ndt.type="date";ndt.value=ymd(new Date());
+  var nsv=el("button","note-save","Add note");
+  nsv.onclick=(function(s){return function(){addCoachNote(s);};})(slug);
+  nrow.appendChild(ndt);nrow.appendChild(nsv);
+  na.appendChild(nrow);
+  dc.appendChild(na);
+
+  var nlist=el("div","");nlist.id="cn-list";
+  dc.appendChild(nlist);
+  drawCoachNotes(cnotes,slug);
 
   if(flags.length){
     dc.appendChild(el("div","sec-label","Ready to increase weight"));

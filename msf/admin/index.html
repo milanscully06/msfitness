@@ -85,6 +85,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 
 .meal-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .clone-box{background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:13px 14px;margin-bottom:18px}
+.pkg-row{display:flex;gap:10px;flex-wrap:wrap}
 
 /* ===== DESKTOP — use the screen, kill the scrolling ===== */
 @media (min-width:900px){
@@ -160,6 +161,19 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
   <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="an" placeholder="e.g. Jake Thompson"></div>
   <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="ag" placeholder="e.g. Build muscle and lose fat"></div>
+  <div class="pkg-row">
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Package</label>
+      <select class="form-input" id="a-pkg">
+        <option value="">— none —</option>
+        <option value="8 Week">8 Week</option>
+        <option value="3 Month">3 Month</option>
+        <option value="6 Month">6 Month</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Start date</label><input class="form-input" type="date" id="a-start"></div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">End date</label><input class="form-input" type="date" id="a-end"></div>
+  </div>
   <div class="form-group">
     <label class="form-label">URL slug (lowercase, no spaces)</label>
     <input class="form-input" id="asl" placeholder="e.g. jake">
@@ -199,6 +213,19 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div class="modal-sub">Update details or modify their program</div>
   <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="en"></div>
   <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="eg"></div>
+  <div class="pkg-row">
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Package</label>
+      <select class="form-input" id="e-pkg">
+        <option value="">— none —</option>
+        <option value="8 Week">8 Week</option>
+        <option value="3 Month">3 Month</option>
+        <option value="6 Month">6 Month</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Start date</label><input class="form-input" type="date" id="e-start"></div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">End date</label><input class="form-input" type="date" id="e-end"></div>
+  </div>
   <div class="form-group">
     <label class="form-label">URL slug (lowercase, no spaces)</label>
     <input class="form-input" id="e-slug" placeholder="e.g. jake">
@@ -572,6 +599,10 @@ function openAdd() {
   });
   cs.value = "";
   cs.onchange = function(){ cloneFrom(this.value); };
+  document.getElementById("a-pkg").value="";
+  document.getElementById("a-start").value=new Date().toISOString().split("T")[0];
+  document.getElementById("a-end").value="";
+  wirePkg("a");
   document.getElementById("an").value="";
   document.getElementById("ag").value="";
   document.getElementById("asl").value="";
@@ -587,6 +618,20 @@ function openAdd() {
 }
 
 // ── OPEN EDIT ──
+// ── PACKAGE / RENEWAL ──
+var PKG_DAYS={"8 Week":56,"3 Month":91,"6 Month":182};
+function wirePkg(p){
+  var pkg=document.getElementById(p+"-pkg"), st=document.getElementById(p+"-start"), en=document.getElementById(p+"-end");
+  function calc(){
+    var d=PKG_DAYS[pkg.value];
+    if(!d||!st.value)return;
+    var s=new Date(st.value+"T12:00:00");
+    s.setDate(s.getDate()+d);
+    en.value=s.toISOString().split("T")[0];
+  }
+  pkg.onchange=calc; st.onchange=calc;
+}
+
 async function cloneFrom(slug) {
   var tgt = ["a-cal","a-pro","a-carb","a-fat"];
   if (!slug) {
@@ -646,6 +691,10 @@ async function openEdit(slug) {
   esl.value = r1.data.slug;
   document.getElementById("e-sp").textContent = r1.data.slug;
   esl.oninput = function(){ this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,""); document.getElementById("e-sp").textContent=this.value||"slug"; };
+  document.getElementById("e-pkg").value = r1.data.package||"";
+  document.getElementById("e-start").value = r1.data.start_date||"";
+  document.getElementById("e-end").value = r1.data.end_date||"";
+  wirePkg("e");
   if (r3.data) {
     document.getElementById("e-cal").value = r3.data.calories||"";
     document.getElementById("e-pro").value = r3.data.protein||"";
@@ -732,7 +781,12 @@ async function saveNew() {
   var goal=document.getElementById("ag").value.trim();
   var slug=document.getElementById("asl").value.trim();
   if(!name||!slug){showErr("Name and URL slug are required");return;}
-  var res=await sb.from("clients").insert({slug:slug,name:name,goal:goal});
+  var newRec={slug:slug,name:name,goal:goal};
+  var apk=document.getElementById("a-pkg").value, ast=document.getElementById("a-start").value, aen=document.getElementById("a-end").value;
+  if(apk)newRec.package=apk;
+  if(ast)newRec.start_date=ast;
+  if(aen)newRec.end_date=aen;
+  var res=await sb.from("clients").insert(newRec);
   if(res.error){showErr("Error: "+res.error.message);return;}
   var progRows=daysToRows(slug,addDays);
   if(progRows.length){var pr=await sb.from("programs").insert(progRows);if(pr.error){showErr("Program error: "+pr.error.message);return;}}
@@ -749,6 +803,8 @@ async function saveEdit() {
   var newSlug=(document.getElementById("e-slug").value||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
   if(!name){showErr("Name is required");return;}
   if(!newSlug){showErr("URL slug can't be empty");return;}
+  var epk=document.getElementById("e-pkg").value, est=document.getElementById("e-start").value, een=document.getElementById("e-end").value;
+  var pkgFields={package:epk||null, start_date:est||null, end_date:een||null};
 
   if(newSlug!==editSlug){
     var oldSlug=editSlug;
@@ -757,7 +813,7 @@ async function saveEdit() {
     // Foreign keys block renaming the slug in place. So: create the new client row first,
     // repoint every child table to it, then delete the old row (now safe — nothing references it).
     var oldRow=await sb.from("clients").select("created_at,active").eq("slug",oldSlug).maybeSingle();
-    var newRow={slug:newSlug,name:name,goal:goal};
+    var newRow={slug:newSlug,name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date};
     if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
     if(oldRow.data&&oldRow.data.active===false)newRow.active=false;
     var ins=await sb.from("clients").insert(newRow);
@@ -773,6 +829,7 @@ async function saveEdit() {
     await sb.from("extra_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("conditioning_plan").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("conditioning_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("coach_notes").update({client_slug:newSlug}).eq("client_slug",oldSlug);
     await sb.from("lift_logs").update({client:newSlug}).eq("client",oldSlug);
     // keep lift history linked to the program: re-prefix exercise ids (one update per distinct exercise)
     var lr=await sb.from("lift_logs").select("ex_id").eq("client",newSlug);
@@ -791,7 +848,7 @@ async function saveEdit() {
     if(delOld.error){showErr("Data moved to '"+newSlug+"', but the old '"+oldSlug+"' record couldn't be removed: "+delOld.error.message);return;}
     editSlug=newSlug;
   } else {
-    await sb.from("clients").update({name:name,goal:goal}).eq("slug",editSlug);
+    await sb.from("clients").update({name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date}).eq("slug",editSlug);
   }
 
   await sb.from("programs").delete().eq("client_slug",editSlug);

@@ -78,6 +78,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .day-block-title{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em;margin-bottom:10px;color:var(--ink)}
 .sec-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .ex-row-admin{flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.ex-name-input{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);outline:none;padding:11px 11px;margin-bottom:7px}
+.ex-name-input:focus{border-color:var(--sage)}
+.ex-name-input::placeholder{color:var(--ink-3);font-weight:500}
+.ex-pick-wrap{position:relative}
+.ex-pick{position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;margin-top:3px;max-height:240px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.ex-pick-item{padding:10px 12px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.ex-pick-item+.ex-pick-item{border-top:1px solid var(--line)}
+.ex-pick-item:hover{background:var(--surface);color:var(--ink)}
 .set-tags{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:4px}
 .set-tag-input{padding:7px 4px;font-size:12px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);text-align:center;width:100%;-webkit-appearance:none}
 .set-tag-input:focus{outline:none;border-color:var(--sage)}
@@ -121,6 +129,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .day-swap:focus{outline:none;border-color:var(--sage)}
 .clip-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:12px}
 .clip-status{font-size:11px;color:var(--ink-2);font-weight:600}
+.res-admin-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:7px}
+.res-admin-t{flex:1;min-width:0}
+.res-admin-t b{display:block;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-admin-t span{font-size:11px;color:var(--ink-3)}
 .clip-btn{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;white-space:nowrap}
 .clip-btn:hover{border-color:var(--ink-3)}
 .clip-btn.paste{border-color:var(--sage);color:var(--sage)}
@@ -142,12 +154,46 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div style="padding:0 16px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
     <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
-    <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="res-btn">Resources</button>
+      <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
+    </div>
   </div>
   <div class="success-bar" id="succ"></div>
   <div class="error-bar" id="err"></div>
   <div class="folder-tabs" id="folder-tabs"></div>
   <div id="clist"><div class="loader">Loading clients...</div></div>
+</div>
+
+<div class="modal-overlay" id="modal-resources">
+<div class="modal-box">
+  <div class="modal-title">Client resources</div>
+  <div class="modal-sub">Shared with every client on their home screen</div>
+  <div class="clone-box">
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="r-title" placeholder="e.g. Getting Started Guide"></div>
+    <div class="form-group"><label class="form-label">Type</label>
+      <select class="form-input" id="r-kind">
+        <option value="link">Link (Drive, YouTube, website)</option>
+        <option value="file">File upload (PDF, doc)</option>
+        <option value="guide">Written guide (typed text)</option>
+        <option value="call">Book a call (calendar link)</option>
+      </select>
+    </div>
+    <div class="form-group" id="r-url-wrap"><label class="form-label">URL</label><input class="form-input" id="r-url" placeholder="https://…"></div>
+    <div class="form-group" id="r-file-wrap" style="display:none"><label class="form-label">File</label>
+      <input type="file" id="r-file" class="form-input" style="padding:9px">
+      <div id="r-file-status" style="font-size:11px;color:var(--ink-3);margin-top:6px"></div>
+    </div>
+    <div class="form-group" id="r-content-wrap" style="display:none"><label class="form-label">Guide text</label><textarea class="form-input" id="r-content" style="min-height:130px;resize:vertical"></textarea></div>
+    <button class="btn-green" style="width:100%" id="r-save-btn">Add resource</button>
+    <div id="r-edit-note" style="display:none;font-size:11px;color:var(--sage);margin-top:8px"></div>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:14px 0 8px">Current resources</div>
+  <div id="r-list"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="r-close-btn">Done</button>
+  </div>
+</div>
 </div>
 
 <div class="modal-overlay" id="modal-add">
@@ -283,6 +329,137 @@ function closeModal(id){document.getElementById(id).classList.remove("show");}
 
 // ── WIRE UP STATIC BUTTONS ──
 document.getElementById("add-btn").onclick = openAdd;
+document.getElementById("res-btn").onclick = openResources;
+document.getElementById("r-close-btn").onclick = function(){closeModal("modal-resources");};
+document.getElementById("r-save-btn").onclick = saveRes;
+document.getElementById("r-kind").onchange = resKindToggle;
+document.getElementById("r-file").onchange = uploadResFile;
+
+// ===== RESOURCES MANAGER =====
+var allRes=[], editingResId=null, editingResUrl=null, uploadedResUrl=null;
+
+function openResources(){ resetResForm(); loadResources(); openModal("modal-resources"); }
+
+async function loadResources(){
+  var r=await sb.from("resources").select("*").order("sort_order");
+  allRes=r.data||[];
+  renderResList();
+}
+
+function resKindToggle(){
+  var k=document.getElementById("r-kind").value;
+  document.getElementById("r-url-wrap").style.display=(k==="link"||k==="call")?"":"none";
+  document.getElementById("r-file-wrap").style.display=(k==="file")?"":"none";
+  document.getElementById("r-content-wrap").style.display=(k==="guide")?"":"none";
+  document.getElementById("r-url").placeholder=(k==="call")?"https://calendly.com/…":"https://…";
+}
+
+function resetResForm(){
+  editingResId=null; editingResUrl=null; uploadedResUrl=null;
+  document.getElementById("r-title").value="";
+  document.getElementById("r-kind").value="link";
+  document.getElementById("r-url").value="";
+  document.getElementById("r-content").value="";
+  document.getElementById("r-file").value="";
+  document.getElementById("r-file-status").textContent="";
+  document.getElementById("r-save-btn").textContent="Add resource";
+  document.getElementById("r-edit-note").style.display="none";
+  resKindToggle();
+}
+
+async function uploadResFile(){
+  var f=document.getElementById("r-file").files[0];
+  if(!f)return;
+  var st=document.getElementById("r-file-status");
+  st.textContent="Uploading \u2026";
+  var path=Date.now()+"_"+f.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  var up=await sb.storage.from("resources").upload(path,f);
+  if(up.error){st.textContent="Upload failed: "+up.error.message;return;}
+  uploadedResUrl=sb.storage.from("resources").getPublicUrl(path).data.publicUrl;
+  st.textContent="Uploaded \u2713  "+f.name;
+}
+
+async function saveRes(){
+  var title=document.getElementById("r-title").value.trim();
+  var kind=document.getElementById("r-kind").value;
+  if(!title){alert("Title is required");return;}
+  var rec={title:title,kind:kind,url:null,content:null};
+  if(kind==="guide"){
+    rec.content=document.getElementById("r-content").value.trim();
+    if(!rec.content){alert("Enter the guide text");return;}
+  }else if(kind==="file"){
+    rec.url=uploadedResUrl||editingResUrl;
+    if(!rec.url){alert("Upload a file first");return;}
+  }else{
+    rec.url=document.getElementById("r-url").value.trim();
+    if(!rec.url){alert("Enter a URL");return;}
+  }
+  if(editingResId){
+    var u=await sb.from("resources").update(rec).eq("id",editingResId);
+    if(u.error){alert("Save failed: "+u.error.message);return;}
+  }else{
+    var maxo=allRes.length?Math.max.apply(null,allRes.map(function(x){return x.sort_order||0;})):0;
+    rec.sort_order=maxo+1;
+    var ins=await sb.from("resources").insert(rec);
+    if(ins.error){alert("Save failed: "+ins.error.message);return;}
+  }
+  resetResForm();
+  loadResources();
+}
+
+function editRes(r){
+  editingResId=r.id; editingResUrl=r.url||null; uploadedResUrl=null;
+  document.getElementById("r-title").value=r.title;
+  document.getElementById("r-kind").value=r.kind;
+  document.getElementById("r-url").value=(r.kind==="link"||r.kind==="call")?(r.url||""):"";
+  document.getElementById("r-content").value=r.content||"";
+  document.getElementById("r-file").value="";
+  document.getElementById("r-file-status").textContent=(r.kind==="file"&&r.url)?"Current file kept \u2014 upload to replace":"";
+  resKindToggle();
+  document.getElementById("r-save-btn").textContent="Update resource";
+  var note=document.getElementById("r-edit-note");note.style.display="block";note.textContent="Editing \u201C"+r.title+"\u201D";
+}
+
+async function delRes(r){
+  if(!confirm("Delete \u201C"+r.title+"\u201D?"))return;
+  if(r.kind==="file"&&r.url){
+    var parts=r.url.split("/resources/");
+    if(parts[1]){try{await sb.storage.from("resources").remove([decodeURIComponent(parts[1])]);}catch(e){}}
+  }
+  await sb.from("resources").delete().eq("id",r.id);
+  if(editingResId===r.id)resetResForm();
+  loadResources();
+}
+
+async function moveRes(i,dir){
+  var a=allRes[i],b=allRes[i+dir];if(!a||!b)return;
+  var ao=a.sort_order,bo=b.sort_order;
+  if(ao===bo){bo=ao+dir;}
+  await sb.from("resources").update({sort_order:bo}).eq("id",a.id);
+  await sb.from("resources").update({sort_order:ao}).eq("id",b.id);
+  loadResources();
+}
+
+function renderResList(){
+  var box=document.getElementById("r-list");
+  box.innerHTML="";
+  if(!allRes.length){box.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:8px 0">No resources yet.</div>';return;}
+  var KIND={link:"Link",file:"File",guide:"Written guide",call:"Book a call"};
+  allRes.forEach(function(r,i){
+    var row=el("div","res-admin-row");
+    var info=el("div","res-admin-t");
+    info.appendChild(el("b","",r.title));
+    info.appendChild(el("span","",KIND[r.kind]||r.kind));
+    row.appendChild(info);
+    var ctl=el("div","");ctl.style.cssText="display:flex;gap:5px;flex-shrink:0";
+    if(i>0){var up=el("button","clip-btn","\u2191");up.onclick=(function(idx){return function(){moveRes(idx,-1);};})(i);ctl.appendChild(up);}
+    if(i<allRes.length-1){var dn=el("button","clip-btn","\u2193");dn.onclick=(function(idx){return function(){moveRes(idx,1);};})(i);ctl.appendChild(dn);}
+    var ed=el("button","clip-btn","Edit");ed.onclick=(function(x){return function(){editRes(x);};})(r);ctl.appendChild(ed);
+    var dl=el("button","clip-btn","\u2715");dl.style.color="var(--bad)";dl.onclick=(function(x){return function(){delRes(x);};})(r);ctl.appendChild(dl);
+    row.appendChild(ctl);
+    box.appendChild(row);
+  });
+}
 document.getElementById("cancel-add-btn").onclick = function(){closeModal("modal-add");};
 document.getElementById("cancel-edit-btn").onclick = function(){closeModal("modal-edit");};
 document.getElementById("save-add-btn").onclick = saveNew;
@@ -363,6 +540,47 @@ function addDay(mode) {
   renderDays(mode);
 }
 
+// ===== EXERCISE LIBRARY (autocomplete) =====
+var EX_LIB=[
+// Chest
+"Barbell bench press","Incline barbell bench press","Decline barbell bench press","Dumbbell bench press","Incline dumbbell press","Decline dumbbell press","Machine chest press","Smith machine bench press","Dumbbell fly","Incline dumbbell fly","Cable fly","Low-to-high cable fly","Pec deck","Push-up","Incline push-up","Chest dip","Landmine press","Svend press",
+// Back
+"Deadlift","Conventional deadlift","Trap-bar deadlift","Romanian deadlift","Stiff-leg deadlift","Sumo deadlift","Rack pull","Bent-over barbell row","Pendlay row","Dumbbell row","Chest-supported row","T-bar row","Seated cable row","Wide-grip lat pulldown","Close-grip lat pulldown","Lat pulldown","Pull-up","Weighted pull-up","Chin-up","Assisted pull-up","Straight-arm pulldown","Cable face pull","Dumbbell pullover","Meadows row","Inverted row",
+// Shoulders
+"Overhead press","Seated barbell press","Seated dumbbell shoulder press","Dumbbell shoulder press","Seated DB shoulder press","Arnold press","Push press","Machine shoulder press","Dumbbell lateral raise","Cable lateral raise","Machine lateral raise","Front raise","Dumbbell rear delt fly","Reverse pec deck","Cable rear delt fly","Upright row","Barbell shrug","Dumbbell shrug","Landmine shoulder press",
+// Legs
+"Barbell back squat","Front squat","Box squat","Goblet squat","Dumbbell goblet squat","Hack squat","Leg press","Bulgarian split squat","Walking lunges","Reverse lunge","Forward lunge","Step-up","Leg extension","Lying leg curl","Seated leg curl","Nordic hamstring curl","Hip thrust","Barbell hip thrust","Single-leg hip thrust","Glute bridge","Kettlebell sumo deadlift","Cable kickback","Standing calf raise","Seated calf raise","Leg press calf raise","Adductor machine","Abductor machine","Lateral band walk","Sissy squat",
+// Arms
+"Barbell curl","EZ-bar curl","Dumbbell curl","Incline dumbbell curl","Hammer curl","Preacher curl","Cable curl","Concentration curl","Spider curl","Tricep rope pushdown","Tricep cable pushdown","Straight-bar pushdown","Overhead tricep extension","Cable overhead extension","Skull crushers","Close-grip bench press","Bench dip","Tricep kickback",
+// Core
+"Plank","Side plank","Dead bug","Bird dog","Pallof press","Hanging knee raise","Hanging leg raise","Cable crunch","Ab wheel rollout","Hollow body hold","Russian twist","Bicycle crunch","Mountain climbers","Leg raise","Toes-to-bar","Sit-up",
+// Conditioning
+"Treadmill incline walk","Incline treadmill","Rowing machine","Assault bike","Stationary bike","Stair climber","Jump rope","Sled push","Sled drag","Farmer's carry","Battle ropes","Box jump","Kettlebell swing"
+];
+
+function attachExPicker(input,setName){
+  var wrap=input.parentNode; var dd=null;
+  function close(){ if(dd){dd.remove();dd=null;} }
+  function open(){
+    close();
+    var q=input.value.trim().toLowerCase();
+    var matches=q?EX_LIB.filter(function(e){return e.toLowerCase().indexOf(q)!==-1;}):EX_LIB.slice();
+    if(q){matches.sort(function(a,b){return (a.toLowerCase().indexOf(q)===0?0:1)-(b.toLowerCase().indexOf(q)===0?0:1);});}
+    matches=matches.slice(0,50);
+    if(!matches.length)return;
+    dd=el("div","ex-pick");
+    matches.forEach(function(name){
+      var it=el("div","ex-pick-item",name);
+      it.onmousedown=function(ev){ev.preventDefault();input.value=name;setName(name);close();};
+      dd.appendChild(it);
+    });
+    wrap.appendChild(dd);
+  }
+  input.addEventListener("focus",open);
+  input.addEventListener("input",open);
+  input.addEventListener("blur",function(){setTimeout(close,160);});
+}
+
 function renderDays(mode) {
   var days = mode==="add"?addDays:editDays;
   var container = document.getElementById(mode==="add"?"add-days":"edit-days");
@@ -421,10 +639,14 @@ function renderDays(mode) {
       // Exercises
       sec.exercises.forEach(function(ex, ei) {
         var er = el("div","ex-row-admin");
-        var en2 = el("input",""); en2.style.cssText="width:100%;background:transparent;border:none;font-size:13px;font-weight:600;color:var(--ink);outline:none;margin-bottom:4px;border-bottom:1px solid var(--line-2);padding-bottom:3px";
-        en2.placeholder="Exercise name"; en2.value=ex.name;
-        en2.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].name=this.value;};})(di,si,ei,mode);
-        er.appendChild(en2);
+        var pickWrap=el("div","ex-pick-wrap");
+        var en2 = el("input","ex-name-input");
+        en2.placeholder="Search or type exercise\u2026"; en2.value=ex.name; en2.setAttribute("autocomplete","off");
+        var setName=(function(i,j,k,m){return function(val){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].name=val;};})(di,si,ei,mode);
+        en2.oninput=function(){setName(this.value);};
+        attachExPicker(en2,setName);
+        pickWrap.appendChild(en2);
+        er.appendChild(pickWrap);
         var st=el("div","set-tags");
         [0,1,2].forEach(function(idx){
           var s=el("input","set-tag-input"); s.placeholder="Set "+(idx+1); s.value=(ex.sets[idx]||{}).tag||["1×10–12","2×6–8","3×6–8"][idx];

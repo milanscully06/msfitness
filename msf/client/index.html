@@ -96,18 +96,18 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .badge-ss{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);
   border:1px solid rgba(157,180,154,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
 
-.set-header{display:grid;grid-template-columns:54px 1fr 1fr 56px;gap:8px;margin-bottom:8px;padding:0 2px}
-.set-hdr{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);text-align:center}
-.set-row{display:grid;grid-template-columns:54px 1fr 1fr 56px;gap:8px;align-items:center;margin-bottom:8px}
-.set-pill{font-size:11px;font-weight:700;letter-spacing:.04em;text-align:center;padding:7px 4px;border-radius:9px;line-height:1.1}
-.pill-w{background:rgba(157,180,154,.14);color:var(--sage)}
-.pill-s{background:var(--surface-2);color:var(--ink-2)}
-.set-input{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:11px;padding:11px 6px;
+.set-row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.set-num{width:76px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink-2);letter-spacing:.01em;line-height:1.2}
+.set-field{flex:1;min-width:0}
+.set-input{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:11px;padding:13px 8px;
   color:var(--ink);font-family:var(--display);font-weight:600;font-size:16px;text-align:center;outline:none;
   -webkit-appearance:none;transition:border-color .15s}
 .set-input:focus{border-color:var(--sage)}
-.set-input::placeholder{color:var(--ink-3);font-family:var(--body)}
-.target{font-size:12px;color:var(--ink-3);text-align:center;font-weight:500}
+.set-input::placeholder{color:var(--ink-3);font-family:var(--body);font-weight:500;font-size:13px}
+.set-remove{width:32px;height:32px;flex-shrink:0;background:none;border:1px solid var(--line-2);border-radius:9px;color:var(--ink-3);font-size:12px;cursor:pointer;padding:0}
+.set-remove:hover{border-color:var(--bad);color:var(--bad)}
+.add-set-btn{width:100%;background:none;border:1px dashed var(--line-2);border-radius:11px;color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:600;padding:11px;cursor:pointer;margin-top:3px}
+.add-set-btn:hover{border-color:var(--sage);color:var(--sage)}
 
 .alert-bar{display:none;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:12px;font-size:12.5px;font-weight:500;
   margin-top:13px;line-height:1.45}
@@ -730,28 +730,20 @@ function renderLog(){
   day.sections.forEach(function(sec){
     vlog.appendChild(el("div","sec-label",sec.label));
     sec.exercises.forEach(function(ex){
+      if(ex._base==null)ex._base=ex.sets.length;
       var card=el("div","ex-card"+(ex.ss?" ss":""));
       var head=el("div","ex-head");
       head.appendChild(el("span","ex-name",ex.name));
       if(ex.ss){head.appendChild(el("span","badge-ss","Superset"));}
       card.appendChild(head);
 
-      // Set header
-      var hdr=el("div","set-header");
-      ["","Weight kg","Reps","Target"].forEach(function(t){hdr.appendChild(el("div","set-hdr",t));});
-      card.appendChild(hdr);
+      var setsWrap=el("div","");setsWrap.id="sets_"+ex.id;
+      ex.sets.forEach(function(s,i){ setsWrap.appendChild(makeSetRow(ex,i)); });
+      card.appendChild(setsWrap);
 
-      ex.sets.forEach(function(s,i){
-        var row=el("div","set-row");
-        row.appendChild(el("div","set-pill "+(i===0?"pill-w":"pill-s"),s.tag));
-        var wi=el("input");wi.className="set-input";wi.type="number";wi.inputMode="decimal";wi.min="0";wi.step="0.5";wi.id=ex.id+"_w"+i;wi.placeholder="\u2014";
-        var ri=el("input");ri.className="set-input";ri.type="number";ri.inputMode="numeric";ri.min="0";ri.step="1";ri.id=ex.id+"_r"+i;ri.placeholder="\u2014";
-        ri.dataset.exid=ex.id;
-        ri.onchange=function(){chk(this.dataset.exid);};
-        row.appendChild(wi);row.appendChild(ri);
-        row.appendChild(el("div","target",s.top>=99?"\u2014":i===0?"10\u201312":"6\u20138"));
-        card.appendChild(row);
-      });
+      var addBtn=el("button","add-set-btn","+ Add set");
+      addBtn.onclick=(function(exId){return function(){addSet(exId);};})(ex.id);
+      card.appendChild(addBtn);
 
       var alert=el("div","alert-bar");alert.id="al_"+ex.id;
       card.appendChild(alert);
@@ -777,6 +769,7 @@ async function loadCache(){
   var today=new Date().toISOString().split("T")[0];
   var res=await sb.from("lift_logs").select("*").eq("client",CLIENT).eq("day",curDay).gte("logged_at",today+"T00:00:00");
   if(res.data&&res.data.length){
+    extendSetsFrom(res.data);
     res.data.forEach(function(r){
       var wi=document.getElementById(r.ex_id+"_w"+r.set_index);
       var ri=document.getElementById(r.ex_id+"_r"+r.set_index);
@@ -792,6 +785,7 @@ async function loadCache(){
   // Get the most recent date
   var lastDate=new Date(prev.data[0].logged_at).toDateString();
   var lastSession=prev.data.filter(function(r){return new Date(r.logged_at).toDateString()===lastDate;});
+  extendSetsFrom(lastSession);
   lastSession.forEach(function(r){
     var wi=document.getElementById(r.ex_id+"_w"+r.set_index);
     var ri=document.getElementById(r.ex_id+"_r"+r.set_index);
@@ -807,6 +801,59 @@ async function loadCache(){
   PROG[curDay].sections.forEach(function(sec){sec.exercises.forEach(function(ex){chk(ex.id);});});
 }
 
+function findEx(exId){var f=null;PROG[curDay].sections.forEach(function(s){s.exercises.forEach(function(e){if(e.id===exId)f=e;});});return f;}
+
+function makeSetRow(ex,i){
+  var row=el("div","set-row");
+  var cue=(ex.sets[i].tag||"").replace(/[0-9\-\u2013\u2014.]/g,"").trim();
+  row.appendChild(el("div","set-num","Set "+(i+1)+(cue?" \u00b7 "+cue:"")));
+  var wf=el("div","set-field");
+  var wi=el("input");wi.className="set-input";wi.type="number";wi.inputMode="decimal";wi.min="0";wi.step="0.5";wi.id=ex.id+"_w"+i;wi.placeholder="kg";
+  wf.appendChild(wi);row.appendChild(wf);
+  var rf=el("div","set-field");
+  var ri=el("input");ri.className="set-input";ri.type="number";ri.inputMode="numeric";ri.min="0";ri.step="1";ri.id=ex.id+"_r"+i;ri.placeholder="reps";
+  ri.dataset.exid=ex.id;ri.onchange=function(){chk(this.dataset.exid);};
+  rf.appendChild(ri);row.appendChild(rf);
+  if(i>=ex._base){
+    var x=el("button","set-remove","\u2715");
+    x.onclick=(function(exId,idx){return function(){removeSet(exId,idx);};})(ex.id,i);
+    row.appendChild(x);
+  }
+  return row;
+}
+
+function addSet(exId){
+  var ex=findEx(exId);if(!ex)return;
+  ex.sets.push({tag:"",top:99,bot:0});
+  var cont=document.getElementById("sets_"+exId);
+  if(cont)cont.appendChild(makeSetRow(ex,ex.sets.length-1));
+}
+
+function removeSet(exId,idx){
+  var ex=findEx(exId);if(!ex)return;
+  var vals=ex.sets.map(function(s,i){return {w:(document.getElementById(exId+"_w"+i)||{}).value||"",r:(document.getElementById(exId+"_r"+i)||{}).value||""};});
+  ex.sets.splice(idx,1);vals.splice(idx,1);
+  var cont=document.getElementById("sets_"+exId);if(!cont)return;
+  cont.innerHTML="";
+  ex.sets.forEach(function(s,i){cont.appendChild(makeSetRow(ex,i));});
+  ex.sets.forEach(function(s,i){var wi=document.getElementById(exId+"_w"+i),ri=document.getElementById(exId+"_r"+i);if(wi)wi.value=vals[i].w;if(ri)ri.value=vals[i].r;});
+  chk(exId);
+}
+
+// extend an exercise's set rows if a logged session had more sets than programmed
+function extendSetsFrom(rows){
+  var maxIdx={};
+  rows.forEach(function(r){ if(maxIdx[r.ex_id]==null||r.set_index>maxIdx[r.ex_id])maxIdx[r.ex_id]=r.set_index; });
+  PROG[curDay].sections.forEach(function(sec){sec.exercises.forEach(function(ex){
+    var need=maxIdx[ex.id];
+    while(need!=null && ex.sets.length<=need){
+      ex.sets.push({tag:"",top:99,bot:0});
+      var cont=document.getElementById("sets_"+ex.id);
+      if(cont)cont.appendChild(makeSetRow(ex,ex.sets.length-1));
+    }
+  });});
+}
+
 function chk(exId){
   var alert=document.getElementById("al_"+exId);if(!alert)return;
   var ex=null;
@@ -814,14 +861,15 @@ function chk(exId){
   if(!ex)return;
   var allTop=true,any=false,low=false;
   ex.sets.forEach(function(s,i){
+    if(i>=ex._base)return;
     var w=parseFloat((document.getElementById(exId+"_w"+i)||{}).value);
     var r=parseInt((document.getElementById(exId+"_r"+i)||{}).value);
     if(!isNaN(r)&&!isNaN(w)){any=true;if(i>0&&r<s.bot)low=true;if(r<s.top)allTop=false;}
     else allTop=false;
   });
   alert.className="alert-bar";
-  if(any&&allTop){alert.className="alert-bar show alert-up";alert.textContent="\u2191 All sets at target \u2014 increase weight next session";}
-  else if(any&&low){alert.className="alert-bar show alert-warn";alert.textContent="\u26a0 Reps below target \u2014 reduce the load";}
+  if(any&&allTop){alert.className="alert-bar show alert-up";alert.textContent="\u2191 Strong session \u2014 add a little weight next time";}
+  else if(any&&low){alert.className="alert-bar show alert-warn";alert.textContent="\u26a0 Reps dropping off \u2014 ease the load slightly";}
 }
 
 async function doSave(){

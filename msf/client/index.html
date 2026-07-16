@@ -97,7 +97,9 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
   border:1px solid rgba(157,180,154,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
 
 .set-row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
-.set-num{width:76px;flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink-2);letter-spacing:.01em;line-height:1.2}
+.set-num{width:88px;flex-shrink:0;line-height:1.2}
+.set-n{font-size:13px;font-weight:700;color:var(--ink)}
+.set-aim{font-size:11px;font-weight:600;color:var(--sage);margin-top:2px}
 .set-field{flex:1;min-width:0}
 .set-input{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:11px;padding:13px 8px;
   color:var(--ink);font-family:var(--display);font-weight:600;font-size:16px;text-align:center;outline:none;
@@ -805,8 +807,11 @@ function findEx(exId){var f=null;PROG[curDay].sections.forEach(function(s){s.exe
 
 function makeSetRow(ex,i){
   var row=el("div","set-row");
-  var cue=(ex.sets[i].tag||"").replace(/[0-9\-\u2013\u2014.]/g,"").trim();
-  row.appendChild(el("div","set-num","Set "+(i+1)+(cue?" \u00b7 "+cue:"")));
+  var lab=el("div","set-num");
+  lab.appendChild(el("div","set-n","Set "+(i+1)));
+  var tag=(ex.sets[i].tag||"").trim();
+  if(tag)lab.appendChild(el("div","set-aim",tag));
+  row.appendChild(lab);
   var wf=el("div","set-field");
   var wi=el("input");wi.className="set-input";wi.type="number";wi.inputMode="decimal";wi.min="0";wi.step="0.5";wi.id=ex.id+"_w"+i;wi.placeholder="kg";
   wf.appendChild(wi);row.appendChild(wf);

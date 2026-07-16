@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<title>The Health Project</title>
+<title>Milan Scullino</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Pacifico&display=swap" rel="stylesheet">
@@ -22,7 +22,8 @@
   --pro:#D2C9B6;
   --carb:#9DB49A;
   --fat:#CBA67D;
-  --sage:#9DB49A;
+  --sage:#C8622E;
+  --good:#5FA46C;
   --warn:#CBA67D;
   --bad:#C97A6D;
   --radius:18px;
@@ -38,7 +39,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;
   padding:18px 20px 14px;background:rgba(14,12,11,.86);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
 .tb-left{display:flex;align-items:center;gap:14px;min-width:0}
-.brand{font-family:'Pacifico',cursive;font-size:20px;line-height:1;flex-shrink:0}
+.brand{font-family:'Pacifico',cursive;font-size:16px;line-height:1;flex-shrink:0;color:var(--sage)}
 .tb-id{min-width:0}
 .tb-name{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb-goal{font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
@@ -94,7 +95,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .ex-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .ex-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
 .badge-ss{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);
-  border:1px solid rgba(157,180,154,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
+  border:1px solid rgba(200,98,46,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
 
 .set-row{display:flex;align-items:center;gap:9px;margin-bottom:9px}
 .set-num{width:88px;flex-shrink:0;line-height:1.2}
@@ -114,7 +115,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .alert-bar{display:none;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:12px;font-size:12.5px;font-weight:500;
   margin-top:13px;line-height:1.45}
 .alert-bar.show{display:flex}
-.alert-up{background:rgba(157,180,154,.1);border:1px solid rgba(157,180,154,.24);color:var(--ink)}
+.alert-up{background:rgba(95,164,108,.12);border:1px solid rgba(95,164,108,.3);color:var(--good)}
 .alert-warn{background:rgba(203,122,109,.1);border:1px solid rgba(203,122,109,.26);color:var(--ink)}
 
 .save-row{display:flex;gap:10px;align-items:center;margin:22px 0 8px;padding-top:20px;border-top:1px solid var(--line)}
@@ -261,7 +262,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 
 .meal-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:11px;
   display:flex;gap:13px;align-items:flex-start;cursor:pointer;transition:border-color .2s,background .2s}
-.meal-card.ticked{border-color:rgba(157,180,154,.34);background:rgba(157,180,154,.06)}
+.meal-card.ticked{border-color:rgba(200,98,46,.34);background:rgba(200,98,46,.06)}
 .meal-tick{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line-2);flex-shrink:0;margin-top:2px;
   display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;transition:all .15s}
 .meal-card.ticked .meal-tick{background:var(--sage);border-color:var(--sage);color:#11120f}
@@ -275,7 +276,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
   flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center}
 .paywall.show{display:flex}
 .pw-card{max-width:340px;width:100%}
-.pw-brand{font-family:'Pacifico',cursive;font-size:40px;margin-bottom:14px}
+.pw-brand{font-family:'Pacifico',cursive;font-size:30px;margin-bottom:14px;color:var(--sage)}
 .pw-title{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:-.02em;margin-bottom:8px}
 .pw-sub{font-size:14px;color:var(--ink-2);margin-bottom:28px}
 .pw-btn{display:block;width:100%;padding:16px;background:var(--ink);color:var(--bg);border-radius:14px;
@@ -297,7 +298,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:22px;display:flex;flex-direction:column;gap:10px}
 .cond-pills{display:flex;gap:8px;flex-wrap:wrap}
 .cond-pill{flex:1;min-width:96px;padding:10px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.cond-pill-easy.on{background:rgba(157,180,154,.18);border-color:var(--sage);color:var(--sage)}
+.cond-pill-easy.on{background:rgba(200,98,46,.18);border-color:var(--sage);color:var(--sage)}
 .cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
 .cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
 .cond-in{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;width:100%}
@@ -314,7 +315,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-date{font-size:12px;color:var(--ink-3);font-weight:600;white-space:nowrap}
 .cond-meta{font-size:13px;color:var(--ink-2);margin-top:5px;font-weight:600}
 .cond-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:6px;margin-top:8px}
-.cond-badge.cond-easy{background:rgba(157,180,154,.15);color:var(--sage)}
+.cond-badge.cond-easy{background:rgba(200,98,46,.15);color:var(--sage)}
 .cond-badge.cond-hard{background:rgba(201,122,109,.15);color:var(--bad)}
 .cond-badge.cond-other{background:var(--surface-2);color:var(--ink-2)}
 .cond-notes{font-size:12px;color:var(--ink-2);margin-top:7px;line-height:1.5}
@@ -327,7 +328,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .sched-cell{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
 .sched-empty{font-size:13px;color:var(--ink-3);padding-top:2px}
 .sched-item{border-radius:10px;padding:9px 12px;border:1px solid var(--line-2)}
-.sched-item.cond-easy{background:rgba(157,180,154,.1);border-color:rgba(157,180,154,.3)}
+.sched-item.cond-easy{background:rgba(200,98,46,.1);border-color:rgba(200,98,46,.3)}
 .sched-item.cond-hard{background:rgba(201,122,109,.1);border-color:rgba(201,122,109,.3)}
 .sched-item.cond-other{background:var(--surface-2)}
 .sched-item-title{font-size:13px;font-weight:700;color:var(--ink)}
@@ -339,7 +340,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 
   <header class="topbar">
     <div class="tb-left">
-      <div class="brand">THP</div>
+      <div class="brand">Milan Scullino</div>
       <div class="tb-id">
         <div class="tb-name" id="cn">Loading…</div>
         <div class="tb-goal" id="cg"></div>
@@ -369,8 +370,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 
   <div class="paywall" id="paywall">
     <div class="pw-card">
-      <div class="pw-brand">THP</div>
-      <div class="pw-title">The Health Project</div>
+      <div class="pw-brand">Milan Scullino</div>
       <div class="pw-sub">Your personalised coaching</div>
       <a class="pw-btn" id="pw-link" href="">Start free trial</a>
     </div>
@@ -436,7 +436,7 @@ async function init(){
   var r1=await sb.from("clients").select("*").eq("slug",slug).single();
   var r2=await sb.from("programs").select("*").eq("client_slug",slug).order("exercise_order");
   if(r1.error||!r1.data){err();return;}
-  document.title=r1.data.name+" \u2014 The Health Project";
+  document.title=r1.data.name+" \u2014 Milan Scullino";
   var _ini=(r1.data.name||"").trim().split(" ").filter(function(x){return x;}).map(function(p){return p[0];}).slice(0,2).join("").toUpperCase();
   var _av=document.getElementById("avatar");if(_av)_av.textContent=_ini||"\u00b7";
   document.getElementById("cn").textContent=r1.data.name;
@@ -796,7 +796,7 @@ async function loadCache(){
   });
   // Show a banner
   var banner=document.createElement("div");
-  banner.style.cssText="background:rgba(157,180,154,.1);color:#9DB49A;border:1px solid rgba(157,180,154,.24);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:12px;";
+  banner.style.cssText="background:rgba(200,98,46,.1);color:#C8622E;border:1px solid rgba(200,98,46,.24);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:12px;";
   banner.textContent="Showing last session (" + new Date(prev.data[0].logged_at).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + ") — beat these numbers";
   var vlog=document.getElementById("view-log");
   vlog.insertBefore(banner,vlog.children[2]);
@@ -975,9 +975,9 @@ function weightChartSVG(pts){
   var area=line+"L"+X(n-1)+","+H+"L"+X(0)+","+H+"Z";
   var lx=X(n-1),ly=Y(parseFloat(pts[n-1].weight));
   var svg='<svg class="wt-chart" viewBox="0 0 '+W+' '+H+'">';
-  svg+='<defs><linearGradient id="wtg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(157,180,154,.28)"/><stop offset="100%" stop-color="rgba(157,180,154,0)"/></linearGradient></defs>';
-  if(n>1){svg+='<path d="'+area+'" fill="url(#wtg)"/><path d="'+line+'" fill="none" stroke="#9DB49A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';}
-  svg+='<circle cx="'+lx+'" cy="'+ly+'" r="4" fill="#9DB49A"/></svg>';
+  svg+='<defs><linearGradient id="wtg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(200,98,46,.28)"/><stop offset="100%" stop-color="rgba(200,98,46,0)"/></linearGradient></defs>';
+  if(n>1){svg+='<path d="'+area+'" fill="url(#wtg)"/><path d="'+line+'" fill="none" stroke="#C8622E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';}
+  svg+='<circle cx="'+lx+'" cy="'+ly+'" r="4" fill="#C8622E"/></svg>';
   return svg;
 }
 
@@ -1124,7 +1124,7 @@ async function loadChart(exId){
   var vals=(res.data||[]).map(function(r){return r.weight||0;});
   var ctx=document.getElementById("pc");if(!ctx)return;
   if(chart)chart.destroy();
-  chart=new Chart(ctx,{type:"line",data:{labels:labels.length?labels:["No data"],datasets:[{data:vals.length?vals:[0],borderColor:"#9DB49A",backgroundColor:"rgba(157,180,154,.14)",borderWidth:2,pointBackgroundColor:"#9DB49A",pointRadius:4,tension:.35,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.45)",maxTicksLimit:6}},y:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.45)",callback:function(v){return v+"kg";}},beginAtZero:false}}}});
+  chart=new Chart(ctx,{type:"line",data:{labels:labels.length?labels:["No data"],datasets:[{data:vals.length?vals:[0],borderColor:"#C8622E",backgroundColor:"rgba(200,98,46,.14)",borderWidth:2,pointBackgroundColor:"#C8622E",pointRadius:4,tension:.35,fill:true}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.45)",maxTicksLimit:6}},y:{grid:{color:"rgba(244,238,228,.06)"},ticks:{font:{size:11},color:"rgba(244,238,228,.45)",callback:function(v){return v+"kg";}},beginAtZero:false}}}});
 }
 
 
@@ -1153,7 +1153,7 @@ function showPaywall(clientSlug,clientName){
   var link=document.getElementById("pw-link");
   if(!pw||!link){
     // Fallback if paywall div not found
-    document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;background:#2C2C2E"><div style="font-size:40px;margin-bottom:16px">🏋️</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">MS Fitness</div><div style="font-size:15px;color:#EBEBF5;margin-bottom:24px">Subscribe to access your program</div><div style="font-size:28px;font-weight:700;color:#1D9E75;margin-bottom:4px">$49<span style="font-size:14px;color:#EBEBF5">/week</span></div><div style="font-size:13px;color:#EBEBF5;margin-bottom:24px">7 day free trial</div><a href="'+PAYMENT_LINK+'?client_reference_id='+clientSlug+'" style="display:block;padding:16px 32px;background:#1D9E75;color:#fff;font-size:16px;font-weight:700;border-radius:14px;text-decoration:none">Start free trial</a></div>';
+    document.body.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;text-align:center;background:#2C2C2E"><div style="font-size:40px;margin-bottom:16px">🏋️</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Milan Scullino</div><div style="font-size:15px;color:#EBEBF5;margin-bottom:24px">Subscribe to access your program</div><div style="font-size:28px;font-weight:700;color:#C8622E;margin-bottom:4px">$49<span style="font-size:14px;color:#EBEBF5">/week</span></div><div style="font-size:13px;color:#EBEBF5;margin-bottom:24px">7 day free trial</div><a href="'+PAYMENT_LINK+'?client_reference_id='+clientSlug+'" style="display:block;padding:16px 32px;background:#C8622E;color:#fff;font-size:16px;font-weight:700;border-radius:14px;text-decoration:none">Start free trial</a></div>';
     return;
   }
   link.href=PAYMENT_LINK+"?client_reference_id="+clientSlug;
@@ -1512,7 +1512,7 @@ function renderNotes(){
   inp.onkeydown=function(e){if(e.key==="Enter"){addNote();}};
   addRow.appendChild(inp);
   var addBtn=el("button","","\uFF0B Add");
-  addBtn.style.cssText="background:#9DB49A;color:#0E0C0B;border:none;border-radius:10px;font-weight:700;font-size:13px;padding:11px 16px;cursor:pointer;white-space:nowrap";
+  addBtn.style.cssText="background:#C8622E;color:#0E0C0B;border:none;border-radius:10px;font-weight:700;font-size:13px;padding:11px 16px;cursor:pointer;white-space:nowrap";
   addBtn.onclick=function(){addNote();};
   addRow.appendChild(addBtn);
   sn.appendChild(addRow);

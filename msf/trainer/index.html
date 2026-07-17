@@ -80,6 +80,12 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .st-dot.amber{background:#CBA67D}
 .st-dot.green{background:var(--sage)}
 .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.chip.req{background:rgba(200,98,46,.16);color:#C8622E}
+.req-box{margin-bottom:16px}
+.req-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(200,98,46,.08);border:1px solid rgba(200,98,46,.3);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.req-meal{font-size:14px;font-weight:700;color:var(--ink)}
+.req-when{font-size:11px;color:var(--ink-3);margin-top:3px}
+.req-resolve{background:#C8622E;color:var(--bg);border:none;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap}
 .chip.red{background:rgba(201,122,109,.14);color:var(--bad)}
 .chip.amber{background:rgba(203,166,125,.14);color:#CBA67D}
@@ -354,9 +360,10 @@ async function renderOverview(){
   var rn=await sb.from("nutrition_logs").select("client_slug,logged_date");
   var rf=await sb.from("food_logs").select("client_slug,logged_date");
   var rc=await sb.from("coach_notes").select("client_slug,note_date");
+  var rq=await sb.from("change_requests").select("client_slug").eq("status","open");
   sync(false);
   function byKey(arr,k){var m={};(arr||[]).forEach(function(r){var v=r[k];if(!m[v])m[v]=[];m[v].push(r);});return m;}
-  var liftBy=byKey(rl.data,"client"),bodyBy=byKey(rb.data,"client_slug"),natBy=byKey(rn.data,"client_slug"),foodBy=byKey(rf.data,"client_slug"),noteBy=byKey(rc.data,"client_slug");
+  var liftBy=byKey(rl.data,"client"),bodyBy=byKey(rb.data,"client_slug"),natBy=byKey(rn.data,"client_slug"),foodBy=byKey(rf.data,"client_slug"),noteBy=byKey(rc.data,"client_slug"),reqBy=byKey(rq.data,"client_slug");
 
   // build a scored row per client, then sort by who needs attention
   var rows=clients.map(function(c){
@@ -369,7 +376,12 @@ async function renderOverview(){
     var contactDays=daysAgo(lastNote);
     var renewDays=daysUntil(c.end_date);
     var t=triage(c,inactive,f7,contactDays,renewDays);
-    return {c:c,lr:lr,br:br,map:map,inactive:inactive,f7:f7,contactDays:contactDays,renewDays:renewDays,t:t};
+    var reqCount=(reqBy[c.slug]||[]).length;
+    if(reqCount>0){
+      t.chips.unshift({t:reqCount+" meal request"+(reqCount>1?"s":""),cls:"req"});
+      if(t.status==="green")t.status="amber";
+    }
+    return {c:c,lr:lr,br:br,map:map,inactive:inactive,f7:f7,contactDays:contactDays,renewDays:renewDays,t:t,reqCount:reqCount};
   });
   var rank={red:0,amber:1,green:2};
   rows.sort(function(a,b){
@@ -546,6 +558,12 @@ async function delCoachNote(id,slug){
   drawCoachNotes(_cnotes.filter(function(n){return n.id!==id;}),slug);
 }
 
+function dayFull(k){return {mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"}[k]||k||"";}
+async function resolveReq(id,slug){
+  await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",id);
+  renderClient(slug);
+}
+
 // ── PER-CLIENT DEEP VIEW ──
 async function renderClient(slug){
   var dc=document.getElementById("dcontent");dc.className="";dc.innerHTML="";dc.appendChild(el("div","loader","Loading…"));
@@ -560,10 +578,12 @@ async function renderClient(slug){
   var rx=await sb.from("extra_logs").select("logged_date,note,created_at").eq("client_slug",slug);
   var rt=await sb.from("nutrition_targets").select("calories").eq("client_slug",slug).maybeSingle();
   var rcn=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  var rcr=await sb.from("change_requests").select("*").eq("client_slug",slug).eq("status","open").order("created_at",{ascending:false});
   sync(false);
   var lift=r1.data||[],body=rb.data||[],nat=rn.data||[],food=rf.data||[],photos=rp.data||[];
   var notes=rx.data||[],targetCal=(rt.data&&rt.data.calories)||0;
   var cnotes=rcn.data||[];
+  var creqs=rcr.data||[];
 
   var sessions=sessionCount(lift);
   var wt=weightTrend(body);
@@ -586,6 +606,25 @@ async function renderClient(slug){
   var contactDays=daysAgo(lastNoteMs);
   grid.appendChild(statBox("Last contact",contactDays==null?"—":(contactDays===0?"Today":contactDays+"d")));
   dc.appendChild(grid);
+
+  // Meal change requests
+  if(creqs.length){
+    dc.appendChild(el("div","sec-label","Meal change requests"));
+    var rbox=el("div","req-box");
+    creqs.forEach(function(q){
+      var item=el("div","req-item");
+      var left=el("div","");
+      left.appendChild(el("div","req-meal",dayFull(q.ref_day)+" \u00b7 "+q.ref_name));
+      var da=daysAgo(new Date(q.created_at).getTime());
+      left.appendChild(el("div","req-when","Requested "+(da===0?"today":(da===1?"yesterday":da+" days ago"))));
+      item.appendChild(left);
+      var rbtn=el("button","req-resolve","Mark done");
+      rbtn.onclick=(function(id,s){return function(){resolveReq(id,s);};})(q.id,slug);
+      item.appendChild(rbtn);
+      rbox.appendChild(item);
+    });
+    dc.appendChild(rbox);
+  }
 
   // Renewal
   var renewDays=daysUntil(c.end_date);

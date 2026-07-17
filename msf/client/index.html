@@ -77,6 +77,12 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .sl-item.checked{opacity:.38}
 .sl-item.checked .sl-name{text-decoration:line-through}
 .sl-name{font-size:14px;color:var(--ink);font-weight:600}
+.res-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:9px;cursor:pointer}
+.res-row:active{border-color:var(--line-2)}
+.res-ic{width:38px;height:38px;flex-shrink:0;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:18px}
+.res-t{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
+.res-arrow{color:var(--ink-3);font-size:16px;flex-shrink:0;font-weight:700}
+.guide-text{font-size:14px;color:var(--ink-2);line-height:1.65;white-space:pre-wrap}
 .sl-qty{font-size:13px;color:var(--sage);font-weight:700;white-space:nowrap}
 
 /* ===== TRAIN (log) ===== */
@@ -263,6 +269,9 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .meal-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:11px;
   display:flex;gap:13px;align-items:flex-start;cursor:pointer;transition:border-color .2s,background .2s}
 .meal-card.ticked{border-color:rgba(200,98,46,.34);background:rgba(200,98,46,.06)}
+.req-btn{margin-top:10px;background:none;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-3);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 11px;cursor:pointer}
+.req-btn:hover{border-color:var(--ink-2);color:var(--ink-2)}
+.req-btn.active{border-color:var(--sage);color:var(--sage);background:rgba(200,98,46,.1)}
 .meal-tick{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line-2);flex-shrink:0;margin-top:2px;
   display:flex;align-items:center;justify-content:center;font-size:13px;color:transparent;transition:all .15s}
 .meal-card.ticked .meal-tick{background:var(--sage);border-color:var(--sage);color:#11120f}
@@ -390,6 +399,16 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
         <button class="sl-x" onclick="closeShopList()">✕</button>
       </div>
       <div class="sl-body" id="sl-body"></div>
+    </div>
+  </div>
+
+  <div class="sl-overlay" id="guide-overlay">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title" id="guide-title">Guide</div>
+        <button class="sl-x" onclick="closeGuide()">✕</button>
+      </div>
+      <div class="sl-body"><div class="guide-text" id="guide-body"></div></div>
     </div>
   </div>
 
@@ -640,6 +659,7 @@ async function renderToday(){
   var dStr=todayStr();
   var rT=await sb.from("nutrition_targets").select("*").eq("client_slug",CLIENT).maybeSingle();
   var rN=await sb.from("nutrition_logs").select("calories").eq("client_slug",CLIENT).eq("logged_date",dStr);
+  var rR=await sb.from("resources").select("*").order("sort_order");
   var body=await loadBody();
 
   vt.innerHTML="";
@@ -705,7 +725,31 @@ async function renderToday(){
     wg.appendChild(el("div","tday-wempty","No weigh-ins yet \u2014 tap to log"));
   }
   vt.appendChild(wg);
+
+  // Resources
+  if(rR.data&&rR.data.length){
+    vt.appendChild(el("div","sec-label","Resources"));
+    var IC={link:"\uD83D\uDD17",file:"\uD83D\uDCC4",guide:"\uD83D\uDCD6",call:"\uD83D\uDCC5"};
+    rR.data.forEach(function(rz){
+      var row=el("div","res-row");
+      row.appendChild(el("div","res-ic",IC[rz.kind]||"\uD83D\uDD17"));
+      row.appendChild(el("div","res-t",rz.title));
+      row.appendChild(el("div","res-arrow", rz.kind==="guide"?"\u203A":"\u2197"));
+      row.onclick=(function(r){return function(){
+        if(r.kind==="guide"){openGuide(r.title,r.content||"");}
+        else if(r.url){window.open(r.url,"_blank");}
+      };})(rz);
+      vt.appendChild(row);
+    });
+  }
 }
+
+function openGuide(title,content){
+  document.getElementById("guide-title").textContent=title;
+  document.getElementById("guide-body").textContent=content;
+  document.getElementById("guide-overlay").classList.add("show");
+}
+function closeGuide(){document.getElementById("guide-overlay").classList.remove("show");}
 
 function renderLog(){
   var day=PROG[curDay];
@@ -1165,6 +1209,7 @@ function showPaywall(clientSlug,clientName){
 // ── NUTRITION ──────────────────────────────────────
 var nutTargets={calories:0,protein:0,carbs:0,fats:0};
 var nutMeals=[];
+var mealReqs={};
 var nutLogs={};
 var foodLogs=[];
 var extraNotes=[];
@@ -1340,6 +1385,10 @@ async function loadNutDay(){
   var rx=await sb.from("extra_logs").select("*").eq("client_slug",CLIENT).eq("logged_date",nutDate).order("created_at",{ascending:true});
   extraNotes=rx.data||[];
 
+  var rr=await sb.from("change_requests").select("*").eq("client_slug",CLIENT).eq("kind","meal").eq("ref_day",dayKey).eq("status","open");
+  mealReqs={};
+  if(rr.data)rr.data.forEach(function(r){mealReqs[r.ref_name]=r;});
+
   renderNutUI();
 }
 
@@ -1436,6 +1485,11 @@ function renderNutUI(){
       macroLine.style.marginTop="6px";
       info.appendChild(macroLine);
 
+      var reqd=!!mealReqs[meal.meal_name];
+      var reqBtn=el("button","req-btn"+(reqd?" active":""), reqd?"\u2713 Change requested":"Request change");
+      reqBtn.onclick=function(ev){reqMealChange(meal,ev);};
+      info.appendChild(reqBtn);
+
       var kcal=el("div","meal-kcal",meal.calories+" kcal");
       card.appendChild(tick);card.appendChild(info);card.appendChild(kcal);
       mc.appendChild(card);
@@ -1451,6 +1505,20 @@ async function toggleMeal(meal){
     var row={client_slug:CLIENT,meal_id:meal.id,meal_name:meal.meal_name,logged_date:nutDate,calories:meal.calories,protein:meal.protein,carbs:meal.carbs,fats:meal.fats};
     var res=await sb.from("nutrition_logs").insert(row).select().single();
     if(res.data)nutLogs[meal.id]=res.data;
+  }
+  renderNutUI();
+}
+
+async function reqMealChange(meal,ev){
+  ev.stopPropagation();
+  var dayKey=getDayKey(nutDate);
+  var existing=mealReqs[meal.meal_name];
+  if(existing){
+    await sb.from("change_requests").delete().eq("id",existing.id);
+    delete mealReqs[meal.meal_name];
+  } else {
+    var ins=await sb.from("change_requests").insert({client_slug:CLIENT,kind:"meal",ref_day:dayKey,ref_name:meal.meal_name,status:"open"}).select().single();
+    if(ins.data)mealReqs[meal.meal_name]=ins.data;
   }
   renderNutUI();
 }

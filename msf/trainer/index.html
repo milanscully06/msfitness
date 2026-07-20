@@ -378,7 +378,7 @@ async function renderOverview(){
     var t=triage(c,inactive,f7,contactDays,renewDays);
     var reqCount=(reqBy[c.slug]||[]).length;
     if(reqCount>0){
-      t.chips.unshift({t:reqCount+" meal request"+(reqCount>1?"s":""),cls:"req"});
+      t.chips.unshift({t:reqCount+" request"+(reqCount>1?"s":""),cls:"req"});
       if(t.status==="green")t.status="amber";
     }
     return {c:c,lr:lr,br:br,map:map,inactive:inactive,f7:f7,contactDays:contactDays,renewDays:renewDays,t:t,reqCount:reqCount};
@@ -609,12 +609,15 @@ async function renderClient(slug){
 
   // Meal change requests
   if(creqs.length){
-    dc.appendChild(el("div","sec-label","Meal change requests"));
+    dc.appendChild(el("div","sec-label","Requests"));
     var rbox=el("div","req-box");
     creqs.forEach(function(q){
       var item=el("div","req-item");
       var left=el("div","");
-      left.appendChild(el("div","req-meal",dayFull(q.ref_day)+" \u00b7 "+q.ref_name));
+      var label = q.kind==="recipe"
+        ? ("\uD83C\uDF7D Wants recipe: "+q.ref_name)
+        : (dayFull(q.ref_day)+" \u00b7 "+q.ref_name+" \u2014 change requested");
+      left.appendChild(el("div","req-meal",label));
       var da=daysAgo(new Date(q.created_at).getTime());
       left.appendChild(el("div","req-when","Requested "+(da===0?"today":(da===1?"yesterday":da+" days ago"))));
       item.appendChild(left);

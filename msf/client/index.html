@@ -108,6 +108,18 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .rp-step-t{font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .rp-req{width:100%;background:var(--sage);color:var(--bg);border:none;border-radius:12px;font-family:var(--body);font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin:22px 0 8px}
 .rp-req.active{background:none;border:1px solid var(--sage);color:var(--sage)}
+.rp-search-wrap{margin:2px 0 10px}
+.rp-search{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;padding:13px 14px;outline:none}
+.rp-search:focus{border-color:var(--sage)}
+.rp-search::placeholder{color:var(--ink-3)}
+.rp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.rp-chip{background:var(--surface);border:1px solid var(--line-2);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer}
+.rp-chip.on{background:var(--sage);border-color:var(--sage);color:var(--bg)}
+.rp-none{font-size:13px;color:var(--ink-3);text-align:center;padding:22px 10px}
+.rp-ask{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:15px;margin:16px 0 8px;text-align:center}
+.rp-ask-t{font-size:13px;color:var(--ink-2);margin-bottom:10px}
+.rp-ask-btn{background:var(--sage);color:var(--bg);border:none;border-radius:11px;font-family:var(--body);font-size:13.5px;font-weight:700;padding:11px 18px;cursor:pointer}
+.rp-ask-btn.ghost{background:none;border:1px solid var(--line-2);color:var(--ink-3)}
 
 /* ===== TRAIN (log) ===== */
 .day-scroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px;scrollbar-width:none}
@@ -124,6 +136,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .ex-card.ss{border-left:2px solid var(--sage)}
 .ex-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .ex-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.ex-note-c{font-size:12.5px;color:var(--sage);line-height:1.5;margin:2px 0 12px;padding-left:11px;border-left:2px solid rgba(200,98,46,.4);white-space:pre-wrap}
 .badge-ss{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);
   border:1px solid rgba(200,98,46,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
 
@@ -508,7 +521,7 @@ function buildProg(rows){
     if(!PROG[r.day_key])PROG[r.day_key]={label:r.day_label,focus:r.day_focus,sections:[]};
     var sec=PROG[r.day_key].sections.find(function(s){return s.label===r.section_label;});
     if(!sec){sec={label:r.section_label,exercises:[]};PROG[r.day_key].sections.push(sec);}
-    sec.exercises.push({id:r.ex_id,name:r.ex_name,ss:r.is_superset,sets:r.sets});
+    sec.exercises.push({id:r.ex_id,name:r.ex_name,ss:r.is_superset,note:r.note||"",sets:r.sets});
   });
 }
 
@@ -816,6 +829,7 @@ function renderLog(){
       head.appendChild(el("span","ex-name",ex.name));
       if(ex.ss){head.appendChild(el("span","badge-ss","Superset"));}
       card.appendChild(head);
+      if(ex.note){var en=el("div","ex-note-c");en.textContent=ex.note;card.appendChild(en);}
 
       var setsWrap=el("div","");setsWrap.id="sets_"+ex.id;
       ex.sets.forEach(function(s,i){ setsWrap.appendChild(makeSetRow(ex,i)); });
@@ -1403,7 +1417,7 @@ async function openShopList(){
 function closeShopList(){document.getElementById("shop-list").classList.remove("show");}
 
 // ===== RECIPE LIBRARY =====
-var allRecipes=[], recipeReqs={};
+var allRecipes=[], recipeReqs={}, ideaReqs={}, recipeQuery="", recipeCat="All";
 
 async function openRecipes(){
   var ov=document.getElementById("recipe-panel");
@@ -1413,9 +1427,12 @@ async function openRecipes(){
   ov.classList.add("show");
   var r=await sb.from("recipes").select("*").order("category").order("title");
   allRecipes=r.data||[];
-  var rq=await sb.from("change_requests").select("*").eq("client_slug",CLIENT).eq("kind","recipe").eq("status","open");
-  recipeReqs={};
-  if(rq.data)rq.data.forEach(function(q){recipeReqs[q.ref_name]=q;});
+  var rq=await sb.from("change_requests").select("*").eq("client_slug",CLIENT).in("kind",["recipe","idea"]).eq("status","open");
+  recipeReqs={}; ideaReqs={};
+  if(rq.data)rq.data.forEach(function(q){
+    if(q.kind==="recipe")recipeReqs[q.ref_name]=q;
+    else ideaReqs[(q.ref_name||"").toLowerCase()]=q;
+  });
   drawRecipeList();
 }
 
@@ -1423,29 +1440,105 @@ function drawRecipeList(){
   var body=document.getElementById("rp-body");
   document.getElementById("rp-title").textContent="Recipes";
   body.innerHTML="";
-  if(!allRecipes.length){
-    body.appendChild(el("div","empty-txt","No recipes yet \u2014 your coach is adding them."));
-    return;
-  }
-  var byCat={};
-  allRecipes.forEach(function(r){var c=r.category||"Other";if(!byCat[c])byCat[c]=[];byCat[c].push(r);});
-  ["Breakfast","Lunch","Dinner","Snack","Dessert","Other"].forEach(function(cat){
-    var list=byCat[cat];
-    if(!list||!list.length)return;
-    body.appendChild(el("div","sec-label",cat));
-    list.forEach(function(r){
-      var card=el("div","rp-card");
-      card.onclick=function(){openRecipe(r);};
-      if(r.photo_url){var im=el("img","rp-img");im.src=r.photo_url;im.loading="lazy";card.appendChild(im);}
-      else{card.appendChild(el("div","rp-img rp-img-empty","\uD83C\uDF7D"));}
-      var mid=el("div","rp-mid");
-      mid.appendChild(el("div","rp-name",r.title));
-      mid.appendChild(el("div","rp-macros",(r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
-      if(recipeReqs[r.title])mid.appendChild(el("div","rp-flag","\u2713 Requested"));
-      card.appendChild(mid);
-      body.appendChild(card);
-    });
+
+  // search + category filter
+  var sw=el("div","rp-search-wrap");
+  var si=el("input");si.className="rp-search";si.type="text";si.id="rp-q";
+  si.placeholder="What are you after? e.g. yoghurt bowl, dessert\u2026";
+  si.setAttribute("autocomplete","off");
+  si.value=recipeQuery;
+  si.oninput=function(){recipeQuery=this.value;drawRecipeResults();};
+  sw.appendChild(si);
+  body.appendChild(sw);
+
+  var chips=el("div","rp-chips");
+  ["All","Breakfast","Lunch","Dinner","Snack","Dessert"].forEach(function(c){
+    var ch=el("button","rp-chip"+(recipeCat===c?" on":""),c);
+    ch.onclick=function(){recipeCat=c;drawRecipeList();setTimeout(function(){var q=document.getElementById("rp-q");if(q)q.value=recipeQuery;},0);};
+    chips.appendChild(ch);
   });
+  body.appendChild(chips);
+
+  var res=el("div","");res.id="rp-results";
+  body.appendChild(res);
+  drawRecipeResults();
+}
+
+function drawRecipeResults(){
+  var res=document.getElementById("rp-results");
+  if(!res)return;
+  res.innerHTML="";
+  var q=(recipeQuery||"").trim().toLowerCase();
+  var matches=allRecipes.filter(function(r){
+    if(recipeCat!=="All" && (r.category||"Other")!==recipeCat)return false;
+    if(!q)return true;
+    return (r.title||"").toLowerCase().indexOf(q)!==-1
+        || (r.category||"").toLowerCase().indexOf(q)!==-1
+        || (r.ingredients||"").toLowerCase().indexOf(q)!==-1;
+  });
+
+  if(!allRecipes.length){
+    res.appendChild(el("div","empty-txt","No recipes yet \u2014 your coach is adding them."));
+  } else if(!matches.length){
+    var none=el("div","rp-none");
+    none.textContent=q?("Nothing matching \u201C"+recipeQuery.trim()+"\u201D yet."):"Nothing in this category yet.";
+    res.appendChild(none);
+  } else {
+    var byCat={};
+    matches.forEach(function(r){var c=r.category||"Other";if(!byCat[c])byCat[c]=[];byCat[c].push(r);});
+    ["Breakfast","Lunch","Dinner","Snack","Dessert","Other"].forEach(function(cat){
+      var list=byCat[cat];
+      if(!list||!list.length)return;
+      res.appendChild(el("div","sec-label",cat));
+      list.forEach(function(r){res.appendChild(recipeCard(r));});
+    });
+  }
+
+  // ask the coach for ideas
+  var askTxt=q?recipeQuery.trim():(recipeCat!=="All"?recipeCat.toLowerCase():"");
+  var ask=el("div","rp-ask");
+  if(ideaReqs[askTxt.toLowerCase()]){
+    ask.appendChild(el("div","rp-ask-t","\u2713 Asked for \u201C"+askTxt+"\u201D ideas"));
+    var cancel=el("button","rp-ask-btn ghost","Cancel request");
+    cancel.onclick=function(){askIdeas(askTxt);};
+    ask.appendChild(cancel);
+  } else {
+    ask.appendChild(el("div","rp-ask-t", matches.length?"Want something different?":"Can't find what you want?"));
+    var b=el("button","rp-ask-btn", askTxt?("Ask for \u201C"+askTxt+"\u201D ideas"):"Ask your coach for ideas");
+    b.onclick=function(){
+      var t=askTxt;
+      if(!t){t=(prompt("What are you after? e.g. high-protein desserts")||"").trim();if(!t)return;}
+      askIdeas(t);
+    };
+    ask.appendChild(b);
+  }
+  res.appendChild(ask);
+}
+
+function recipeCard(r){
+  var card=el("div","rp-card");
+  card.onclick=function(){openRecipe(r);};
+  if(r.photo_url){var im=el("img","rp-img");im.src=r.photo_url;im.loading="lazy";card.appendChild(im);}
+  else{card.appendChild(el("div","rp-img rp-img-empty","\uD83C\uDF7D"));}
+  var mid=el("div","rp-mid");
+  mid.appendChild(el("div","rp-name",r.title));
+  mid.appendChild(el("div","rp-macros",(r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
+  if(recipeReqs[r.title])mid.appendChild(el("div","rp-flag","\u2713 Requested"));
+  card.appendChild(mid);
+  return card;
+}
+
+async function askIdeas(text){
+  var key=text.toLowerCase();
+  var existing=ideaReqs[key];
+  if(existing){
+    await sb.from("change_requests").delete().eq("id",existing.id);
+    delete ideaReqs[key];
+  } else {
+    var ins=await sb.from("change_requests").insert({client_slug:CLIENT,kind:"idea",ref_name:text,status:"open"}).select().single();
+    if(ins.data)ideaReqs[key]=ins.data;
+  }
+  drawRecipeResults();
 }
 
 function openRecipe(r){

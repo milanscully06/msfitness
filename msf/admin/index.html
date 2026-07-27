@@ -99,6 +99,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .set-x:hover{color:var(--bad)}
 .set-add{background:none;border:1px dashed var(--line-2);border-radius:8px;color:var(--ink-2);font-size:12px;font-weight:600;padding:0 12px;cursor:pointer}
 .set-add:hover{border-color:var(--sage);color:var(--sage)}
+.ex-note{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:12px;padding:8px 9px;outline:none;resize:vertical;min-height:34px;margin-bottom:5px;line-height:1.4}
+.ex-note:focus{border-color:var(--sage)}
+.ex-note::placeholder{color:var(--ink-3)}
 
 .meal-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .clone-box{background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:13px 14px;margin-bottom:18px}
@@ -880,6 +883,9 @@ function renderDays(mode) {
           draw();
         })();
         er.appendChild(setsBox);
+        var noteI=el("textarea","ex-note"); noteI.placeholder="Note for this exercise (drop set, form cue, tempo\u2026)"; noteI.value=ex.note||"";
+        noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;};})(di,si,ei,mode);
+        er.appendChild(noteI);
         var tr=el("div",""); tr.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:4px 0";
         tr.appendChild(el("span","",ex.ss?"Superset ✓":"Superset"));
         var tb=el("button","toggle"+(ex.ss?" on":""));
@@ -891,7 +897,7 @@ function renderDays(mode) {
         erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
       });
       var ae=el("button","add-btn","+ Add exercise");
-      ae.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.push({name:"",ss:false,sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderDays(m);};})(di,si,mode);
+      ae.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.push({name:"",ss:false,note:"",sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderDays(m);};})(di,si,mode);
       sb2.appendChild(ae); block.appendChild(sb2);
     });
     var as=el("button","add-btn","+ Add section");
@@ -1196,7 +1202,7 @@ function buildEditDays(rows) {
     if(!dm[r.day_key])dm[r.day_key]={key:r.day_key,label:r.day_label,focus:r.day_focus,sections:[]};
     var sec=dm[r.day_key].sections.find(function(s){return s.label===r.section_label;});
     if(!sec){sec={label:r.section_label,exercises:[]};dm[r.day_key].sections.push(sec);}
-    sec.exercises.push({name:r.ex_name,ss:r.is_superset,sets:r.sets});
+    sec.exercises.push({name:r.ex_name,ss:r.is_superset,note:r.note||"",sets:r.sets});
   });
   return Object.values(dm);
 }
@@ -1208,7 +1214,7 @@ function daysToRows(slug, days) {
     day.sections.forEach(function(sec){
       sec.exercises.forEach(function(ex){
         if(!ex.name)return;
-        rows.push({client_slug:slug,day_key:dk,day_label:day.label,day_focus:day.focus,section_label:sec.label,exercise_order:order++,ex_id:slug+"_"+ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,20)+"_"+dk,ex_name:ex.name,is_superset:ex.ss||false,sets:ex.sets.map(function(s){return {tag:s.tag,top:s.top||8,bot:s.bot||6};})});
+        rows.push({client_slug:slug,day_key:dk,day_label:day.label,day_focus:day.focus,section_label:sec.label,exercise_order:order++,ex_id:slug+"_"+ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,20)+"_"+dk,ex_name:ex.name,is_superset:ex.ss||false,note:ex.note||null,sets:ex.sets.map(function(s){return {tag:s.tag,top:s.top||8,bot:s.bot||6};})});
       });
     });
   });

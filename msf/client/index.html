@@ -834,13 +834,14 @@ var habitLogsCache={};
 function habitStreak(key){
   var n=0,d=new Date();d.setHours(12,0,0,0);
   for(var i=0;i<400;i++){
-    if(habitLogsCache[key+"|"+ymd(d)]){n++;d.setDate(d.getDate()-1);}
+    var ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(habitLogsCache[key+"|"+ds]){n++;d.setDate(d.getDate()-1);}
     else break;
   }
   return n;
 }
 function buildHabitRow(h){
-  var today=ymd(new Date());
+  var today=todayStr();
   var done=!!habitLogsCache[h.key+"|"+today];
   var row=el("div","habit-row"+(done?" done":""));
   var box=el("div","habit-check"+(done?" on":""));
@@ -856,7 +857,7 @@ function buildHabitRow(h){
   return row;
 }
 async function toggleHabit(h,row){
-  var today=ymd(new Date());
+  var today=todayStr();
   var k=h.key+"|"+today;
   if(habitLogsCache[k]){
     delete habitLogsCache[k];

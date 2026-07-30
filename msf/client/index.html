@@ -82,6 +82,17 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .res-ic{width:38px;height:38px;flex-shrink:0;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:18px}
 .res-t{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);line-height:1.3}
 .res-arrow{color:var(--ink-3);font-size:16px;flex-shrink:0;font-weight:700}
+.habit-box{display:flex;flex-direction:column;gap:8px}
+.habit-row{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .15s}
+.habit-row:active{border-color:var(--line-2)}
+.habit-row.done{background:rgba(95,164,108,.07);border-color:rgba(95,164,108,.28)}
+.habit-check{width:26px;height:26px;flex-shrink:0;border-radius:8px;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--bg);transition:all .15s}
+.habit-check.on{background:var(--good,#5FA46C);border-color:var(--good,#5FA46C)}
+.habit-mid{flex:1;min-width:0}
+.habit-label{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3}
+.habit-row.done .habit-label{color:var(--ink-2)}
+.habit-streak{font-size:11.5px;color:var(--ink-3);margin-top:3px;font-weight:600}
+.habit-row.done .habit-streak{color:var(--good,#5FA46C)}
 .guide-text{font-size:14px;color:var(--ink-2);line-height:1.65;white-space:pre-wrap}
 .sl-qty{font-size:13px;color:var(--sage);font-weight:700;white-space:nowrap}
 /* ===== recipes ===== */
@@ -707,6 +718,9 @@ async function renderToday(){
   var rT=await sb.from("nutrition_targets").select("*").eq("client_slug",CLIENT).maybeSingle();
   var rN=await sb.from("nutrition_logs").select("calories").eq("client_slug",CLIENT).eq("logged_date",dStr);
   var rR=await sb.from("resources").select("*").order("sort_order");
+  var rHab=await sb.from("habits").select("*").eq("active",true).order("sort_order");
+  var rCH=await sb.from("client_habits").select("*").eq("client_slug",CLIENT).order("sort_order");
+  var rHL=await sb.from("habit_logs").select("*").eq("client_slug",CLIENT);
   var body=await loadBody();
 
   vt.innerHTML="";
@@ -773,6 +787,31 @@ async function renderToday(){
   }
   vt.appendChild(wg);
 
+  // Daily habits
+  habitLogsCache={};
+  (rHL.data||[]).forEach(function(l){ habitLogsCache[l.habit_key+"|"+l.logged_date]=true; });
+  var overrides={}, customs=[];
+  (rCH.data||[]).forEach(function(ch){
+    if(ch.source_habit_id) overrides[ch.source_habit_id]=ch;
+    else customs.push({key:ch.id,label:ch.label||"Habit"});
+  });
+  var habitList=[];
+  (rHab.data||[]).forEach(function(h){
+    var ov=overrides[h.id];
+    if(ov&&ov.enabled===false)return;   // coach turned this one off for the client
+    habitList.push({key:h.id,label:h.label});
+  });
+  customs.forEach(function(c){ habitList.push(c); });
+
+  if(habitList.length){
+    vt.appendChild(el("div","sec-label","Daily habits"));
+    var hbox=el("div","habit-box");
+    habitList.forEach(function(h){
+      hbox.appendChild(buildHabitRow(h));
+    });
+    vt.appendChild(hbox);
+  }
+
   // Resources
   if(rR.data&&rR.data.length){
     vt.appendChild(el("div","sec-label","Resources"));
@@ -791,8 +830,47 @@ async function renderToday(){
   }
 }
 
-function openGuide(title,content){
-  document.getElementById("guide-title").textContent=title;
+var habitLogsCache={};
+function habitStreak(key){
+  var n=0,d=new Date();d.setHours(12,0,0,0);
+  for(var i=0;i<400;i++){
+    if(habitLogsCache[key+"|"+ymd(d)]){n++;d.setDate(d.getDate()-1);}
+    else break;
+  }
+  return n;
+}
+function buildHabitRow(h){
+  var today=ymd(new Date());
+  var done=!!habitLogsCache[h.key+"|"+today];
+  var row=el("div","habit-row"+(done?" done":""));
+  var box=el("div","habit-check"+(done?" on":""));
+  box.innerHTML=done?"\u2713":"";
+  var mid=el("div","habit-mid");
+  mid.appendChild(el("div","habit-label",h.label));
+  var streak=habitStreak(h.key);
+  var st=el("div","habit-streak");
+  st.textContent=streak>0?("\uD83D\uDD25 "+streak+" day"+(streak===1?"":"s")):"Tap to check off";
+  mid.appendChild(st);
+  row.appendChild(box);row.appendChild(mid);
+  row.onclick=function(){toggleHabit(h,row);};
+  return row;
+}
+async function toggleHabit(h,row){
+  var today=ymd(new Date());
+  var k=h.key+"|"+today;
+  if(habitLogsCache[k]){
+    delete habitLogsCache[k];
+    await sb.from("habit_logs").delete().eq("client_slug",CLIENT).eq("habit_key",h.key).eq("logged_date",today);
+  }else{
+    habitLogsCache[k]=true;
+    await sb.from("habit_logs").insert({client_slug:CLIENT,habit_key:h.key,logged_date:today});
+  }
+  // re-render just this row in place (keeps scroll position)
+  var fresh=buildHabitRow(h);
+  row.parentNode.replaceChild(fresh,row);
+}
+
+function openGuide(title,content){  document.getElementById("guide-title").textContent=title;
   document.getElementById("guide-body").textContent=content;
   document.getElementById("guide-overlay").classList.add("show");
 }

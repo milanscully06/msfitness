@@ -75,6 +75,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-savebar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg);padding:2px 0 14px;margin-bottom:6px;z-index:1}
 .pf-savebar-l{font-size:15px;font-weight:700;color:var(--ink)}
 .pf-save-btn{padding:9px 18px;font-size:13px}
+.pf-nut-sec{margin-bottom:22px}
+.pf-sub{font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -981,7 +983,7 @@ async function toggleActive(slug, makeActive, ev) {
 }
 
 // ===== CLIENT PROFILE (merged app — stage 1 shell) =====
-var editDaysCont="edit-days";
+var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
 var profileSlug=null, profileTabName="overview";
 var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
 
@@ -1019,8 +1021,8 @@ function renderPfTab(){
   if(!c)return;
   if(profileTabName==="overview"){ pfOverview(b,c); return; }
   if(profileTabName==="program"){ pfProgram(b,c); return; }
+  if(profileTabName==="nutrition"){ pfNutrition(b,c); return; }
   var map={
-    nutrition:["Nutrition","Meal plans, macro targets and the conditioning schedule land here. Use the full editor for now."],
     habits:["Habits","This client\u2019s habit tweaks move here. Use the full editor for now."],
     progress:["Progress","Weigh-in editor, weight chart and progress photos come here. Weigh-ins are in the full editor now; charts and photos live in the current trainer dashboard until the next stage."],
     coaching:["Coaching","Coach notes and open meal/recipe requests move here. These live in the current trainer dashboard until the next stage."]
@@ -1035,8 +1037,66 @@ function renderPfTab(){
   b.appendChild(ph);
 }
 
-async function pfProgram(b,c){
+async function pfNutrition(b,c){
   editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading nutrition\u2026"));
+  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",c.slug).maybeSingle();
+  var rm=await sb.from("meal_templates").select("*").eq("client_slug",c.slug).order("meal_order");
+  var rc=await sb.from("conditioning_plan").select("*").eq("client_slug",c.slug).order("item_order");
+
+  editMealDays=emptyMealDays();
+  (rm.data||[]).forEach(function(m){
+    var d=m.day_of_week||"mon"; if(!editMealDays[d])editMealDays[d]=[];
+    editMealDays[d].push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,meal_order:m.meal_order||0});
+  });
+  DAYS.forEach(function(day){ if(editMealDays[day.k])editMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);}); });
+
+  editCondDays=emptyCondDays();
+  (rc.data||[]).forEach(function(it){
+    var d=it.day_of_week||"mon"; if(!editCondDays[d])editCondDays[d]=[];
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
+
+  b.innerHTML="";
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Nutrition"));
+  var save=el("button","btn-green pf-save-btn","Save nutrition");
+  save.onclick=function(){ saveNutritionOnly(c.slug,save); };
+  bar.appendChild(save);
+  b.appendChild(bar);
+
+  var tg=rt.data||{};
+  var tsec=el("div","pf-nut-sec");
+  tsec.appendChild(el("div","pf-sub","Daily targets"));
+  function ti(id,lbl,val){var w=el("div","");w.appendChild(el("div","nut-label",lbl));var i=el("input","nut-input");i.type="number";i.id=id;i.value=(val!=null?val:"");w.appendChild(i);return w;}
+  var r1=el("div","nut-row"); r1.appendChild(ti("pf-cal","Calories",tg.calories)); r1.appendChild(ti("pf-pro","Protein (g)",tg.protein)); tsec.appendChild(r1);
+  var r2=el("div","nut-row"); r2.appendChild(ti("pf-carb","Carbs (g)",tg.carbs)); r2.appendChild(ti("pf-fat","Fats (g)",tg.fats)); tsec.appendChild(r2);
+  b.appendChild(tsec);
+
+  var msec=el("div","pf-nut-sec");
+  msec.appendChild(el("div","pf-sub","Meals by day"));
+  var mhost=el("div","");mhost.id="pf-meal-days"; msec.appendChild(mhost);
+  b.appendChild(msec);
+  editMealCont="pf-meal-days"; renderMealDays("edit");
+
+  var csec=el("div","pf-nut-sec");
+  csec.appendChild(el("div","pf-sub","Conditioning schedule"));
+  var chost=el("div","");chost.id="pf-cond-days"; csec.appendChild(chost);
+  b.appendChild(csec);
+  editCondCont="pf-cond-days"; renderCondDays("edit");
+}
+
+async function saveNutritionOnly(slug,btn){
+  var old=btn?btn.textContent:"";
+  if(btn){btn.textContent="Saving\u2026";btn.disabled=true;}
+  try{
+    await saveNutrition(slug,"pf",editMealDays);
+    await saveCond(slug,editCondDays);
+    if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
+  }catch(e){ alert("Save failed: "+(e&&e.message?e.message:e)); if(btn){btn.textContent=old;btn.disabled=false;} }
+}
+
+async function pfProgram(b,c){  editSlug=c.slug;
   b.appendChild(el("div","loader","Loading program\u2026"));
   var r=await sb.from("programs").select("*").eq("client_slug",c.slug).order("exercise_order");
   editDays=buildEditDays(r.data||[]);
@@ -1283,7 +1343,7 @@ function emptyCondDays(){ var d={}; DAYS.forEach(function(day){d[day.k]=[];}); r
 
 function renderCondDays(mode){
   var days = mode==="add"?addCondDays:editCondDays;
-  var container = document.getElementById(mode==="add"?"add-cond-days":"edit-cond-days");
+  var container = document.getElementById(mode==="add"?"add-cond-days":(editCondCont||"edit-cond-days"));
   container.innerHTML="";
   DAYS.forEach(function(day){
     var items = days[day.k]||[];
@@ -1330,7 +1390,7 @@ async function saveCond(slug, condDays){
 
 function renderMealDays(mode) {
   var meals = mode==="add"?addMealDays:editMealDays;
-  var container = document.getElementById(mode==="add"?"add-meal-days":"edit-meal-days");
+  var container = document.getElementById(mode==="add"?"add-meal-days":(editMealCont||"edit-meal-days"));
   container.innerHTML = "";
   // clipboard toolbar
   var cbar=el("div","clip-bar");
@@ -1554,7 +1614,7 @@ async function openEdit(slug) {
     if(!editCondDays[d])editCondDays[d]=[];
     editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
   });
-  editDaysCont="edit-days";
+  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days";
   renderDays("edit");
   renderMealDays("edit");
   renderCondDays("edit");

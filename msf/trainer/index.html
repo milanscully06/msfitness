@@ -72,6 +72,20 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-ov-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .pf-ov-v{font-size:15px;font-weight:700;color:var(--ink);margin-top:5px;word-break:break-word}
 .pf-link{font-size:13px;color:var(--sage);word-break:break-all}
+.act-strip-lbl{font-size:11px;color:var(--ink-3);font-weight:600;margin:14px 0 7px}
+.act-strip{display:flex;gap:4px}
+.act-col{display:flex;flex-direction:column;gap:3px;flex:1}
+.act-dot{height:14px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
+.act-dot.on-gym{background:var(--sage);border-color:var(--sage)}
+.act-dot.on-food{background:#C8A24A;border-color:#C8A24A}
+.lift-tbl{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.lift-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line)}
+.lift-row:last-child{border-bottom:none}
+.lift-head{background:var(--surface-2)}
+.lift-head>div{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.lt-ex{font-size:13.5px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lt-last{font-size:13px;color:var(--ink-2);white-space:nowrap}
+.lt-chg{font-size:13px;font-weight:700;white-space:nowrap;text-align:right;min-width:52px}
 .pf-savebar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg);padding:2px 0 14px;margin-bottom:6px;z-index:1}
 .pf-savebar-l{font-size:15px;font-weight:700;color:var(--ink)}
 .pf-save-btn{padding:9px 18px;font-size:13px}
@@ -1521,6 +1535,61 @@ async function pfProgram(b,c){  editSlug=c.slug;
   var chost=el("div","");chost.id="pf-cond-days"; csec.appendChild(chost);
   b.appendChild(csec);
   editCondCont="pf-cond-days"; renderCondDays("edit");
+
+  var gpsec=el("div","pf-nut-sec");gpsec.style.marginTop="26px";
+  gpsec.appendChild(el("div","pf-sub","Gym progress \u2014 what they've logged"));
+  var gphost=el("div","");gphost.id="pf-gymprog"; gpsec.appendChild(gphost);
+  gphost.appendChild(el("div","loader","Loading\u2026"));
+  b.appendChild(gpsec);
+  loadGymProgress(c.slug, gphost);
+}
+
+function liftTable(lift){
+  var byEx={};
+  lift.forEach(function(r){
+    if(!byEx[r.ex_id])byEx[r.ex_id]={name:r.ex_name,sessions:{}};
+    var dk=new Date(r.logged_at).toDateString();
+    if(!byEx[r.ex_id].sessions[dk])byEx[r.ex_id].sessions[dk]={date:new Date(r.logged_at),sets:[]};
+    byEx[r.ex_id].sessions[dk].sets.push({w:r.weight,reps:r.reps});
+  });
+  var topSet=function(s){var best=null;s.sets.forEach(function(x){if(x.w!=null&&(!best||x.w>best.w))best=x;});return best||s.sets[0];};
+  var out=[];
+  Object.keys(byEx).forEach(function(id){
+    var ex=byEx[id];
+    var sess=Object.keys(ex.sessions).map(function(k){return ex.sessions[k];}).sort(function(a,b){return b.date-a.date;});
+    if(!sess.length)return;
+    var latest=topSet(sess[0]);
+    var prev=sess[1]?topSet(sess[1]):null;
+    var chg=(prev&&latest&&latest.w!=null&&prev.w!=null)?(latest.w-prev.w):null;
+    out.push({name:ex.name, weight:latest?latest.w:null, reps:latest?latest.reps:null, chg:chg, last:sess[0].date});
+  });
+  out.sort(function(a,b){return b.last-a.last;});
+  return out;
+}
+async function loadGymProgress(slug, host){
+  var r=await sb.from("lift_logs").select("*").eq("client",slug);
+  var rows=liftTable(r.data||[]);
+  host.innerHTML="";
+  if(!rows.length){ host.appendChild(el("div","wt-empty","No sessions logged yet.")); return; }
+  var tbl=el("div","lift-tbl");
+  var th=el("div","lift-row lift-head");
+  th.appendChild(el("div","lt-ex","Exercise"));
+  th.appendChild(el("div","lt-last","Last"));
+  th.appendChild(el("div","lt-chg","Change"));
+  tbl.appendChild(th);
+  rows.forEach(function(r){
+    var tr=el("div","lift-row");
+    tr.appendChild(el("div","lt-ex",r.name));
+    tr.appendChild(el("div","lt-last", r.weight!=null?(r.weight+"kg \u00d7 "+(r.reps!=null?r.reps:"\u2014")):((r.reps!=null?r.reps:"\u2014")+" reps")));
+    var chg=el("div","lt-chg");
+    if(r.chg==null){ chg.textContent="\u2014"; chg.style.color="var(--ink-3)"; }
+    else if(r.chg>0){ chg.textContent="+"+r.chg+"kg"; chg.style.color="var(--good,#5FA46C)"; }
+    else if(r.chg<0){ chg.textContent=r.chg+"kg"; chg.style.color="var(--bad)"; }
+    else { chg.textContent="="; chg.style.color="var(--ink-3)"; }
+    tr.appendChild(chg);
+    tbl.appendChild(tr);
+  });
+  host.appendChild(tbl);
 }
 
 async function saveProgramOnly(slug,btn){
@@ -1538,7 +1607,8 @@ async function saveProgramOnly(slug,btn){
   if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
 }
 
-function pfOverview(b,c){  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
+async function pfOverview(b,c){
+  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
   var weeks=anchor!=null?Math.max(0,Math.floor((Date.now()-anchor)/(7*86400000))):null;
   var fmt=function(d){return d?new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"\u2014";};
   var grid=el("div","pf-ov-grid");
@@ -1552,7 +1622,14 @@ function pfOverview(b,c){  var anchor=c.start_date?new Date(c.start_date+"T12:00
   lk.appendChild(el("div","pf-ov-l","Client app link"));
   lk.appendChild(el("div","pf-link","/client/"+c.slug));
   b.appendChild(lk);
-  var row=el("div",""); row.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+
+  // ---- logging activity (are they actually using the app?) ----
+  var actWrap=el("div","");actWrap.id="pf-activity";
+  actWrap.appendChild(el("div","loader","Loading activity\u2026"));
+  b.appendChild(actWrap);
+  loadPfActivity(c.slug, actWrap);
+
+  var row=el("div",""); row.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px";
   var edit=el("button","btn-green","\u2699 Open full editor");
   edit.onclick=function(){ openEdit(profileSlug); };
   row.appendChild(edit);
@@ -1561,9 +1638,55 @@ function pfOverview(b,c){  var anchor=c.start_date?new Date(c.start_date+"T12:00
   arch.onclick=function(){ toggleActive(c.slug,!active,null); closeProfile(); };
   row.appendChild(arch);
   b.appendChild(row);
-  var note=el("div",""); note.style.cssText="font-size:12px;color:var(--ink-3);margin-top:18px;line-height:1.6";
-  note.textContent="Coming to this tab next: triage status, sessions, weight trend, last contact and the shareable win card \u2014 ported in from the trainer dashboard.";
-  b.appendChild(note);
+}
+
+async function loadPfActivity(slug, wrap){
+  var rl=await sb.from("lift_logs").select("logged_at").eq("client",slug);
+  var rn=await sb.from("nutrition_logs").select("logged_date").eq("client_slug",slug);
+  var lifts=rl.data||[], foods=rn.data||[];
+  wrap.innerHTML="";
+
+  // distinct gym-session dates + last session
+  var gymDays={}, lastGym=null;
+  lifts.forEach(function(r){ if(r.logged_at){ var d=new Date(r.logged_at); gymDays[d.toDateString()]=1; if(!lastGym||d>lastGym)lastGym=d; } });
+  var sessions=Object.keys(gymDays).length;
+
+  // food-log dates + last food log
+  var foodDays={}, lastFood=null;
+  foods.forEach(function(r){ if(r.logged_date){ foodDays[r.logged_date]=1; var d=new Date(r.logged_date+"T12:00:00"); if(!lastFood||d>lastFood)lastFood=d; } });
+
+  var agoTxt=function(d){
+    if(!d)return "never";
+    var days=Math.floor((Date.now()-d.getTime())/86400000);
+    return days<=0?"today":(days===1?"yesterday":days+"d ago");
+  };
+
+  wrap.appendChild(el("div","pf-sub","Activity"));
+  var ag=el("div","pf-ov-grid");
+  function acell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);ag.appendChild(x);}
+  var gymStale = !lastGym || (Date.now()-lastGym.getTime())/86400000 > 7;
+  var foodStale = !lastFood || (Date.now()-lastFood.getTime())/86400000 > 3;
+  acell("Sessions logged", String(sessions));
+  acell("Last gym session", agoTxt(lastGym), gymStale);
+  acell("Last food log", agoTxt(lastFood), foodStale);
+  acell("Days food logged", String(Object.keys(foodDays).length));
+  wrap.appendChild(ag);
+
+  // 14-day strip: gym (top) + food (bottom)
+  wrap.appendChild(el("div","act-strip-lbl","Last 14 days \u2014 \u25cf gym  \u25cb food"));
+  var strip=el("div","act-strip");
+  for(var i=13;i>=0;i--){
+    var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i);
+    var dk=d.toDateString();
+    var ymdk=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    var col=el("div","act-col");
+    col.title=d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
+    col.appendChild(el("div","act-dot"+(gymDays[dk]?" on-gym":"")));
+    col.appendChild(el("div","act-dot"+(foodDays[ymdk]?" on-food":"")));
+    strip.appendChild(col);
+  }
+  wrap.appendChild(strip);
+  wrap.style.marginBottom="18px";
 }
 
 // ── PROGRAM BUILDER ──

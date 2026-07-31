@@ -77,6 +77,29 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-save-btn{padding:9px 18px;font-size:13px}
 .pf-nut-sec{margin-bottom:22px}
 .pf-sub{font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.pf-hint2{font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5}
+.chart-box2{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.wt-chart{width:100%;height:auto;display:block}
+.wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.ptile{aspect-ratio:3/4;border-radius:12px;background-size:cover;background-position:center;background-color:var(--surface-2);position:relative;cursor:pointer;border:1px solid var(--line)}
+.pdate{position:absolute;bottom:6px;left:8px;font-size:10px;color:#fff;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;padding:24px}
+.lb.show{display:flex}
+.lb img{max-width:100%;max-height:100%;border-radius:8px}
+.lb-x{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:18px;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.win-overlay{position:fixed;inset:0;background:rgba(8,7,6,.92);backdrop-filter:blur(6px);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
+.win-overlay.show{display:flex}
+.win-x{position:absolute;top:20px;right:20px;background:var(--surface-2);border:none;border-radius:12px;color:var(--ink-2);font-size:16px;width:40px;height:40px;cursor:pointer}
+.win-card{width:100%;max-width:400px;aspect-ratio:4/5;background:linear-gradient(160deg,#1a1310 0%,#0E0C0B 55%,#160f0b 100%);border:1px solid rgba(200,98,46,.35);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px;position:relative;overflow:hidden}
+.win-card::before{content:"";position:absolute;top:-40%;left:-30%;width:160%;height:80%;background:radial-gradient(ellipse at center,rgba(200,98,46,.22),transparent 65%);pointer-events:none}
+.win-brand{position:relative;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.28em;color:#C8622E;margin-bottom:auto}
+.win-label{position:relative;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase}
+.win-big{position:relative;font-family:var(--display);font-weight:800;font-size:82px;line-height:1;color:var(--ink);margin:10px 0 4px;letter-spacing:-.02em}
+.win-unit{font-size:34px;font-weight:700;color:#C8622E;margin-left:4px}
+.win-sub{position:relative;font-size:16px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.win-foot{position:relative;margin-top:auto;font-size:15px;font-weight:700;color:#C8622E}
+.win-hint{font-size:12px;color:var(--ink-3);text-align:center;max-width:400px}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -248,6 +271,19 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
   <div class="pf-body" id="pf-body"></div>
 </div>
+
+<div class="win-overlay" id="win-panel">
+  <button class="win-x" onclick="closeWin()">✕</button>
+  <div class="win-card" id="win-card">
+    <div class="win-brand">MS FITNESS</div>
+    <div class="win-label" id="win-label">Client win</div>
+    <div class="win-big" id="win-big">−0.0<span class="win-unit">kg</span></div>
+    <div class="win-sub" id="win-sub">lost</div>
+    <div class="win-foot" id="win-foot"></div>
+  </div>
+  <div class="win-hint">Screenshot this card to share — no bodyweight is shown</div>
+</div>
+<div class="lb" id="lightbox"><button class="lb-x" onclick="closeLB()">✕</button><img id="lb-img" alt=""></div>
 
 <div class="modal-overlay" id="modal-resources">
 <div class="modal-box">
@@ -607,7 +643,7 @@ async function delClientHabit(slug,c){
 document.getElementById("wi-add-btn").onclick = addWeighIn;
 async function loadWeighIns(slug){
   var r=await sb.from("body_logs").select("*").eq("client_slug",slug).order("logged_date",{ascending:false});
-  var box=document.getElementById("edit-weighins"); box.innerHTML="";
+  var box=document.getElementById(weighInCont||"edit-weighins"); box.innerHTML="";
   var rows=(r.data||[]).filter(function(x){return x.weight!=null;});
   if(!rows.length){box.innerHTML='<div style="font-size:12px;color:var(--ink-3)">No weigh-ins logged yet.</div>';return;}
   rows.forEach(function(w){
@@ -626,12 +662,12 @@ async function loadWeighIns(slug){
 }
 async function addWeighIn(){
   var slug=editSlug; if(!slug)return;
-  var d=document.getElementById("wi-date").value;
-  var kg=parseFloat(document.getElementById("wi-kg").value);
+  var d=document.getElementById(wiDateId||"wi-date").value;
+  var kg=parseFloat(document.getElementById(wiKgId||"wi-kg").value);
   if(!d){alert("Pick a date for the weigh-in");return;}
   if(isNaN(kg)){alert("Enter a weight");return;}
   await sb.from("body_logs").upsert({client_slug:slug,logged_date:d,weight:kg},{onConflict:"client_slug,logged_date"});
-  document.getElementById("wi-kg").value="";
+  document.getElementById(wiKgId||"wi-kg").value="";
   loadWeighIns(slug);
 }
 async function saveWeighIn(slug,dstr,val){
@@ -985,6 +1021,7 @@ async function toggleActive(slug, makeActive, ev) {
 // ===== CLIENT PROFILE (merged app — stage 1 shell) =====
 var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
 var habitCont="edit-habits", habitInputId="ehab-new";
+var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
 var profileSlug=null, profileTabName="overview";
 var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
 
@@ -1024,8 +1061,8 @@ function renderPfTab(){
   if(profileTabName==="program"){ pfProgram(b,c); return; }
   if(profileTabName==="nutrition"){ pfNutrition(b,c); return; }
   if(profileTabName==="habits"){ pfHabits(b,c); return; }
+  if(profileTabName==="progress"){ pfProgress(b,c); return; }
   var map={
-    progress:["Progress","Weigh-in editor, weight chart and progress photos come here. Weigh-ins are in the full editor now; charts and photos live in the current trainer dashboard until the next stage."],
     coaching:["Coaching","Coach notes and open meal/recipe requests move here. These live in the current trainer dashboard until the next stage."]
   };
   var m=map[profileTabName];
@@ -1038,8 +1075,109 @@ function renderPfTab(){
   b.appendChild(ph);
 }
 
-async function pfHabits(b,c){
+// ===== ported from trainer dashboard: weight chart + win card + lightbox =====
+function weightTrend(body){
+  var pts=body.filter(function(r){return r.weight!=null;}).slice().sort(function(a,b){return a.logged_date<b.logged_date?-1:1;});
+  if(!pts.length)return null;
+  var first=parseFloat(pts[0].weight),last=parseFloat(pts[pts.length-1].weight);
+  return {first:first,last:last,delta:last-first,pts:pts};
+}
+function weightChartSVG(pts){
+  if(!pts.length)return '<div class="wt-empty">No weigh-ins yet.</div>';
+  var ws=pts.map(function(p){return parseFloat(p.weight);});
+  var min=Math.min.apply(null,ws),max=Math.max.apply(null,ws);
+  if(min===max){min-=1;max+=1;}
+  var pad=(max-min)*0.18;min-=pad;max+=pad;
+  var W=320,H=130,n=pts.length;
+  function X(i){return n===1?W/2:+((i/(n-1))*W).toFixed(1);}
+  function Y(w){return +(H-((w-min)/(max-min))*H).toFixed(1);}
+  var line="";
+  pts.forEach(function(p,i){line+=(i===0?"M":"L")+X(i)+","+Y(parseFloat(p.weight));});
+  var area=line+"L"+X(n-1)+","+H+"L"+X(0)+","+H+"Z";
+  var lx=X(n-1),ly=Y(parseFloat(pts[n-1].weight));
+  var svg='<svg class="wt-chart" viewBox="0 0 '+W+' '+H+'">';
+  svg+='<defs><linearGradient id="wtg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(157,180,154,.28)"/><stop offset="100%" stop-color="rgba(157,180,154,0)"/></linearGradient></defs>';
+  if(n>1){svg+='<path d="'+area+'" fill="url(#wtg)"/><path d="'+line+'" fill="none" stroke="#9DB49A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';}
+  svg+='<circle cx="'+lx+'" cy="'+ly+'" r="4" fill="#9DB49A"/></svg>';
+  return svg;
+}
+function openWin(name,lost,weeks){
+  var first=(name||"").split(" ")[0]||"Client";
+  document.getElementById("win-label").textContent=first+"'s progress";
+  document.getElementById("win-big").innerHTML="\u2212"+lost.toFixed(1)+'<span class="win-unit">kg</span>';
+  document.getElementById("win-sub").textContent="lost";
+  document.getElementById("win-foot").textContent="in "+weeks+" week"+(weeks===1?"":"s");
+  document.getElementById("win-panel").classList.add("show");
+}
+function closeWin(){document.getElementById("win-panel").classList.remove("show");}
+function openLB(url){var img=document.getElementById("lb-img");img.src=url;document.getElementById("lightbox").classList.add("show");}
+function closeLB(){document.getElementById("lightbox").classList.remove("show");}
+
+async function pfProgress(b,c){
   editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading progress\u2026"));
+  var rb=await sb.from("body_logs").select("*").eq("client_slug",c.slug).order("logged_date",{ascending:true});
+  var rp=await sb.from("progress_photos").select("*").eq("client_slug",c.slug).order("taken_date",{ascending:false});
+  var body=rb.data||[], photos=rp.data||[];
+  b.innerHTML="";
+
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Progress"));
+  var wt=weightTrend(body);
+  if(wt && wt.pts.length>=2){
+    var lost=wt.first-wt.last;
+    if(lost>0.05){
+      var d0=new Date(wt.pts[0].logged_date+"T12:00:00"), d1=new Date(wt.pts[wt.pts.length-1].logged_date+"T12:00:00");
+      var wks=Math.max(1,Math.round((d1-d0)/(7*86400000)));
+      var wb=el("button","btn-green pf-save-btn","\u2728 Share win");
+      wb.onclick=(function(nm,l,w){return function(){openWin(nm,l,w);};})(c.name,lost,wks);
+      bar.appendChild(wb);
+    }
+  }
+  b.appendChild(bar);
+
+  var csec=el("div","pf-nut-sec");
+  csec.appendChild(el("div","pf-sub","Weight"));
+  var cbox=el("div","chart-box2");
+  cbox.innerHTML=weightChartSVG(wt?wt.pts:[]);
+  if(wt){ var dd=el("div","");dd.style.cssText="font-size:12px;color:var(--ink-3);margin-top:8px";dd.textContent="From "+wt.first.toFixed(1)+"kg to "+wt.last.toFixed(1)+"kg  ("+(wt.delta>=0?"+":"")+wt.delta.toFixed(1)+"kg)";cbox.appendChild(dd);}
+  csec.appendChild(cbox);
+  b.appendChild(csec);
+
+  var wsec=el("div","pf-nut-sec");
+  wsec.appendChild(el("div","pf-sub","Weigh-ins"));
+  wsec.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
+  var addrow=el("div","wi-add-row");
+  var di=el("input","form-input");di.type="date";di.id="pf-wi-date";di.style.cssText="flex:1;min-width:130px";di.value=new Date().toISOString().split("T")[0];
+  var ki=el("input","form-input");ki.type="number";ki.step="0.1";ki.id="pf-wi-kg";ki.placeholder="kg";ki.style.width="100px";
+  var ab=el("button","btn-outline","Add / update");ab.style.whiteSpace="nowrap";
+  ab.onclick=function(){ addWeighIn(); };
+  addrow.appendChild(di);addrow.appendChild(ki);addrow.appendChild(ab);
+  wsec.appendChild(addrow);
+  var wlist=el("div","");wlist.id="pf-weighins";wlist.style.marginTop="12px";
+  wsec.appendChild(wlist);
+  b.appendChild(wsec);
+  weighInCont="pf-weighins"; wiDateId="pf-wi-date"; wiKgId="pf-wi-kg";
+  loadWeighIns(c.slug);
+
+  if(photos.length){
+    var psec=el("div","pf-nut-sec");
+    psec.appendChild(el("div","pf-sub","Progress photos"));
+    var pg=el("div","pgrid"); psec.appendChild(pg);
+    b.appendChild(psec);
+    var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
+    var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
+    photos.forEach(function(p){
+      var tile=el("div","ptile");var url=umap[p.storage_path];
+      if(url)tile.style.backgroundImage="url('"+url+"')";
+      tile.appendChild(el("div","pdate",new Date(p.taken_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"})));
+      tile.onclick=(function(u){return function(){ if(u)openLB(u); };})(url);
+      pg.appendChild(tile);
+    });
+  }
+}
+
+async function pfHabits(b,c){  editSlug=c.slug;
   b.innerHTML="";
   var bar=el("div","pf-savebar");
   bar.appendChild(el("div","pf-savebar-l","Daily habits"));
@@ -1638,7 +1776,7 @@ async function openEdit(slug) {
     if(!editCondDays[d])editCondDays[d]=[];
     editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
   });
-  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; habitCont="edit-habits"; habitInputId="ehab-new";
+  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; habitCont="edit-habits"; habitInputId="ehab-new"; weighInCont="edit-weighins"; wiDateId="wi-date"; wiKgId="wi-kg";
   renderDays("edit");
   renderMealDays("edit");
   renderCondDays("edit");

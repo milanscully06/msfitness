@@ -44,6 +44,34 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .cli-link{font-size:11.5px;color:var(--sage);font-weight:600;margin-top:3px}
 .chevron{font-size:20px;color:var(--ink-3);flex-shrink:0}
 .folder-tabs{display:flex;gap:8px;margin-bottom:14px}
+/* ===== client profile (merged app, stage 1) ===== */
+#profile{display:none;position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto}
+#profile.show{display:block}
+.pf-top{position:sticky;top:0;background:rgba(14,12,11,.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:16px 20px 0;z-index:2}
+.pf-back{background:none;border:none;color:var(--ink-2);font-family:var(--body);font-size:14px;font-weight:600;cursor:pointer;padding:0 0 12px}
+.pf-back:hover{color:var(--ink)}
+.pf-id{display:flex;align-items:center;gap:13px;margin-bottom:14px}
+.pf-av{width:46px;height:46px;font-size:15px;flex-shrink:0}
+.pf-idtext{flex:1;min-width:0}
+.pf-name{font-family:var(--display);font-weight:700;font-size:21px;color:var(--ink);line-height:1.15}
+.pf-goal{font-size:13px;color:var(--ink-3);margin-top:2px}
+.pf-status{font-size:11px;font-weight:700;padding:5px 11px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.pf-status.act{background:rgba(95,164,108,.15);color:var(--good,#5FA46C)}
+.pf-status.inact{background:var(--surface-2);color:var(--ink-3)}
+.pf-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.pf-tabs::-webkit-scrollbar{display:none}
+.pf-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-3);font-family:var(--body);font-size:13.5px;font-weight:600;padding:10px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.pf-tab.on{color:var(--sage);border-bottom-color:var(--sage)}
+.pf-body{padding:20px;max-width:900px}
+@media(min-width:900px){ .pf-top{padding:18px 32px 0} .pf-body{padding:26px 32px;max-width:1100px} }
+.pf-ph{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:30px 22px;text-align:center}
+.pf-ph-t{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:7px}
+.pf-ph-d{font-size:13px;color:var(--ink-3);line-height:1.6;max-width:460px;margin:0 auto 18px}
+.pf-ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pf-ov-cell{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.pf-ov-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pf-ov-v{font-size:15px;font-weight:700;color:var(--ink);margin-top:5px;word-break:break-word}
+.pf-link{font-size:13px;color:var(--sage);word-break:break-all}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -198,6 +226,22 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div class="error-bar" id="err"></div>
   <div class="folder-tabs" id="folder-tabs"></div>
   <div id="clist"><div class="loader">Loading clients...</div></div>
+</div>
+
+<div id="profile">
+  <div class="pf-top">
+    <button class="pf-back" onclick="closeProfile()">‹ Clients</button>
+    <div class="pf-id">
+      <div class="av pf-av" id="pf-av">--</div>
+      <div class="pf-idtext">
+        <div class="pf-name" id="pf-name">Client</div>
+        <div class="pf-goal" id="pf-goal"></div>
+      </div>
+      <div class="pf-status" id="pf-status"></div>
+    </div>
+    <div class="pf-tabs" id="pf-tabs"></div>
+  </div>
+  <div class="pf-body" id="pf-body"></div>
 </div>
 
 <div class="modal-overlay" id="modal-resources">
@@ -906,7 +950,7 @@ function renderClients() {
   show.forEach(function(c) {
     var init = c.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var item = el("div","client-list-item");
-    item.onclick = (function(slug){ return function(){ openEdit(slug); }; })(c.slug);
+    item.onclick = (function(slug){ return function(){ openProfile(slug); }; })(c.slug);
     var left = el("div","cli-left");
     var av = el("div","av",init); av.style.cssText="width:36px;height:36px;font-size:12px";
     var info = el("div");
@@ -931,6 +975,89 @@ async function toggleActive(slug, makeActive, ev) {
   await sb.from("clients").update({active:makeActive}).eq("slug",slug);
   allClients.forEach(function(c){ if(c.slug===slug) c.active=makeActive; });
   renderClients();
+}
+
+// ===== CLIENT PROFILE (merged app — stage 1 shell) =====
+var profileSlug=null, profileTabName="overview";
+var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
+
+function openProfile(slug){
+  var c=allClients.find(function(x){return x.slug===slug;});
+  if(!c)return;
+  profileSlug=slug; profileTabName="overview";
+  document.getElementById("pf-av").textContent=(c.name||"").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+  document.getElementById("pf-name").textContent=c.name||"Client";
+  document.getElementById("pf-goal").textContent=c.goal||"No goal set";
+  var st=document.getElementById("pf-status");
+  var active=c.active!==false;
+  st.className="pf-status "+(active?"act":"inact"); st.textContent=active?"Active":"Inactive";
+  var tb=document.getElementById("pf-tabs"); tb.innerHTML="";
+  PF_TABS.forEach(function(t){
+    var b=el("button","pf-tab"+(t[0]==="overview"?" on":""),t[1]);
+    b.onclick=(function(nm){return function(){ switchPfTab(nm); };})(t[0]);
+    tb.appendChild(b);
+  });
+  renderPfTab();
+  document.getElementById("profile").classList.add("show");
+  window.scrollTo(0,0);
+}
+function switchPfTab(name){
+  profileTabName=name;
+  var tb=document.getElementById("pf-tabs");
+  Array.prototype.forEach.call(tb.children,function(b,i){ b.classList.toggle("on",PF_TABS[i][0]===name); });
+  renderPfTab();
+}
+function closeProfile(){ document.getElementById("profile").classList.remove("show"); }
+
+function renderPfTab(){
+  var b=document.getElementById("pf-body"); b.innerHTML="";
+  var c=allClients.find(function(x){return x.slug===profileSlug;});
+  if(!c)return;
+  if(profileTabName==="overview"){ pfOverview(b,c); return; }
+  var map={
+    program:["Program","The gym program builder \u2014 days, exercises, sets and per-exercise notes \u2014 moves into this tab next. For now, open the full editor to build it."],
+    nutrition:["Nutrition","Meal plans, macro targets and the conditioning schedule land here. Use the full editor for now."],
+    habits:["Habits","This client\u2019s habit tweaks move here. Use the full editor for now."],
+    progress:["Progress","Weigh-in editor, weight chart and progress photos come here. Weigh-ins are in the full editor now; charts and photos live in the current trainer dashboard until the next stage."],
+    coaching:["Coaching","Coach notes and open meal/recipe requests move here. These live in the current trainer dashboard until the next stage."]
+  };
+  var m=map[profileTabName];
+  var ph=el("div","pf-ph");
+  ph.appendChild(el("div","pf-ph-t",m[0]+" \u2014 moving here next"));
+  ph.appendChild(el("div","pf-ph-d",m[1]));
+  var ob=el("button","btn-green","\u2699 Open full editor");
+  ob.onclick=function(){ openEdit(profileSlug); };
+  ph.appendChild(ob);
+  b.appendChild(ph);
+}
+
+function pfOverview(b,c){
+  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
+  var weeks=anchor!=null?Math.max(0,Math.floor((Date.now()-anchor)/(7*86400000))):null;
+  var fmt=function(d){return d?new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"\u2014";};
+  var grid=el("div","pf-ov-grid");
+  function cell(l,v){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));x.appendChild(el("div","pf-ov-v",v));grid.appendChild(x);}
+  cell("Package", c.package||"\u2014");
+  cell("Weeks in", weeks==null?"\u2014":String(weeks));
+  cell("Start", fmt(c.start_date));
+  cell("Ends", fmt(c.end_date));
+  b.appendChild(grid);
+  var lk=el("div","pf-ov-cell"); lk.style.marginBottom="18px";
+  lk.appendChild(el("div","pf-ov-l","Client app link"));
+  lk.appendChild(el("div","pf-link","/client/"+c.slug));
+  b.appendChild(lk);
+  var row=el("div",""); row.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  var edit=el("button","btn-green","\u2699 Open full editor");
+  edit.onclick=function(){ openEdit(profileSlug); };
+  row.appendChild(edit);
+  var active=c.active!==false;
+  var arch=el("button","btn-outline",active?"Archive client":"Restore client");
+  arch.onclick=function(){ toggleActive(c.slug,!active,null); closeProfile(); };
+  row.appendChild(arch);
+  b.appendChild(row);
+  var note=el("div",""); note.style.cssText="font-size:12px;color:var(--ink-3);margin-top:18px;line-height:1.6";
+  note.textContent="Coming to this tab next: triage status, sessions, weight trend, last contact and the shareable win card \u2014 ported in from the trainer dashboard.";
+  b.appendChild(note);
 }
 
 // ── PROGRAM BUILDER ──

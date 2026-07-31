@@ -792,7 +792,8 @@ async function renderClient(slug){
   var map=loggedMapOf(nat,food);
   var adh=adh30(map);
   var flags=getFlags(lift.slice().reverse());
-  var weeksIn=c.created_at?Math.floor((Date.now()-new Date(c.created_at).getTime())/(7*86400000)):0;
+  var wkAnchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
+  var weeksIn=wkAnchor?Math.max(0,Math.floor((Date.now()-wkAnchor)/(7*86400000))):0;
   var allEx=[];(r2.data||[]).forEach(function(r){if(!allEx.find(function(x){return x.id===r.ex_id;}))allEx.push({id:r.ex_id,name:r.ex_name});});
 
   dc.innerHTML="";

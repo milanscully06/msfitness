@@ -121,6 +121,12 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .ehab-check{width:22px;height:22px;flex-shrink:0;border-radius:6px;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--bg);cursor:pointer}
 .ehab-check.on{background:var(--sage);border-color:var(--sage)}
 .ehab-label{font-size:13px;color:var(--ink);font-weight:500}
+.wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
+.wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
+.wi-kg-edit{width:84px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;font-weight:600;padding:7px 8px;text-align:center;outline:none}
+.wi-kg-edit:focus{border-color:var(--sage)}
+.wi-unit{font-size:12px;color:var(--ink-3)}
 
 /* ===== DESKTOP — use the screen, kill the scrolling ===== */
 @media (min-width:900px){
@@ -397,6 +403,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
       <button class="btn-outline" id="ehab-add-btn" style="white-space:nowrap">Add</button>
     </div>
   </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Weigh-ins</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Add a missing starting weight, or correct an entry. This edits their real history \u2014 the client sees these numbers.</div>
+    <div class="wi-add-row">
+      <input class="form-input" type="date" id="wi-date" style="flex:1;min-width:130px">
+      <input class="form-input" type="number" step="0.1" id="wi-kg" placeholder="kg" style="width:100px">
+      <button class="btn-outline" id="wi-add-btn" style="white-space:nowrap">Add / update</button>
+    </div>
+    <div id="edit-weighins" style="margin-top:12px"></div>
+  </div>
   <div class="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
     <button class="btn-green" style="flex:1" id="save-edit-btn">Save changes</button>
     <button class="btn-red" id="del-btn">Delete</button>
@@ -536,6 +552,48 @@ async function addClientHabit(){
 async function delClientHabit(slug,c){
   await sb.from("client_habits").delete().eq("id",c.id);
   loadClientHabits(slug);
+}
+
+// ===== WEIGH-IN EDITOR =====
+document.getElementById("wi-add-btn").onclick = addWeighIn;
+async function loadWeighIns(slug){
+  var r=await sb.from("body_logs").select("*").eq("client_slug",slug).order("logged_date",{ascending:false});
+  var box=document.getElementById("edit-weighins"); box.innerHTML="";
+  var rows=(r.data||[]).filter(function(x){return x.weight!=null;});
+  if(!rows.length){box.innerHTML='<div style="font-size:12px;color:var(--ink-3)">No weigh-ins logged yet.</div>';return;}
+  rows.forEach(function(w){
+    var row=el("div","wi-row");
+    var dt=el("div","wi-date",new Date(w.logged_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}));
+    row.appendChild(dt);
+    var inp=el("input","wi-kg-edit"); inp.type="number"; inp.step="0.1"; inp.value=w.weight;
+    inp.onchange=(function(dstr){return function(){ saveWeighIn(slug,dstr,this.value); };})(w.logged_date);
+    row.appendChild(inp);
+    row.appendChild(el("span","wi-unit","kg"));
+    var del=el("button","clip-btn","\u2715"); del.style.color="var(--bad)"; del.style.marginLeft="auto";
+    del.onclick=(function(dstr){return function(){ delWeighIn(slug,dstr); };})(w.logged_date);
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+async function addWeighIn(){
+  var slug=editSlug; if(!slug)return;
+  var d=document.getElementById("wi-date").value;
+  var kg=parseFloat(document.getElementById("wi-kg").value);
+  if(!d){alert("Pick a date for the weigh-in");return;}
+  if(isNaN(kg)){alert("Enter a weight");return;}
+  await sb.from("body_logs").upsert({client_slug:slug,logged_date:d,weight:kg},{onConflict:"client_slug,logged_date"});
+  document.getElementById("wi-kg").value="";
+  loadWeighIns(slug);
+}
+async function saveWeighIn(slug,dstr,val){
+  var kg=parseFloat(val); if(isNaN(kg))return;
+  await sb.from("body_logs").upsert({client_slug:slug,logged_date:dstr,weight:kg},{onConflict:"client_slug,logged_date"});
+  loadWeighIns(slug);
+}
+async function delWeighIn(slug,dstr){
+  if(!confirm("Delete the weigh-in from "+new Date(dstr+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+"?"))return;
+  await sb.from("body_logs").delete().eq("client_slug",slug).eq("logged_date",dstr);
+  loadWeighIns(slug);
 }
 document.getElementById("r-close-btn").onclick = function(){closeModal("modal-resources");};
 document.getElementById("r-save-btn").onclick = saveRes;
@@ -1332,6 +1390,9 @@ async function openEdit(slug) {
   renderMealDays("edit");
   renderCondDays("edit");
   loadClientHabits(slug);
+  loadWeighIns(slug);
+  document.getElementById("wi-date").value=new Date().toISOString().split("T")[0];
+  document.getElementById("wi-kg").value="";
   openModal("modal-edit");
 }
 

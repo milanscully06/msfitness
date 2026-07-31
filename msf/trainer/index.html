@@ -1,26 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Trainer · MS Fitness</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Admin · MS Fitness</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+
 :root{
-  --bg:#0E0C0B;
-  --surface:#181513;
-  --surface-2:#211C19;
-  --line:rgba(244,238,228,0.09);
-  --line-2:rgba(244,238,228,0.16);
-  --ink:#F4EEE4;
-  --ink-2:rgba(244,238,228,0.56);
-  --ink-3:rgba(244,238,228,0.34);
-  --sage:#9DB49A;
-  --bad:#C97A6D;
-  --radius:18px;
+  --bg:#0E0C0B;--surface:#181513;--surface-2:#211C19;
+  --line:rgba(244,238,228,0.09);--line-2:rgba(244,238,228,0.16);
+  --ink:#F4EEE4;--ink-2:rgba(244,238,228,0.56);--ink-3:rgba(244,238,228,0.34);
+  --sage:#9DB49A;--bad:#C97A6D;--radius:18px;
   --display:'Bricolage Grotesque',sans-serif;
   --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
 }
@@ -30,57 +24,82 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .app{max-width:480px;margin:0 auto;padding:0 0 60px}
 
 .topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;background:rgba(14,12,11,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
-.tb-title{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;line-height:1}
-.tb-sub{font-size:11px;color:var(--ink-3);margin-top:3px;letter-spacing:.1em;text-transform:uppercase}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--sage);transition:background .2s}
-.sync-dot.syncing{background:var(--fat);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.t-name{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;line-height:1}
+.t-sub{font-size:11px;color:var(--ink-3);margin-top:3px;letter-spacing:.1em;text-transform:uppercase}
 
-.cpills{display:flex;gap:7px;overflow-x:auto;padding:14px 20px 6px;scrollbar-width:none}
-.cpills::-webkit-scrollbar{display:none}
-.client-pill{padding:8px 15px;border:1px solid var(--line-2);border-radius:99px;font-size:13px;font-weight:600;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
-.client-pill.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn-green{padding:11px 20px;font-size:14px;font-weight:700;border:none;border-radius:12px;cursor:pointer;background:var(--ink);color:var(--bg);font-family:var(--display);display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em}
+.btn-green:active{opacity:.88}
+.btn-outline{padding:11px 16px;font-size:14px;font-weight:600;border:1px solid var(--line-2);border-radius:12px;cursor:pointer;background:var(--surface);color:var(--ink-2);font-family:var(--body)}
+.btn-red{padding:11px 16px;font-size:14px;font-weight:700;border:1px solid rgba(201,122,109,.4);border-radius:12px;cursor:pointer;background:rgba(201,122,109,.12);color:var(--bad);font-family:var(--body)}
 
-#dcontent{padding:0 20px;margin-top:6px}
-.sec-label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 12px}
-.loader,.empty{text-align:center;padding:3rem 1rem;color:var(--ink-3);font-size:14px;line-height:1.6}
+.success-bar{background:rgba(157,180,154,.13);color:var(--sage);padding:11px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px;display:none}
+.error-bar{background:rgba(201,122,109,.13);color:var(--bad);padding:11px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:12px;display:none}
 
+.client-list-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .15s,transform .12s}
+.client-list-item:active{transform:scale(.995)}
+.cli-left{display:flex;align-items:center;gap:11px;min-width:0}
 .av{width:42px;height:42px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2);flex-shrink:0}
-
-.tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:17px 18px;margin-bottom:13px;cursor:pointer;transition:border-color .15s,transform .12s}
-.tcard:active{transform:scale(.995)}
-.tc-head{display:flex;align-items:center;gap:11px;margin-bottom:14px}
-.tc-name{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;line-height:1.1}
-.tc-goal{font-size:12px;color:var(--ink-3);margin-top:2px}
-
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0 0}
-.stat-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
-.tcard .stat-box{background:var(--surface-2)}
-.stat-lbl{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
-.stat-val{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:-.01em;line-height:1}
-.stat-val small{font-size:12px;color:var(--ink-3);font-weight:600;margin-left:1px}
-
-.flag-row{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:11px;font-size:12.5px;font-weight:600;margin-top:9px;line-height:1.35}
-.flag-up{background:rgba(157,180,154,.13);color:var(--sage)}
-.flag-warn{background:rgba(201,122,109,.13);color:var(--bad)}
-.tlink{font-size:11.5px;color:var(--ink-3);font-family:var(--body);margin-top:13px;letter-spacing:.02em}
-/* ===== TRIAGE ===== */
-.triage-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-.tri-sum{flex:1;min-width:92px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center}
-.tri-sum-n{font-family:var(--display);font-weight:800;font-size:22px;line-height:1}
-.tri-sum-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-top:5px}
-.tri-red .tri-sum-n{color:var(--bad)}
-.tri-amber .tri-sum-n{color:#CBA67D}
-.tri-green .tri-sum-n{color:var(--sage)}
-.tcard.st-red{border-left:3px solid var(--bad)}
-.tcard.st-amber{border-left:3px solid #CBA67D}
-.tcard.st-green{border-left:3px solid var(--sage)}
-.st-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-left:auto}
-.st-dot.red{background:var(--bad)}
-.st-dot.amber{background:#CBA67D}
-.st-dot.green{background:var(--sage)}
-.chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
-.chip.req{background:rgba(200,98,46,.16);color:#C8622E}
+.cli-name{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
+.cli-goal{font-size:12px;color:var(--ink-3);margin-top:2px}
+.cli-link{font-size:11.5px;color:var(--sage);font-weight:600;margin-top:3px}
+.chevron{font-size:20px;color:var(--ink-3);flex-shrink:0}
+.folder-tabs{display:flex;gap:8px;margin-bottom:14px}
+/* ===== client profile (merged app, stage 1) ===== */
+#profile{display:none;position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto}
+#profile.show{display:block}
+.pf-top{position:sticky;top:0;background:rgba(14,12,11,.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:16px 20px 0;z-index:2}
+.pf-back{background:none;border:none;color:var(--ink-2);font-family:var(--body);font-size:14px;font-weight:600;cursor:pointer;padding:0 0 12px}
+.pf-back:hover{color:var(--ink)}
+.pf-id{display:flex;align-items:center;gap:13px;margin-bottom:14px}
+.pf-av{width:46px;height:46px;font-size:15px;flex-shrink:0}
+.pf-idtext{flex:1;min-width:0}
+.pf-name{font-family:var(--display);font-weight:700;font-size:21px;color:var(--ink);line-height:1.15}
+.pf-goal{font-size:13px;color:var(--ink-3);margin-top:2px}
+.pf-status{font-size:11px;font-weight:700;padding:5px 11px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.pf-status.act{background:rgba(95,164,108,.15);color:var(--good,#5FA46C)}
+.pf-status.inact{background:var(--surface-2);color:var(--ink-3)}
+.pf-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.pf-tabs::-webkit-scrollbar{display:none}
+.pf-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--ink-3);font-family:var(--body);font-size:13.5px;font-weight:600;padding:10px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.pf-tab.on{color:var(--sage);border-bottom-color:var(--sage)}
+.pf-body{padding:20px;max-width:900px}
+@media(min-width:900px){ .pf-top{padding:18px 32px 0} .pf-body{padding:26px 32px;max-width:1100px} }
+.pf-ph{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:30px 22px;text-align:center}
+.pf-ph-t{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:7px}
+.pf-ph-d{font-size:13px;color:var(--ink-3);line-height:1.6;max-width:460px;margin:0 auto 18px}
+.pf-ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pf-ov-cell{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.pf-ov-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pf-ov-v{font-size:15px;font-weight:700;color:var(--ink);margin-top:5px;word-break:break-word}
+.pf-link{font-size:13px;color:var(--sage);word-break:break-all}
+.pf-savebar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg);padding:2px 0 14px;margin-bottom:6px;z-index:1}
+.pf-savebar-l{font-size:15px;font-weight:700;color:var(--ink)}
+.pf-save-btn{padding:9px 18px;font-size:13px}
+.pf-nut-sec{margin-bottom:22px}
+.pf-sub{font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.pf-hint2{font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5}
+.chart-box2{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.wt-chart{width:100%;height:auto;display:block}
+.wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.ptile{aspect-ratio:3/4;border-radius:12px;background-size:cover;background-position:center;background-color:var(--surface-2);position:relative;cursor:pointer;border:1px solid var(--line)}
+.pdate{position:absolute;bottom:6px;left:8px;font-size:10px;color:#fff;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;padding:24px}
+.lb.show{display:flex}
+.lb img{max-width:100%;max-height:100%;border-radius:8px}
+.lb-x{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:18px;width:40px;height:40px;border-radius:12px;cursor:pointer}
+.win-overlay{position:fixed;inset:0;background:rgba(8,7,6,.92);backdrop-filter:blur(6px);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
+.win-overlay.show{display:flex}
+.win-x{position:absolute;top:20px;right:20px;background:var(--surface-2);border:none;border-radius:12px;color:var(--ink-2);font-size:16px;width:40px;height:40px;cursor:pointer}
+.win-card{width:100%;max-width:400px;aspect-ratio:4/5;background:linear-gradient(160deg,#1a1310 0%,#0E0C0B 55%,#160f0b 100%);border:1px solid rgba(200,98,46,.35);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px;position:relative;overflow:hidden}
+.win-card::before{content:"";position:absolute;top:-40%;left:-30%;width:160%;height:80%;background:radial-gradient(ellipse at center,rgba(200,98,46,.22),transparent 65%);pointer-events:none}
+.win-brand{position:relative;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.28em;color:#C8622E;margin-bottom:auto}
+.win-label{position:relative;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase}
+.win-big{position:relative;font-family:var(--display);font-weight:800;font-size:82px;line-height:1;color:var(--ink);margin:10px 0 4px;letter-spacing:-.02em}
+.win-unit{font-size:34px;font-weight:700;color:#C8622E;margin-left:4px}
+.win-sub{position:relative;font-size:16px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.win-foot{position:relative;margin-top:auto;font-size:15px;font-weight:700;color:#C8622E}
+.win-hint{font-size:12px;color:var(--ink-3);text-align:center;max-width:400px}
 .req-box{margin-bottom:16px}
 .req-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(200,98,46,.08);border:1px solid rgba(200,98,46,.3);border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .req-meal{font-size:14px;font-weight:700;color:var(--ink)}
@@ -88,7 +107,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .req-resolve{background:#C8622E;color:var(--bg);border:none;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .req-place{background:none;border:1px solid #C8622E;color:#C8622E;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .req-acts{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
-/* ===== recipe placement panel ===== */
 .fit-overlay{position:fixed;inset:0;background:rgba(14,12,11,.75);backdrop-filter:blur(5px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
 .fit-overlay.show{display:flex}
 .fit-box{background:var(--bg);border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column}
@@ -116,26 +134,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .fit-btn.add{background:none;border:1px solid var(--line-2);color:var(--ink-2)}
 .fit-btn.add:hover{border-color:var(--ink-3);color:var(--ink)}
 .fit-badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:#C8622E;color:var(--bg);padding:2px 7px;border-radius:6px;margin-bottom:5px}
-/* ===== win card ===== */
-.win-btn{width:100%;background:none;border:1px solid #C8622E;color:#C8622E;border-radius:12px;font-family:var(--body);font-weight:700;font-size:14px;padding:13px;cursor:pointer;margin:2px 0 16px;display:flex;align-items:center;justify-content:center;gap:8px}
-.win-btn:hover{background:rgba(200,98,46,.08)}
-.win-overlay{position:fixed;inset:0;background:rgba(8,7,6,.92);backdrop-filter:blur(6px);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
-.win-overlay.show{display:flex}
-.win-x{position:absolute;top:20px;right:20px;background:var(--surface-2);border:none;border-radius:12px;color:var(--ink-2);font-size:16px;width:40px;height:40px;cursor:pointer}
-.win-card{width:100%;max-width:400px;aspect-ratio:4/5;background:linear-gradient(160deg,#1a1310 0%,#0E0C0B 55%,#160f0b 100%);border:1px solid rgba(200,98,46,.35);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px;position:relative;overflow:hidden}
-.win-card::before{content:"";position:absolute;top:-40%;left:-30%;width:160%;height:80%;background:radial-gradient(ellipse at center,rgba(200,98,46,.22),transparent 65%);pointer-events:none}
-.win-brand{position:relative;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.28em;color:#C8622E;margin-bottom:auto}
-.win-label{position:relative;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase}
-.win-big{position:relative;font-family:var(--display);font-weight:800;font-size:82px;line-height:1;color:var(--ink);margin:10px 0 4px;letter-spacing:-.02em}
-.win-unit{font-size:34px;font-weight:700;color:#C8622E;margin-left:4px}
-.win-sub{position:relative;font-size:16px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
-.win-foot{position:relative;margin-top:auto;font-size:15px;font-weight:700;color:#C8622E}
-.win-hint{font-size:12px;color:var(--ink-3);text-align:center;max-width:400px}
-.chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap}
-.chip.red{background:rgba(201,122,109,.14);color:var(--bad)}
-.chip.amber{background:rgba(203,166,125,.14);color:#CBA67D}
-.chip.info{background:var(--surface-2);color:var(--ink-2)}
-/* ===== COACH NOTES ===== */
 .note-add{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
 .note-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;resize:vertical;min-height:64px;margin-bottom:8px}
 .note-in:focus{border-color:var(--sage)}
@@ -147,103 +145,190 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .note-when{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
 .note-del{background:none;border:none;color:var(--ink-3);font-size:13px;cursor:pointer;padding:0 2px}
 .note-txt{font-size:13.5px;color:var(--ink-2);line-height:1.55;white-space:pre-wrap}
-/* ===== RENEWAL ===== */
-.renew{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:12px}
-.renew.soon{border-color:rgba(201,122,109,.45);background:rgba(201,122,109,.08)}
-.renew-l{font-size:12px;color:var(--ink-3);font-weight:600}
-.renew-v{font-family:var(--display);font-weight:700;font-size:15px;color:var(--ink)}
-.renew.soon .renew-v{color:var(--bad)}
-/* ===== FOLDERS ===== */
-.folder-bar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.fchip{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1px solid var(--line-2);border-radius:99px;font-size:12.5px;font-weight:600;background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap}
-.fchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.fchip-n{opacity:.6;font-weight:700}
-.fchip-x{opacity:.55;font-size:11px;padding:0 1px}
-.fchip-x:hover{opacity:1;color:var(--bad)}
-.fchip-new{border-style:dashed;color:var(--ink-3)}
-.card-folder{margin-top:11px;display:flex;align-items:center;gap:7px}
-.card-folder-l{font-size:11px;color:var(--ink-3);font-weight:600}
-.fsel{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 8px;-webkit-appearance:none;cursor:pointer}
-.fsel:focus{outline:none;border-color:var(--sage)}
-/* ===== DETAIL TWO-COLUMN ===== */
-.detail-grid{display:grid;grid-template-columns:1fr;gap:0}
-.dcol{min-width:0}
-
-/* ===== DESKTOP — full screen ===== */
-@media (min-width:1000px){
-  .app{max-width:1500px;padding:0 0 60px}
-  .topbar{padding:20px 28px 16px}
-  .cpills{padding:16px 28px 6px}
-  #dcontent{padding:0 28px}
-  #dcontent.overview{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
-  #dcontent.overview>.triage-bar,#dcontent.overview>.folder-bar{grid-column:1/-1}
-  #dcontent.overview>.tcard{margin-bottom:0}
-  .detail-grid{grid-template-columns:1fr 1fr;gap:28px;align-items:start}
-  .stat-grid{grid-template-columns:repeat(4,1fr)}
-}
-
-.po-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
-.po-name{font-size:13.5px;font-weight:600}
-.po-tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(157,180,154,.14);color:var(--sage);white-space:nowrap}
-
-.wt-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
-.wt-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px;flex-wrap:wrap}
-.wt-cur{font-family:var(--display);font-weight:800;font-size:32px;letter-spacing:-.02em;line-height:1}
-.wt-cur small{font-size:14px;color:var(--ink-3);font-weight:600;margin-left:2px}
-.wt-delta{font-family:var(--display);font-weight:700;font-size:15px;color:var(--sage)}
-.wt-start{font-size:12px;color:var(--ink-3);margin-left:auto}
-.wt-chart{width:100%;height:auto;display:block}
+.sec-label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 12px}
 .wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
+.folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
+.folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.cli-right{display:flex;align-items:center;gap:10px}
+.folder-move-btn{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink)}
 
-.adh-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
-.adh-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:15px}
-.adh-pct{font-family:var(--display);font-weight:800;font-size:34px;letter-spacing:-.02em;line-height:1}
-.adh-sub{font-size:12px;color:var(--ink-2);text-align:right}
-.adh-strip{display:grid;grid-template-columns:repeat(15,1fr);gap:4px}
-.adh-dot{aspect-ratio:1;border-radius:3px;background:var(--surface-2)}
-.adh-dot.on{background:var(--sage)}
+.empty{text-align:center;padding:3.5rem 1.5rem;color:var(--ink-2)}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+.empty-txt{font-size:14px;line-height:1.6;color:var(--ink-2)}
+.loader{text-align:center;padding:3rem 1rem;color:var(--ink-3);font-size:14px}
 
-.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
-.ptile{aspect-ratio:3/4;border-radius:14px;background:var(--surface-2) center/cover no-repeat;border:1px solid var(--line);position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:8px;cursor:pointer}
-.ptile::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.5),transparent 55%)}
-.pdate{font-size:10px;color:#fff;font-weight:600;position:relative;z-index:2;text-shadow:0 1px 4px rgba(0,0,0,.6)}
-.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;padding:24px}
-.lb.show{display:flex}
-.lb img{max-width:100%;max-height:82vh;border-radius:12px;object-fit:contain}
-.lb-x{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line-2);background:rgba(0,0,0,.45);color:var(--ink);font-size:17px;cursor:pointer}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--surface);border-top:1px solid var(--line-2);border-radius:24px 24px 0 0;padding:22px 18px 40px;width:100%;max-width:480px;max-height:92vh;overflow-y:auto}
+.modal-title{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1.05}
+.modal-sub{font-size:13px;color:var(--ink-3);margin-top:5px;margin-bottom:18px}
 
-.chart-sel{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:12px;padding:12px 14px;color:var(--ink);font-family:var(--body);font-size:14px;margin-bottom:12px;-webkit-appearance:none}
-.chart-sel:focus{outline:none;border-color:var(--sage)}
-.chart-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-.lift-tbl{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.lift-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
-.lift-row:last-child{border-bottom:none}
-.lift-head{background:var(--surface-2)}
-.lift-head>div{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
-.lt-ex{font-size:13px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis}
-.lt-last{font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap;text-align:right}
-.lt-chg{font-size:12px;font-weight:700;white-space:nowrap;text-align:right;min-width:78px}
-.chg-up{color:var(--sage)}
-.chg-dn{color:var(--bad)}
-.chg-none{color:var(--ink-3)}
-.food-tbl{display:flex;flex-direction:column;gap:8px}
-.food-day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
-.food-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.food-date{font-size:13px;font-weight:600;color:var(--ink)}
-.food-cal{font-size:13px;font-weight:700;color:var(--sage);white-space:nowrap}
-.food-cal.over{color:var(--bad)}
-.food-notes{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:3px}
-.food-note{font-size:12px;color:var(--ink-2);line-height:1.5}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:7px;display:block;letter-spacing:.02em}
+.form-input{width:100%;padding:12px 14px;font-size:16px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);color:var(--ink);font-family:var(--body);-webkit-appearance:none}
+.form-input:focus{outline:none;border-color:var(--sage)}
+.form-input::placeholder{color:var(--ink-3)}
+
+.nut-section{margin-top:8px}
+.nut-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.nut-label{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.nut-input{width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--line-2);border-radius:11px;background:var(--surface-2);color:var(--ink);font-family:var(--body);-webkit-appearance:none}
+.nut-input:focus{outline:none;border-color:var(--sage)}
+.nut-input::placeholder{color:var(--ink-3)}
+
+.day-block{background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.day-block-title{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em;margin-bottom:10px;color:var(--ink)}
+.sec-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.ex-row-admin{flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.ex-name-input{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);outline:none;padding:11px 11px;margin-bottom:7px}
+.ex-name-input:focus{border-color:var(--sage)}
+.ex-name-input::placeholder{color:var(--ink-3);font-weight:500}
+.ex-pick-wrap{position:relative}
+.ex-pick{position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;margin-top:3px;max-height:240px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,.55)}
+.ex-pick-item{padding:10px 12px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.ex-pick-item+.ex-pick-item{border-top:1px solid var(--line)}
+.ex-pick-item:hover{background:var(--surface);color:var(--ink)}
+.set-tags{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:4px}
+.set-tag-input{padding:7px 4px;font-size:12px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);text-align:center;width:100%;-webkit-appearance:none}
+.set-tag-input:focus{outline:none;border-color:var(--sage)}
+.set-tag-input::placeholder{color:var(--ink-3)}
+.sets-box{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.set-unit{display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding-right:4px}
+.set-unit:focus-within{border-color:var(--sage)}
+.set-tag-input2{width:76px;padding:8px 6px;font-size:12px;border:none;background:transparent;color:var(--ink);text-align:center;outline:none;-webkit-appearance:none}
+.set-tag-input2::placeholder{color:var(--ink-3)}
+.set-x{background:none;border:none;color:var(--ink-3);font-size:10px;cursor:pointer;padding:2px 3px;line-height:1}
+.set-x:hover{color:var(--bad)}
+.set-add{background:none;border:1px dashed var(--line-2);border-radius:8px;color:var(--ink-2);font-size:12px;font-weight:600;padding:0 12px;cursor:pointer}
+.set-add:hover{border-color:var(--sage);color:var(--sage)}
+.ex-note{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:12px;padding:8px 9px;outline:none;resize:vertical;min-height:34px;margin-bottom:5px;line-height:1.4}
+.ex-note:focus{border-color:var(--sage)}
+.ex-note::placeholder{color:var(--ink-3)}
+
+.meal-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.clone-box{background:var(--surface-2);border:1px solid var(--line-2);border-radius:14px;padding:13px 14px;margin-bottom:18px}
+.pkg-row{display:flex;gap:10px;flex-wrap:wrap}
+.rec-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px}
+.rec-thumb{width:52px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--surface-2)}
+.rec-thumb-empty{display:flex;align-items:center;justify-content:center;font-size:20px}
+.rec-mid{flex:1;min-width:0}
+.rec-title{font-size:13.5px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-meta{font-size:11px;color:var(--ink-3);margin-top:3px}
+.rec-acts{display:flex;gap:6px;flex-shrink:0}
+.hab-row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px}
+.hab-row.off{opacity:.5}
+.hab-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink)}
+.hab-acts{display:flex;gap:6px;flex-shrink:0}
+.ehab-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px}
+.ehab-check{width:22px;height:22px;flex-shrink:0;border-radius:6px;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--bg);cursor:pointer}
+.ehab-check.on{background:var(--sage);border-color:var(--sage)}
+.ehab-label{font-size:13px;color:var(--ink);font-weight:500}
+.wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
+.wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
+.wi-kg-edit{width:84px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;font-weight:600;padding:7px 8px;text-align:center;outline:none}
+.wi-kg-edit:focus{border-color:var(--sage)}
+.wi-unit{font-size:12px;color:var(--ink-3)}
+
+/* ===== DESKTOP — use the screen, kill the scrolling ===== */
+@media (min-width:900px){
+  body{max-width:1240px;margin:0 auto}
+  .modal-overlay{align-items:center;padding:24px}
+  .modal-box{max-width:1120px;max-height:90vh;border-radius:20px;border:1px solid var(--line-2);padding:26px 26px 0}
+  .modal-actions{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:14px 0 18px;margin-top:24px;z-index:5}
+  /* day blocks side by side instead of one endless column */
+  #add-days,#edit-days{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:start}
+  #add-meal-days,#edit-meal-days,#add-cond-days,#edit-cond-days{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+  #add-days>.clip-bar,#edit-days>.clip-bar,#add-meal-days>.clip-bar,#edit-meal-days>.clip-bar{grid-column:1/-1}
+  .day-block{margin-bottom:0}
+  /* client list in columns */
+  #clist{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .client-list-item{margin-bottom:0}
+  .folder-tabs{max-width:420px}
+  .form-input{font-size:14px;padding:10px 12px}
+}
+.macro-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.macro-lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;text-align:center}
+.macro-inp{width:100%;padding:8px 4px;font-size:15px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface-2);color:var(--ink);text-align:center;-webkit-appearance:none}
+.macro-inp:focus{outline:none;border-color:var(--sage)}
+
+.add-btn{font-size:13px;font-weight:600;color:var(--sage);background:none;border:none;cursor:pointer;padding:6px 0;display:block;margin-top:8px;font-family:var(--body)}
+
+.toggle{width:42px;height:25px;background:var(--surface);border:1px solid var(--line-2);border-radius:99px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--sage);border-color:var(--sage)}
+.toggle::after{content:'';position:absolute;width:19px;height:19px;background:var(--ink);border-radius:50%;top:2px;left:2px;transition:left .2s}
+.toggle.on::after{left:20px;background:var(--bg)}
+
+.del-btn{width:28px;height:28px;border:1px solid rgba(201,122,109,.4);border-radius:8px;background:rgba(201,122,109,.1);cursor:pointer;color:var(--bad);font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.day-swap{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 8px;-webkit-appearance:none;cursor:pointer;max-width:160px}
+.day-swap:focus{outline:none;border-color:var(--sage)}
+.clip-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:12px}
+.clip-status{font-size:11px;color:var(--ink-2);font-weight:600}
+.res-admin-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:7px}
+.res-admin-t{flex:1;min-width:0}
+.res-admin-t b{display:block;font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-admin-t span{font-size:11px;color:var(--ink-3)}
+.clip-btn{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:5px 9px;cursor:pointer;white-space:nowrap}
+.clip-btn:hover{border-color:var(--ink-3)}
+.clip-btn.paste{border-color:var(--sage);color:var(--sage)}
+.cond-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.cond-pill{flex:1;min-width:88px;padding:8px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;cursor:pointer}
+.cond-pill-easy.on{background:rgba(157,180,154,.18);border-color:var(--sage);color:var(--sage)}
+.cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
+.cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
+.cond-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 10px;outline:none;margin-bottom:6px}
+.cond-in:focus{border-color:var(--sage)}
+
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="topbar">
-    <div><div class="tb-title">Trainer</div><div class="tb-sub">MS Fitness · live data</div></div>
-    <div class="sync-dot" id="sd"></div>
+<div class="topbar">
+  <div><div class="t-name">Admin panel</div><div class="t-sub">Manage clients &amp; programs</div></div>
+</div>
+<div style="padding:0 16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
+    <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="hab-btn">Habits</button>
+      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="rec-btn">Recipes</button>
+      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="res-btn">Resources</button>
+      <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
+    </div>
   </div>
-  <div class="cpills" id="cpills"></div>
-  <div id="dcontent"><div class="loader">Loading clients…</div></div>
+  <div class="success-bar" id="succ"></div>
+  <div class="error-bar" id="err"></div>
+  <div class="folder-tabs" id="folder-tabs"></div>
+  <div id="clist"><div class="loader">Loading clients...</div></div>
+</div>
+
+<div id="profile">
+  <div class="pf-top">
+    <button class="pf-back" onclick="closeProfile()">‹ Clients</button>
+    <div class="pf-id">
+      <div class="av pf-av" id="pf-av">--</div>
+      <div class="pf-idtext">
+        <div class="pf-name" id="pf-name">Client</div>
+        <div class="pf-goal" id="pf-goal"></div>
+      </div>
+      <div class="pf-status" id="pf-status"></div>
+    </div>
+    <div class="pf-tabs" id="pf-tabs"></div>
+  </div>
+  <div class="pf-body" id="pf-body"></div>
+</div>
+
+<div class="win-overlay" id="win-panel">
+  <button class="win-x" onclick="closeWin()">✕</button>
+  <div class="win-card" id="win-card">
+    <div class="win-brand">MS FITNESS</div>
+    <div class="win-label" id="win-label">Client win</div>
+    <div class="win-big" id="win-big">−0.0<span class="win-unit">kg</span></div>
+    <div class="win-sub" id="win-sub">lost</div>
+    <div class="win-foot" id="win-foot"></div>
+  </div>
+  <div class="win-hint">Screenshot this card to share — no bodyweight is shown</div>
 </div>
 <div class="lb" id="lightbox"><button class="lb-x" onclick="closeLB()">✕</button><img id="lb-img" alt=""></div>
 
@@ -257,73 +342,986 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
 </div>
 
-<div class="win-overlay" id="win-panel">
-  <button class="win-x" onclick="closeWin()">✕</button>
-  <div class="win-card" id="win-card">
-    <div class="win-brand">MS FITNESS</div>
-    <div class="win-label" id="win-label">Client win</div>
-    <div class="win-big" id="win-big">−0.0<span class="win-unit">kg</span></div>
-    <div class="win-sub" id="win-sub">lost</div>
-    <div class="win-foot" id="win-foot"></div>
+<div class="modal-overlay" id="modal-resources">
+<div class="modal-box">
+  <div class="modal-title">Client resources</div>
+  <div class="modal-sub">Shared with every client on their home screen</div>
+  <div class="clone-box">
+    <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="r-title" placeholder="e.g. Getting Started Guide"></div>
+    <div class="form-group"><label class="form-label">Type</label>
+      <select class="form-input" id="r-kind">
+        <option value="link">Link (Drive, YouTube, website)</option>
+        <option value="file">File upload (PDF, doc)</option>
+        <option value="guide">Written guide (typed text)</option>
+        <option value="call">Book a call (calendar link)</option>
+      </select>
+    </div>
+    <div class="form-group" id="r-url-wrap"><label class="form-label">URL</label><input class="form-input" id="r-url" placeholder="https://…"></div>
+    <div class="form-group" id="r-file-wrap" style="display:none"><label class="form-label">File</label>
+      <input type="file" id="r-file" class="form-input" style="padding:9px">
+      <div id="r-file-status" style="font-size:11px;color:var(--ink-3);margin-top:6px"></div>
+    </div>
+    <div class="form-group" id="r-content-wrap" style="display:none"><label class="form-label">Guide text</label><textarea class="form-input" id="r-content" style="min-height:130px;resize:vertical"></textarea></div>
+    <button class="btn-green" style="width:100%" id="r-save-btn">Add resource</button>
+    <div id="r-edit-note" style="display:none;font-size:11px;color:var(--sage);margin-top:8px"></div>
   </div>
-  <div class="win-hint">Screenshot this card to share \u2014 no bodyweight is shown</div>
+  <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:14px 0 8px">Current resources</div>
+  <div id="r-list"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="r-close-btn">Done</button>
+  </div>
+</div>
 </div>
 
+<div class="modal-overlay" id="modal-habits">
+<div class="modal-box">
+  <div class="modal-title">Daily habits</div>
+  <div class="modal-sub">The shared default list — every client gets these. Tweak per client from their edit screen.</div>
+  <div class="clone-box">
+    <div class="form-group"><label class="form-label">New habit</label><input class="form-input" id="hab-new" placeholder="e.g. Hit protein target"></div>
+    <button class="btn-green" style="width:100%" id="hab-add-btn">Add habit</button>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:14px 0 8px">Current habits</div>
+  <div id="hab-list"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="hab-close-btn">Done</button>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-recipes">
+<div class="modal-box">
+  <div class="modal-title">Recipe library</div>
+  <div class="modal-sub">Shared with every client — they can browse these and request one in their plan</div>
+  <div class="clone-box">
+    <div class="form-group"><label class="form-label">Recipe name</label><input class="form-input" id="rc-title" placeholder="e.g. High-protein chicken pesto pasta"></div>
+    <div class="pkg-row">
+      <div class="form-group" style="flex:1;min-width:140px"><label class="form-label">Category</label>
+        <select class="form-input" id="rc-cat">
+          <option value="Breakfast">Breakfast</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Snack">Snack</option>
+          <option value="Dessert">Dessert</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:110px"><label class="form-label">Servings</label><input class="form-input" type="number" id="rc-serv" value="1" min="1"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Photo</label>
+      <input type="file" id="rc-file" accept="image/*" class="form-input" style="padding:9px">
+      <div id="rc-file-status" style="font-size:11px;color:var(--ink-3);margin-top:6px"></div>
+      <input class="form-input" id="rc-photo" placeholder="…or paste an image URL" style="margin-top:7px">
+      <img id="rc-preview" style="display:none;width:100%;max-height:190px;object-fit:cover;border-radius:12px;margin-top:9px">
+    </div>
+    <div class="form-group"><label class="form-label">Ingredients (one per line)</label><textarea class="form-input" id="rc-ing" style="min-height:110px;resize:vertical" placeholder="200g chicken breast&#10;100g pasta&#10;30g pesto"></textarea></div>
+    <div class="form-group"><label class="form-label">Instructions (one step per line)</label><textarea class="form-input" id="rc-inst" style="min-height:110px;resize:vertical" placeholder="Boil the pasta&#10;Pan-fry the chicken&#10;Toss through pesto"></textarea></div>
+    <div class="pkg-row">
+      <div class="form-group" style="flex:1;min-width:88px"><label class="form-label">Calories</label><input class="form-input" type="number" id="rc-cal" value="0"></div>
+      <div class="form-group" style="flex:1;min-width:88px"><label class="form-label">Protein</label><input class="form-input" type="number" id="rc-pro" value="0"></div>
+      <div class="form-group" style="flex:1;min-width:88px"><label class="form-label">Carbs</label><input class="form-input" type="number" id="rc-carb" value="0"></div>
+      <div class="form-group" style="flex:1;min-width:88px"><label class="form-label">Fat</label><input class="form-input" type="number" id="rc-fat" value="0"></div>
+    </div>
+    <button class="btn-green" style="width:100%" id="rc-save-btn">Add recipe</button>
+    <div id="rc-edit-note" style="display:none;font-size:11px;color:var(--sage);margin-top:8px"></div>
+  </div>
+  <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:14px 0 8px">Current recipes</div>
+  <div id="rc-list"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="rc-close-btn">Done</button>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-add">
+<div class="modal-box">
+  <div class="modal-title">Add new client</div>
+  <div class="modal-sub">Fill in their details and build their program</div>
+  <div class="clone-box">
+    <label class="form-label">Start from an existing client</label>
+    <select class="form-input" id="clone-src"><option value="">Blank — build from scratch</option></select>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:6px;line-height:1.5">Copies their program, meals, conditioning &amp; macro targets into the builders below. Tweak from there — nothing is linked afterwards.</div>
+  </div>
+  <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="an" placeholder="e.g. Jake Thompson"></div>
+  <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="ag" placeholder="e.g. Build muscle and lose fat"></div>
+  <div class="pkg-row">
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Package</label>
+      <select class="form-input" id="a-pkg">
+        <option value="">— none —</option>
+        <option value="8 Week">8 Week</option>
+        <option value="3 Month">3 Month</option>
+        <option value="6 Month">6 Month</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Start date</label><input class="form-input" type="date" id="a-start"></div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">End date</label><input class="form-input" type="date" id="a-end"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">URL slug (lowercase, no spaces)</label>
+    <input class="form-input" id="asl" placeholder="e.g. jake">
+    <div style="font-size:11px;color:var(--ink-2);margin-top:4px">Link: /client/<span id="sp">slug</span></div>
+  </div>
+  <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
+  <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
+  <div id="add-days"></div>
+  <button class="add-btn" id="add-day-btn">+ Add training day</button>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
+    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
+    <div class="nut-row">
+      <div><div class="nut-label">Calories</div><input class="nut-input" type="number" id="a-cal" placeholder="2800"></div>
+      <div><div class="nut-label">Protein (g)</div><input class="nut-input" type="number" id="a-pro" placeholder="175"></div>
+    </div>
+    <div class="nut-row">
+      <div><div class="nut-label">Carbs (g)</div><input class="nut-input" type="number" id="a-carb" placeholder="315"></div>
+      <div><div class="nut-label">Fats (g)</div><input class="nut-input" type="number" id="a-fat" placeholder="80"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
+    <div id="add-meal-days"></div>
+  </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
+    <div id="add-cond-days"></div>
+  </div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-green" style="flex:1" id="save-add-btn">Save client</button>
+    <button class="btn-outline" id="cancel-add-btn">Cancel</button>
+  </div>
+</div></div>
+
+<div class="modal-overlay" id="modal-edit">
+<div class="modal-box">
+  <div class="modal-title" id="edit-title">Edit client</div>
+  <div class="modal-sub">Update details or modify their program</div>
+  <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="en"></div>
+  <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="eg"></div>
+  <div class="pkg-row">
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Package</label>
+      <select class="form-input" id="e-pkg">
+        <option value="">— none —</option>
+        <option value="8 Week">8 Week</option>
+        <option value="3 Month">3 Month</option>
+        <option value="6 Month">6 Month</option>
+        <option value="Custom">Custom</option>
+      </select>
+    </div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Start date</label><input class="form-input" type="date" id="e-start"></div>
+    <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">End date</label><input class="form-input" type="date" id="e-end"></div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">URL slug (lowercase, no spaces)</label>
+    <input class="form-input" id="e-slug" placeholder="e.g. jake">
+    <div style="font-size:11px;color:var(--bad);margin-top:5px;line-height:1.5">Changing this sets their link to /client/<span id="e-sp">slug</span> and moves all their programs, meals, weight, food logs, photos &amp; lift history across. Their old link stops working.</div>
+  </div>
+  <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
+  <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
+  <div id="edit-days"></div>
+  <button class="add-btn" id="edit-day-btn">+ Add training day</button>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
+    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
+    <div class="nut-row">
+      <div><div class="nut-label">Calories</div><input class="nut-input" type="number" id="e-cal" placeholder="2800"></div>
+      <div><div class="nut-label">Protein (g)</div><input class="nut-input" type="number" id="e-pro" placeholder="175"></div>
+    </div>
+    <div class="nut-row">
+      <div><div class="nut-label">Carbs (g)</div><input class="nut-input" type="number" id="e-carb" placeholder="315"></div>
+      <div><div class="nut-label">Fats (g)</div><input class="nut-input" type="number" id="e-fat" placeholder="80"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
+    <div id="edit-meal-days"></div>
+  </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
+    <div id="edit-cond-days"></div>
+  </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Habits for this client</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Untick a shared habit to hide it from this client, or add one just for them.</div>
+    <div id="edit-habits"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input class="form-input" id="ehab-new" placeholder="Add a habit just for this client" style="flex:1">
+      <button class="btn-outline" id="ehab-add-btn" style="white-space:nowrap">Add</button>
+    </div>
+  </div>
+  <div class="nut-section">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Weigh-ins</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Add a missing starting weight, or correct an entry. This edits their real history \u2014 the client sees these numbers.</div>
+    <div class="wi-add-row">
+      <input class="form-input" type="date" id="wi-date" style="flex:1;min-width:130px">
+      <input class="form-input" type="number" step="0.1" id="wi-kg" placeholder="kg" style="width:100px">
+      <button class="btn-outline" id="wi-add-btn" style="white-space:nowrap">Add / update</button>
+    </div>
+    <div id="edit-weighins" style="margin-top:12px"></div>
+  </div>
+  <div class="modal-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px">
+    <button class="btn-green" style="flex:1" id="save-edit-btn">Save changes</button>
+    <button class="btn-red" id="del-btn">Delete</button>
+    <button class="btn-outline" style="width:100%;margin-top:4px" id="cancel-edit-btn">Cancel</button>
+  </div>
+</div></div>
+
 <script>
-var SB_URL="https://idlwqbgsnjoikoyhifbr.supabase.co";
-var SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbHdxYmdzbmpvaWtveWhpZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NjI5MDksImV4cCI6MjA5NzAzODkwOX0.K6axtuPPxVHn5CtZ5kplw20P5YtLd7kpAAkylhk-QNg";
-var sb=supabase.createClient(SB_URL,SB_KEY);
-var clients=[],curClient=null,chart=null;
-var folders=[],curFolder="__all__";
+var sb = supabase.createClient("https://idlwqbgsnjoikoyhifbr.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbHdxYmdzbmpvaWtveWhpZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NjI5MDksImV4cCI6MjA5NzAzODkwOX0.K6axtuPPxVHn5CtZ5kplw20P5YtLd7kpAAkylhk-QNg");
+var editSlug = null;
+var addDays = [], editDays = [];
+var addMealDays = {}, editMealDays = {};
+var mealClip = null; // {scope:"meal"|"day"|"all", label, data}
+var progClip = null; // {scope:"day"|"all", label, data}
+function deep(x){ return JSON.parse(JSON.stringify(x)); }
+var DAYS = [{k:"mon",l:"Monday"},{k:"tue",l:"Tuesday"},{k:"wed",l:"Wednesday"},{k:"thu",l:"Thursday"},{k:"fri",l:"Friday"},{k:"sat",l:"Saturday"},{k:"sun",l:"Sunday"}];
 
-function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e;}
-function sync(on){document.getElementById("sd").classList.toggle("syncing",!!on);}
-function initials(name){return (name||"").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();}
-function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function signed(n){return (n>0?"+":"")+n.toFixed(1);}
+function el(tag, cls, txt) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt !== undefined) e.textContent = txt;
+  return e;
+}
+function showSucc(m){var e=document.getElementById("succ");e.textContent=m;e.style.display="block";setTimeout(function(){e.style.display="none";},3500);}
+function showErr(m){var e=document.getElementById("err");e.textContent=m;e.style.display="block";setTimeout(function(){e.style.display="none";},4000);}
+function openModal(id){document.getElementById(id).classList.add("show");}
+function closeModal(id){document.getElementById(id).classList.remove("show");}
 
-// ── METRICS ──
-function sessionCount(liftRows){
-  return new Set(liftRows.map(function(r){return new Date(r.logged_at).toDateString()+"_"+r.day;})).size;
+// ── WIRE UP STATIC BUTTONS ──
+document.getElementById("add-btn").onclick = openAdd;
+document.getElementById("rec-btn").onclick = openRecipes;
+document.getElementById("rc-close-btn").onclick = function(){closeModal("modal-recipes");};
+document.getElementById("rc-save-btn").onclick = saveRec;
+document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
+document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
+document.getElementById("res-btn").onclick = openResources;
+
+// ===== HABITS (shared list) =====
+var allHabits=[];
+document.getElementById("hab-btn").onclick = function(){ loadHabits(); openModal("modal-habits"); };
+document.getElementById("hab-close-btn").onclick = function(){ closeModal("modal-habits"); };
+document.getElementById("hab-add-btn").onclick = addHabit;
+document.getElementById("ehab-add-btn").onclick = addClientHabit;
+
+async function loadHabits(){
+  var r=await sb.from("habits").select("*").order("sort_order");
+  allHabits=r.data||[];
+  drawHabitList();
 }
-function lastActiveMs(lift,body,nat,food){
-  var t=[];
-  lift.forEach(function(r){if(r.logged_at)t.push(new Date(r.logged_at).getTime());});
-  body.forEach(function(r){if(r.logged_date)t.push(new Date(r.logged_date+"T12:00:00").getTime());});
-  nat.forEach(function(r){if(r.logged_date)t.push(new Date(r.logged_date+"T12:00:00").getTime());});
-  food.forEach(function(r){if(r.logged_date)t.push(new Date(r.logged_date+"T12:00:00").getTime());});
-  return t.length?Math.max.apply(null,t):null;
+function drawHabitList(){
+  var box=document.getElementById("hab-list"); box.innerHTML="";
+  if(!allHabits.length){box.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:8px 0">No habits yet.</div>';return;}
+  allHabits.forEach(function(h){
+    var row=el("div","hab-row"+(h.active===false?" off":""));
+    var nm=el("div","hab-name",h.label);
+    row.appendChild(nm);
+    var acts=el("div","hab-acts");
+    var tg=el("button","clip-btn",h.active===false?"Retired":"Active");
+    tg.onclick=function(){ toggleHabitActive(h); };
+    var dl=el("button","clip-btn","\u2715"); dl.style.color="var(--bad)"; dl.onclick=function(){ delHabit(h); };
+    acts.appendChild(tg);acts.appendChild(dl);
+    row.appendChild(acts);
+    box.appendChild(row);
+  });
 }
+async function addHabit(){
+  var t=document.getElementById("hab-new").value.trim();
+  if(!t)return;
+  var mx=0;allHabits.forEach(function(h){if((h.sort_order||0)>mx)mx=h.sort_order||0;});
+  var ins=await sb.from("habits").insert({label:t,sort_order:mx+1});
+  if(ins.error){alert("Couldn't add: "+ins.error.message);return;}
+  document.getElementById("hab-new").value="";
+  loadHabits();
+}
+async function toggleHabitActive(h){
+  await sb.from("habits").update({active:!(h.active!==false)}).eq("id",h.id);
+  loadHabits();
+}
+async function delHabit(h){
+  if(!confirm("Delete \""+h.label+"\" for everyone? Client tick history for it stays but it disappears from all clients."))return;
+  await sb.from("habits").delete().eq("id",h.id);
+  loadHabits();
+}
+
+// ===== per-client habit tweaks (in edit modal) =====
+var editHabitState={shared:[],overrides:{},customs:[]};
+async function loadClientHabits(slug){
+  var rh=await sb.from("habits").select("*").eq("active",true).order("sort_order");
+  var rc=await sb.from("client_habits").select("*").eq("client_slug",slug).order("sort_order");
+  editHabitState.shared=rh.data||[];
+  editHabitState.overrides={}; editHabitState.customs=[];
+  (rc.data||[]).forEach(function(ch){
+    if(ch.source_habit_id) editHabitState.overrides[ch.source_habit_id]=ch;
+    else editHabitState.customs.push(ch);
+  });
+  drawClientHabits(slug);
+}
+function drawClientHabits(slug){
+  var box=document.getElementById(habitCont||"edit-habits"); box.innerHTML="";
+  editHabitState.shared.forEach(function(h){
+    var ov=editHabitState.overrides[h.id];
+    var on=!(ov&&ov.enabled===false);
+    var row=el("div","ehab-row");
+    var cb=el("div","ehab-check"+(on?" on":""));cb.innerHTML=on?"\u2713":"";
+    cb.onclick=function(){ setSharedHabitEnabled(slug,h,!on); };
+    row.appendChild(cb);
+    row.appendChild(el("div","ehab-label",h.label+(on?"":"  (hidden)")));
+    box.appendChild(row);
+  });
+  editHabitState.customs.forEach(function(c){
+    var row=el("div","ehab-row");
+    var cb=el("div","ehab-check on");cb.innerHTML="\u2713";
+    row.appendChild(cb);
+    row.appendChild(el("div","ehab-label",(c.label||"Habit")+"  \u00b7 custom"));
+    var x=el("button","clip-btn","\u2715");x.style.color="var(--bad)";x.style.marginLeft="auto";
+    x.onclick=function(){ delClientHabit(slug,c); };
+    row.appendChild(x);
+    box.appendChild(row);
+  });
+}
+async function setSharedHabitEnabled(slug,h,enabled){
+  var ov=editHabitState.overrides[h.id];
+  if(ov){
+    await sb.from("client_habits").update({enabled:enabled}).eq("id",ov.id);
+  }else{
+    await sb.from("client_habits").insert({client_slug:slug,source_habit_id:h.id,enabled:enabled});
+  }
+  loadClientHabits(slug);
+}
+async function addClientHabit(){
+  var slug=editSlug; if(!slug)return;
+  var t=document.getElementById(habitInputId||"ehab-new").value.trim(); if(!t)return;
+  await sb.from("client_habits").insert({client_slug:slug,label:t,enabled:true});
+  document.getElementById(habitInputId||"ehab-new").value="";
+  loadClientHabits(slug);
+}
+async function delClientHabit(slug,c){
+  await sb.from("client_habits").delete().eq("id",c.id);
+  loadClientHabits(slug);
+}
+
+// ===== WEIGH-IN EDITOR =====
+document.getElementById("wi-add-btn").onclick = addWeighIn;
+async function loadWeighIns(slug){
+  var r=await sb.from("body_logs").select("*").eq("client_slug",slug).order("logged_date",{ascending:false});
+  var box=document.getElementById(weighInCont||"edit-weighins"); box.innerHTML="";
+  var rows=(r.data||[]).filter(function(x){return x.weight!=null;});
+  if(!rows.length){box.innerHTML='<div style="font-size:12px;color:var(--ink-3)">No weigh-ins logged yet.</div>';return;}
+  rows.forEach(function(w){
+    var row=el("div","wi-row");
+    var dt=el("div","wi-date",new Date(w.logged_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}));
+    row.appendChild(dt);
+    var inp=el("input","wi-kg-edit"); inp.type="number"; inp.step="0.1"; inp.value=w.weight;
+    inp.onchange=(function(dstr){return function(){ saveWeighIn(slug,dstr,this.value); };})(w.logged_date);
+    row.appendChild(inp);
+    row.appendChild(el("span","wi-unit","kg"));
+    var del=el("button","clip-btn","\u2715"); del.style.color="var(--bad)"; del.style.marginLeft="auto";
+    del.onclick=(function(dstr){return function(){ delWeighIn(slug,dstr); };})(w.logged_date);
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+async function addWeighIn(){
+  var slug=editSlug; if(!slug)return;
+  var d=document.getElementById(wiDateId||"wi-date").value;
+  var kg=parseFloat(document.getElementById(wiKgId||"wi-kg").value);
+  if(!d){alert("Pick a date for the weigh-in");return;}
+  if(isNaN(kg)){alert("Enter a weight");return;}
+  await sb.from("body_logs").upsert({client_slug:slug,logged_date:d,weight:kg},{onConflict:"client_slug,logged_date"});
+  document.getElementById(wiKgId||"wi-kg").value="";
+  loadWeighIns(slug);
+}
+async function saveWeighIn(slug,dstr,val){
+  var kg=parseFloat(val); if(isNaN(kg))return;
+  await sb.from("body_logs").upsert({client_slug:slug,logged_date:dstr,weight:kg},{onConflict:"client_slug,logged_date"});
+  loadWeighIns(slug);
+}
+async function delWeighIn(slug,dstr){
+  if(!confirm("Delete the weigh-in from "+new Date(dstr+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+"?"))return;
+  await sb.from("body_logs").delete().eq("client_slug",slug).eq("logged_date",dstr);
+  loadWeighIns(slug);
+}
+document.getElementById("r-close-btn").onclick = function(){closeModal("modal-resources");};
+document.getElementById("r-save-btn").onclick = saveRes;
+document.getElementById("r-kind").onchange = resKindToggle;
+document.getElementById("r-file").onchange = uploadResFile;
+
+// ===== RESOURCES MANAGER =====
+var allRes=[], editingResId=null, editingResUrl=null, uploadedResUrl=null;
+
+function openResources(){ resetResForm(); loadResources(); openModal("modal-resources"); }
+
+async function loadResources(){
+  var r=await sb.from("resources").select("*").order("sort_order");
+  allRes=r.data||[];
+  renderResList();
+}
+
+function resKindToggle(){
+  var k=document.getElementById("r-kind").value;
+  document.getElementById("r-url-wrap").style.display=(k==="link"||k==="call")?"":"none";
+  document.getElementById("r-file-wrap").style.display=(k==="file")?"":"none";
+  document.getElementById("r-content-wrap").style.display=(k==="guide")?"":"none";
+  document.getElementById("r-url").placeholder=(k==="call")?"https://calendly.com/…":"https://…";
+}
+
+function resetResForm(){
+  editingResId=null; editingResUrl=null; uploadedResUrl=null;
+  document.getElementById("r-title").value="";
+  document.getElementById("r-kind").value="link";
+  document.getElementById("r-url").value="";
+  document.getElementById("r-content").value="";
+  document.getElementById("r-file").value="";
+  document.getElementById("r-file-status").textContent="";
+  document.getElementById("r-save-btn").textContent="Add resource";
+  document.getElementById("r-edit-note").style.display="none";
+  resKindToggle();
+}
+
+async function uploadResFile(){
+  var f=document.getElementById("r-file").files[0];
+  if(!f)return;
+  var st=document.getElementById("r-file-status");
+  st.textContent="Uploading \u2026";
+  var path=Date.now()+"_"+f.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+  var up=await sb.storage.from("resources").upload(path,f);
+  if(up.error){st.textContent="Upload failed: "+up.error.message;return;}
+  uploadedResUrl=sb.storage.from("resources").getPublicUrl(path).data.publicUrl;
+  st.textContent="Uploaded \u2713  "+f.name;
+}
+
+async function saveRes(){
+  var title=document.getElementById("r-title").value.trim();
+  var kind=document.getElementById("r-kind").value;
+  if(!title){alert("Title is required");return;}
+  var rec={title:title,kind:kind,url:null,content:null};
+  if(kind==="guide"){
+    rec.content=document.getElementById("r-content").value.trim();
+    if(!rec.content){alert("Enter the guide text");return;}
+  }else if(kind==="file"){
+    rec.url=uploadedResUrl||editingResUrl;
+    if(!rec.url){alert("Upload a file first");return;}
+  }else{
+    rec.url=document.getElementById("r-url").value.trim();
+    if(!rec.url){alert("Enter a URL");return;}
+  }
+  if(editingResId){
+    var u=await sb.from("resources").update(rec).eq("id",editingResId);
+    if(u.error){alert("Save failed: "+u.error.message);return;}
+  }else{
+    var maxo=allRes.length?Math.max.apply(null,allRes.map(function(x){return x.sort_order||0;})):0;
+    rec.sort_order=maxo+1;
+    var ins=await sb.from("resources").insert(rec);
+    if(ins.error){alert("Save failed: "+ins.error.message);return;}
+  }
+  resetResForm();
+  loadResources();
+}
+
+// ===== RECIPE LIBRARY =====
+var allRecipes=[], editingRecId=null, uploadedRecPhoto=null, uploadedRecPath=null;
+
+function openRecipes(){ resetRecForm(); loadRecipes(); openModal("modal-recipes"); }
+
+async function loadRecipes(){
+  var r=await sb.from("recipes").select("*").order("category").order("title");
+  allRecipes=r.data||[];
+  drawRecList();
+}
+
+function resetRecForm(){
+  editingRecId=null; uploadedRecPhoto=null; uploadedRecPath=null;
+  ["rc-title","rc-ing","rc-inst","rc-photo"].forEach(function(id){document.getElementById(id).value="";});
+  ["rc-cal","rc-pro","rc-carb","rc-fat"].forEach(function(id){document.getElementById(id).value=0;});
+  document.getElementById("rc-serv").value=1;
+  document.getElementById("rc-cat").value="Dinner";
+  document.getElementById("rc-file").value="";
+  document.getElementById("rc-file-status").textContent="";
+  var pv=document.getElementById("rc-preview"); pv.style.display="none"; pv.src="";
+  document.getElementById("rc-save-btn").textContent="Add recipe";
+  document.getElementById("rc-edit-note").style.display="none";
+}
+
+function recPreview(url){
+  var pv=document.getElementById("rc-preview");
+  if(url){pv.src=url;pv.style.display="block";}else{pv.style.display="none";pv.src="";}
+}
+
+function recResize(file,maxDim,q){
+  return new Promise(function(resolve){
+    try{
+      var img=new Image();
+      img.onload=function(){
+        var w=img.width,h=img.height;
+        if(w>=h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+        else if(h>w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+        var c=document.createElement("canvas");c.width=w;c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        c.toBlob(function(b){resolve(b||file);},"image/jpeg",q);
+      };
+      img.onerror=function(){resolve(file);};
+      img.src=URL.createObjectURL(file);
+    }catch(e){resolve(file);}
+  });
+}
+
+async function uploadRecPhoto(f){
+  var st=document.getElementById("rc-file-status");
+  st.textContent="Uploading\u2026";
+  var blob=await recResize(f,1100,0.82);
+  var rid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2));
+  var path=rid+".jpg";
+  var up=await sb.storage.from("recipe-photos").upload(path,blob,{contentType:"image/jpeg"});
+  if(up.error){st.textContent="Upload failed: "+up.error.message;return;}
+  uploadedRecPath=path;
+  uploadedRecPhoto=sb.storage.from("recipe-photos").getPublicUrl(path).data.publicUrl;
+  st.textContent="Photo ready \u2713";
+  recPreview(uploadedRecPhoto);
+}
+
+async function saveRec(){
+  var title=document.getElementById("rc-title").value.trim();
+  if(!title){alert("Give the recipe a name");return;}
+  var photo=uploadedRecPhoto||document.getElementById("rc-photo").value.trim()||null;
+  var rec={
+    title:title,
+    category:document.getElementById("rc-cat").value,
+    photo_url:photo,
+    ingredients:document.getElementById("rc-ing").value.trim(),
+    instructions:document.getElementById("rc-inst").value.trim(),
+    calories:parseInt(document.getElementById("rc-cal").value)||0,
+    protein:parseInt(document.getElementById("rc-pro").value)||0,
+    carbs:parseInt(document.getElementById("rc-carb").value)||0,
+    fats:parseInt(document.getElementById("rc-fat").value)||0,
+    servings:parseInt(document.getElementById("rc-serv").value)||1
+  };
+  if(uploadedRecPath)rec.photo_path=uploadedRecPath;
+  if(editingRecId){
+    var u=await sb.from("recipes").update(rec).eq("id",editingRecId);
+    if(u.error){alert("Save failed: "+u.error.message);return;}
+  }else{
+    var ins=await sb.from("recipes").insert(rec);
+    if(ins.error){alert("Save failed: "+ins.error.message);return;}
+  }
+  resetRecForm();
+  loadRecipes();
+}
+
+function editRec(r){
+  editingRecId=r.id; uploadedRecPhoto=null; uploadedRecPath=null;
+  document.getElementById("rc-title").value=r.title||"";
+  document.getElementById("rc-cat").value=r.category||"Dinner";
+  document.getElementById("rc-serv").value=r.servings||1;
+  document.getElementById("rc-photo").value=r.photo_url||"";
+  document.getElementById("rc-ing").value=r.ingredients||"";
+  document.getElementById("rc-inst").value=r.instructions||"";
+  document.getElementById("rc-cal").value=r.calories||0;
+  document.getElementById("rc-pro").value=r.protein||0;
+  document.getElementById("rc-carb").value=r.carbs||0;
+  document.getElementById("rc-fat").value=r.fats||0;
+  document.getElementById("rc-file").value="";
+  document.getElementById("rc-file-status").textContent="";
+  recPreview(r.photo_url||"");
+  document.getElementById("rc-save-btn").textContent="Update recipe";
+  var note=document.getElementById("rc-edit-note");note.style.display="block";note.textContent="Editing \u201C"+r.title+"\u201D";
+}
+
+async function delRec(r){
+  if(!confirm("Delete \u201C"+r.title+"\u201D?"))return;
+  if(r.photo_path){ try{ await sb.storage.from("recipe-photos").remove([r.photo_path]); }catch(e){} }
+  await sb.from("recipes").delete().eq("id",r.id);
+  if(editingRecId===r.id)resetRecForm();
+  loadRecipes();
+}
+
+function drawRecList(){
+  var box=document.getElementById("rc-list");
+  box.innerHTML="";
+  if(!allRecipes.length){box.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:8px 0">No recipes yet.</div>';return;}
+  allRecipes.forEach(function(r){
+    var row=el("div","rec-row");
+    if(r.photo_url){var im=el("img","rec-thumb");im.src=r.photo_url;row.appendChild(im);}
+    else{row.appendChild(el("div","rec-thumb rec-thumb-empty","\uD83C\uDF7D"));}
+    var mid=el("div","rec-mid");
+    mid.appendChild(el("div","rec-title",r.title));
+    mid.appendChild(el("div","rec-meta",(r.category||"")+" \u00b7 "+(r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
+    row.appendChild(mid);
+    var acts=el("div","rec-acts");
+    var eb=el("button","clip-btn","Edit"); eb.onclick=function(){editRec(r);};
+    var db=el("button","clip-btn","\u2715"); db.style.color="var(--bad)"; db.onclick=function(){delRec(r);};
+    acts.appendChild(eb);acts.appendChild(db);
+    row.appendChild(acts);
+    box.appendChild(row);
+  });
+}
+
+function editRes(r){
+  editingResId=r.id; editingResUrl=r.url||null; uploadedResUrl=null;
+  document.getElementById("r-title").value=r.title;
+  document.getElementById("r-kind").value=r.kind;
+  document.getElementById("r-url").value=(r.kind==="link"||r.kind==="call")?(r.url||""):"";
+  document.getElementById("r-content").value=r.content||"";
+  document.getElementById("r-file").value="";
+  document.getElementById("r-file-status").textContent=(r.kind==="file"&&r.url)?"Current file kept \u2014 upload to replace":"";
+  resKindToggle();
+  document.getElementById("r-save-btn").textContent="Update resource";
+  var note=document.getElementById("r-edit-note");note.style.display="block";note.textContent="Editing \u201C"+r.title+"\u201D";
+}
+
+async function delRes(r){
+  if(!confirm("Delete \u201C"+r.title+"\u201D?"))return;
+  if(r.kind==="file"&&r.url){
+    var parts=r.url.split("/resources/");
+    if(parts[1]){try{await sb.storage.from("resources").remove([decodeURIComponent(parts[1])]);}catch(e){}}
+  }
+  await sb.from("resources").delete().eq("id",r.id);
+  if(editingResId===r.id)resetResForm();
+  loadResources();
+}
+
+async function moveRes(i,dir){
+  var a=allRes[i],b=allRes[i+dir];if(!a||!b)return;
+  var ao=a.sort_order,bo=b.sort_order;
+  if(ao===bo){bo=ao+dir;}
+  await sb.from("resources").update({sort_order:bo}).eq("id",a.id);
+  await sb.from("resources").update({sort_order:ao}).eq("id",b.id);
+  loadResources();
+}
+
+function renderResList(){
+  var box=document.getElementById("r-list");
+  box.innerHTML="";
+  if(!allRes.length){box.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:8px 0">No resources yet.</div>';return;}
+  var KIND={link:"Link",file:"File",guide:"Written guide",call:"Book a call"};
+  allRes.forEach(function(r,i){
+    var row=el("div","res-admin-row");
+    var info=el("div","res-admin-t");
+    info.appendChild(el("b","",r.title));
+    info.appendChild(el("span","",KIND[r.kind]||r.kind));
+    row.appendChild(info);
+    var ctl=el("div","");ctl.style.cssText="display:flex;gap:5px;flex-shrink:0";
+    if(i>0){var up=el("button","clip-btn","\u2191");up.onclick=(function(idx){return function(){moveRes(idx,-1);};})(i);ctl.appendChild(up);}
+    if(i<allRes.length-1){var dn=el("button","clip-btn","\u2193");dn.onclick=(function(idx){return function(){moveRes(idx,1);};})(i);ctl.appendChild(dn);}
+    var ed=el("button","clip-btn","Edit");ed.onclick=(function(x){return function(){editRes(x);};})(r);ctl.appendChild(ed);
+    var dl=el("button","clip-btn","\u2715");dl.style.color="var(--bad)";dl.onclick=(function(x){return function(){delRes(x);};})(r);ctl.appendChild(dl);
+    row.appendChild(ctl);
+    box.appendChild(row);
+  });
+}
+document.getElementById("cancel-add-btn").onclick = function(){closeModal("modal-add");};
+document.getElementById("cancel-edit-btn").onclick = function(){closeModal("modal-edit");};
+document.getElementById("save-add-btn").onclick = saveNew;
+document.getElementById("save-edit-btn").onclick = saveEdit;
+document.getElementById("del-btn").onclick = delClient;
+document.getElementById("add-day-btn").onclick = function(){addDay("add");};
+document.getElementById("edit-day-btn").onclick = function(){addDay("edit");};
+document.getElementById("asl").oninput = function(){
+  this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g,"");
+  document.getElementById("sp").textContent = this.value || "slug";
+};
+
+// ── LOAD CLIENTS ──
+var allClients = [], clientFolder = "active";
+
+async function loadClients() {
+  var res = await sb.from("clients").select("*").order("created_at");
+  allClients = res.data || [];
+  renderClients();
+}
+
+function renderClients() {
+  var tabsEl = document.getElementById("folder-tabs");
+  var clist = document.getElementById("clist");
+  var actives = allClients.filter(function(c){return c.active!==false;});
+  var inactives = allClients.filter(function(c){return c.active===false;});
+
+  tabsEl.innerHTML = "";
+  var ta = el("button","folder-tab"+(clientFolder==="active"?" on":""),"Active ("+actives.length+")");
+  ta.onclick = function(){clientFolder="active";renderClients();};
+  var ti = el("button","folder-tab"+(clientFolder==="inactive"?" on":""),"Inactive ("+inactives.length+")");
+  ti.onclick = function(){clientFolder="inactive";renderClients();};
+  tabsEl.appendChild(ta); tabsEl.appendChild(ti);
+
+  clist.innerHTML = "";
+  var show = clientFolder==="active"?actives:inactives;
+  if (!show.length) {
+    var d = el("div","empty");
+    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">No '+clientFolder+' clients.</div>';
+    clist.appendChild(d); return;
+  }
+  show.forEach(function(c) {
+    var init = c.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+    var item = el("div","client-list-item");
+    item.onclick = (function(slug){ return function(){ openProfile(slug); }; })(c.slug);
+    var left = el("div","cli-left");
+    var av = el("div","av",init); av.style.cssText="width:36px;height:36px;font-size:12px";
+    var info = el("div");
+    info.appendChild(el("div","cli-name",c.name));
+    info.appendChild(el("div","cli-goal",c.goal||"No goal"));
+    info.appendChild(el("div","cli-link","/client/"+c.slug));
+    left.appendChild(av); left.appendChild(info);
+    item.appendChild(left);
+    var right = el("div","cli-right");
+    var isActive = c.active!==false;
+    var tog = el("button","folder-move-btn", isActive?"Archive":"Restore");
+    tog.onclick = (function(slug,mk){ return function(ev){ toggleActive(slug,mk,ev); }; })(c.slug,!isActive);
+    right.appendChild(tog);
+    right.appendChild(el("div","chevron","›"));
+    item.appendChild(right);
+    clist.appendChild(item);
+  });
+}
+
+async function toggleActive(slug, makeActive, ev) {
+  if (ev) ev.stopPropagation();
+  await sb.from("clients").update({active:makeActive}).eq("slug",slug);
+  allClients.forEach(function(c){ if(c.slug===slug) c.active=makeActive; });
+  renderClients();
+}
+
+// ===== CLIENT PROFILE (merged app — stage 1 shell) =====
+var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
+var habitCont="edit-habits", habitInputId="ehab-new";
+var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
+var profileSlug=null, profileTabName="overview";
+var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
+
+function openProfile(slug){
+  var c=allClients.find(function(x){return x.slug===slug;});
+  if(!c)return;
+  profileSlug=slug; profileTabName="overview";
+  document.getElementById("pf-av").textContent=(c.name||"").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+  document.getElementById("pf-name").textContent=c.name||"Client";
+  document.getElementById("pf-goal").textContent=c.goal||"No goal set";
+  var st=document.getElementById("pf-status");
+  var active=c.active!==false;
+  st.className="pf-status "+(active?"act":"inact"); st.textContent=active?"Active":"Inactive";
+  var tb=document.getElementById("pf-tabs"); tb.innerHTML="";
+  PF_TABS.forEach(function(t){
+    var b=el("button","pf-tab"+(t[0]==="overview"?" on":""),t[1]);
+    b.onclick=(function(nm){return function(){ switchPfTab(nm); };})(t[0]);
+    tb.appendChild(b);
+  });
+  renderPfTab();
+  document.getElementById("profile").classList.add("show");
+  window.scrollTo(0,0);
+}
+function switchPfTab(name){
+  profileTabName=name;
+  var tb=document.getElementById("pf-tabs");
+  Array.prototype.forEach.call(tb.children,function(b,i){ b.classList.toggle("on",PF_TABS[i][0]===name); });
+  renderPfTab();
+}
+function closeProfile(){ document.getElementById("profile").classList.remove("show"); }
+
+function renderPfTab(){
+  var b=document.getElementById("pf-body"); b.innerHTML="";
+  var c=allClients.find(function(x){return x.slug===profileSlug;});
+  if(!c)return;
+  if(profileTabName==="overview"){ pfOverview(b,c); return; }
+  if(profileTabName==="program"){ pfProgram(b,c); return; }
+  if(profileTabName==="nutrition"){ pfNutrition(b,c); return; }
+  if(profileTabName==="habits"){ pfHabits(b,c); return; }
+  if(profileTabName==="progress"){ pfProgress(b,c); return; }
+  if(profileTabName==="coaching"){ pfCoaching(b,c); return; }
+}
+
+// ===== ported from trainer dashboard: coach notes + requests + recipe placement =====
+function daysAgo(ms){return ms==null?null:Math.floor((Date.now()-ms)/86400000);}
+function ymd(d){return d.toISOString().split("T")[0];}
+function dayFull(k){return {mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"}[k]||k||"";}
+var DAY_ORDER=["mon","tue","wed","thu","fri","sat","sun"];
+var _cnotes=[];
+function drawCoachNotes(list,slug){
+  _cnotes=list||[];
+  var box=document.getElementById("cn-list");
+  if(!box)return;
+  box.innerHTML="";
+  if(!_cnotes.length){box.appendChild(el("div","wt-empty","No notes yet. Log your first call here."));return;}
+  _cnotes.forEach(function(n){
+    var card=el("div","note-card");
+    var h=el("div","note-head");
+    var d=new Date(n.note_date+"T12:00:00");
+    var ago=daysAgo(d.getTime());
+    h.appendChild(el("div","note-when", d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + (ago===0?" \u00b7 today":(ago===1?" \u00b7 1d ago":" \u00b7 "+ago+"d ago"))));
+    var del=el("button","note-del","\u2715");
+    del.onclick=(function(id,s){return function(){delCoachNote(id,s);};})(n.id,slug);
+    h.appendChild(del);
+    card.appendChild(h);
+    card.appendChild(el("div","note-txt",n.note));
+    box.appendChild(card);
+  });
+}
+async function addCoachNote(slug){
+  var t=document.getElementById("cn-txt");
+  var txt=(t.value||"").trim();
+  if(!txt){t.focus();return;}
+  var date=document.getElementById("cn-date").value||ymd(new Date());
+  var ins=await sb.from("coach_notes").insert({client_slug:slug,note_date:date,note:txt}).select().single();
+  if(ins.error){alert("Couldn't save note \u2014 try again.");return;}
+  t.value="";
+  var r=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  drawCoachNotes(r.data||[],slug);
+}
+async function delCoachNote(id,slug){
+  await sb.from("coach_notes").delete().eq("id",id);
+  drawCoachNotes(_cnotes.filter(function(n){return n.id!==id;}),slug);
+}
+
+var _fitReq=null,_fitSlug=null,_fitRecipe=null;
+function closeFit(){document.getElementById("fit-panel").classList.remove("show");}
+async function openFit(q,slug){
+  _fitReq=q;_fitSlug=slug;
+  var ov=document.getElementById("fit-panel");
+  var body=document.getElementById("fit-body");
+  document.getElementById("fit-title").textContent="Place: "+q.ref_name;
+  body.innerHTML='<div class="loader">Working out where it fits\u2026</div>';
+  ov.classList.add("show");
+  var rr=await sb.from("recipes").select("*").eq("title",q.ref_name).maybeSingle();
+  if(!rr.data){body.innerHTML='<div class="wt-empty">Couldn\'t find that recipe in the library \u2014 it may have been renamed or deleted.</div>';return;}
+  _fitRecipe=rr.data;
+  var rec=rr.data;
+  var rm=await sb.from("meal_templates").select("*").eq("client_slug",slug);
+  var meals=rm.data||[];
+  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
+  var tgt=rt.data;
+  body.innerHTML="";
+  var mr=el("div","fit-macros");
+  [[rec.calories||0,"Calories"],[(rec.protein||0)+"g","Protein"],[(rec.carbs||0)+"g","Carbs"],[(rec.fats||0)+"g","Fat"]].forEach(function(m){
+    var bx=el("div","fit-m");
+    bx.appendChild(el("div","fit-m-v",String(m[0])));
+    bx.appendChild(el("div","fit-m-l",m[1]));
+    mr.appendChild(bx);
+  });
+  body.appendChild(mr);
+  var n1=el("div","fit-note");
+  n1.textContent="Macros are per serving"+(rec.servings>1?(" \u00b7 recipe makes "+rec.servings):"")+
+    (tgt?("  \u2022  Their daily target: "+tgt.calories+" kcal / "+tgt.protein+"P / "+tgt.carbs+"C / "+tgt.fats+"F"):"");
+  body.appendChild(n1);
+  if(!meals.length){
+    body.appendChild(el("div","wt-empty","This client has no meal plan yet \u2014 build one in the Nutrition tab first."));
+    return;
+  }
+  var scored=meals.map(function(m){
+    var dk=(rec.calories||0)-(m.calories||0);
+    var dp=(rec.protein||0)-(m.protein||0);
+    var sc=Math.abs(dk)+5*Math.abs(dp);
+    var cat=(rec.category||"").toLowerCase();
+    var nm=(m.meal_name||"").toLowerCase();
+    var catMatch=cat&&nm&&nm.indexOf(cat)!==-1;
+    if(catMatch)sc=sc*0.35;
+    return {m:m,dk:dk,dp:dp,score:sc,cat:catMatch};
+  });
+  scored.sort(function(a,b){
+    if(a.score!==b.score)return a.score-b.score;
+    return DAY_ORDER.indexOf(a.m.day_of_week)-DAY_ORDER.indexOf(b.m.day_of_week);
+  });
+  body.appendChild(el("div","sec-label","Best fits"));
+  scored.forEach(function(sObj,i){
+    var m=sObj.m;
+    var slot=el("div","fit-slot"+(i===0?" best":""));
+    if(i===0)slot.appendChild(el("div","fit-badge","Closest match"));
+    var top=el("div","fit-slot-top");
+    var lft=el("div","");
+    lft.appendChild(el("div","fit-slot-name",dayFull(m.day_of_week)+" \u00b7 "+(m.meal_name||"Meal")+(sObj.cat?"  \u2713":"")));
+    lft.appendChild(el("div","fit-slot-cur","Currently "+(m.calories||0)+" kcal \u00b7 "+(m.protein||0)+"P "+(m.carbs||0)+"C "+(m.fats||0)+"F"));
+    var cls=Math.abs(sObj.dk)<=75?"good":(Math.abs(sObj.dk)<=200?"warn":"bad");
+    var d=el("div","fit-delta "+cls);
+    d.textContent="Swap \u2192 "+(sObj.dk>=0?"+":"\u2212")+Math.abs(sObj.dk)+" kcal, "+(sObj.dp>=0?"+":"\u2212")+Math.abs(sObj.dp)+"g protein";
+    lft.appendChild(d);
+    top.appendChild(lft);
+    var btns=el("div","fit-btns");
+    var rb=el("button","fit-btn rep","Replace");
+    rb.onclick=(function(mm){return function(){placeRecipe(mm,"replace");};})(m);
+    var ab=el("button","fit-btn add","Add");
+    ab.onclick=(function(mm){return function(){placeRecipe(mm,"add");};})(m);
+    btns.appendChild(rb);btns.appendChild(ab);
+    top.appendChild(btns);
+    slot.appendChild(top);
+    body.appendChild(slot);
+  });
+}
+async function placeRecipe(targetMeal,mode){
+  var rec=_fitRecipe,slug=_fitSlug,q=_fitReq;
+  if(!rec||!slug)return;
+  var dayName=dayFull(targetMeal.day_of_week);
+  var msg = mode==="replace"
+    ? ("Replace "+dayName+" \u00b7 "+(targetMeal.meal_name||"meal")+" with \""+rec.title+"\"?\n\nTheir current meal will be overwritten.")
+    : ("Add \""+rec.title+"\" as an extra meal on "+dayName+"?\n\nThis adds "+(rec.calories||0)+" kcal to that day.");
+  if(!confirm(msg))return;
+  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0 };
+  if(mode==="replace"){
+    var u=await sb.from("meal_templates").update(payload).eq("id",targetMeal.id);
+    if(u.error){alert("Couldn't update that meal: "+u.error.message);return;}
+  } else {
+    var rmax=await sb.from("meal_templates").select("meal_order").eq("client_slug",slug).eq("day_of_week",targetMeal.day_of_week);
+    var mx=0;(rmax.data||[]).forEach(function(r){if((r.meal_order||0)>mx)mx=r.meal_order||0;});
+    payload.client_slug=slug; payload.day_of_week=targetMeal.day_of_week; payload.option_num=1; payload.meal_order=mx+1;
+    var ins=await sb.from("meal_templates").insert(payload);
+    if(ins.error){alert("Couldn't add that meal: "+ins.error.message);return;}
+  }
+  if(q&&q.id) await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",q.id);
+  closeFit();
+  renderPfTab();
+}
+async function resolveReq(id,slug){
+  await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",id);
+  renderPfTab();
+}
+
+async function pfCoaching(b,c){
+  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading\u2026"));
+  var rcr=await sb.from("change_requests").select("*").eq("client_slug",c.slug).eq("status","open").order("created_at",{ascending:false});
+  var rcn=await sb.from("coach_notes").select("*").eq("client_slug",c.slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  var creqs=rcr.data||[], cnotes=rcn.data||[];
+  b.innerHTML="";
+
+  if(creqs.length){
+    b.appendChild(el("div","pf-sub","Open requests"));
+    var rbox=el("div","req-box");
+    creqs.forEach(function(q){
+      var item=el("div","req-item");
+      var left=el("div","");
+      var label = q.kind==="recipe" ? ("\uD83C\uDF7D Wants recipe: "+q.ref_name) : (dayFull(q.ref_day)+" \u00b7 "+q.ref_name+" \u2014 change requested");
+      left.appendChild(el("div","req-meal",label));
+      var da=daysAgo(new Date(q.created_at).getTime());
+      left.appendChild(el("div","req-when","Requested "+(da===0?"today":(da===1?"yesterday":da+" days ago"))));
+      item.appendChild(left);
+      var acts=el("div","req-acts");
+      if(q.kind==="recipe"){
+        var pb=el("button","req-place","Place it \u203a");
+        pb.onclick=(function(qq,s){return function(){openFit(qq,s);};})(q,c.slug);
+        acts.appendChild(pb);
+      }
+      var rb=el("button","req-resolve","Mark done");
+      rb.onclick=(function(id,s){return function(){resolveReq(id,s);};})(q.id,c.slug);
+      acts.appendChild(rb);
+      item.appendChild(acts);
+      rbox.appendChild(item);
+    });
+    b.appendChild(rbox);
+  }
+
+  b.appendChild(el("div","pf-sub","Coach notes"));
+  var na=el("div","note-add");
+  var nin=el("textarea","note-in");nin.id="cn-txt";nin.placeholder="What did you discuss? Agreed actions, excuses, wins\u2026";
+  na.appendChild(nin);
+  var nrow=el("div","note-row");
+  var ndt=el("input","note-date");ndt.id="cn-date";ndt.type="date";ndt.value=new Date().toISOString().split("T")[0];
+  var nsv=el("button","note-save","Add note");
+  nsv.onclick=function(){ addCoachNote(c.slug); };
+  nrow.appendChild(ndt);nrow.appendChild(nsv);
+  na.appendChild(nrow);
+  b.appendChild(na);
+  var nlist=el("div","");nlist.id="cn-list";
+  b.appendChild(nlist);
+  drawCoachNotes(cnotes,c.slug);
+}
+
+// ===== ported from trainer dashboard: weight chart + win card + lightbox =====
 function weightTrend(body){
   var pts=body.filter(function(r){return r.weight!=null;}).slice().sort(function(a,b){return a.logged_date<b.logged_date?-1:1;});
   if(!pts.length)return null;
   var first=parseFloat(pts[0].weight),last=parseFloat(pts[pts.length-1].weight);
   return {first:first,last:last,delta:last-first,pts:pts};
 }
-function loggedMapOf(nat,food){var m={};nat.forEach(function(r){m[r.logged_date]=1;});food.forEach(function(r){m[r.logged_date]=1;});return m;}
-function adh30(map){
-  var today=new Date();today.setHours(12,0,0,0);var count=0;
-  for(var i=0;i<30;i++){var d=new Date(today);d.setDate(d.getDate()-i);if(map[ymd(d)])count++;}
-  return {count:count,pct:Math.round(count/30*100)};
-}
-function adhStrip(map){
-  var today=new Date();today.setHours(12,0,0,0);var out=[];
-  for(var i=29;i>=0;i--){var d=new Date(today);d.setDate(d.getDate()-i);out.push(!!map[ymd(d)]);}
-  return out;
-}
-function getFlags(rows){
-  var flags=[],today=new Date().toDateString();
-  var tr=rows.filter(function(r){return new Date(r.logged_at).toDateString()===today;});
-  var byEx={};
-  tr.forEach(function(r){if(!byEx[r.ex_id])byEx[r.ex_id]={name:r.ex_name,sets:[]};byEx[r.ex_id].sets[r.set_index]=r;});
-  Object.values(byEx).forEach(function(ex){
-    var f=ex.sets.filter(Boolean);if(!f.length)return;
-    var ok=f.every(function(s,i){return i===0||(s.reps&&s.reps>=8);});
-    if(ok&&!flags.includes(ex.name))flags.push(ex.name);
-  });
-  return flags;
-}
-
 function weightChartSVG(pts){
   if(!pts.length)return '<div class="wt-empty">No weigh-ins yet.</div>';
   var ws=pts.map(function(p){return parseFloat(p.weight);});
@@ -343,296 +1341,6 @@ function weightChartSVG(pts){
   svg+='<circle cx="'+lx+'" cy="'+ly+'" r="4" fill="#9DB49A"/></svg>';
   return svg;
 }
-
-function statBox(lbl,valHTML){var b=el("div","stat-box");b.appendChild(el("div","stat-lbl",lbl));var v=el("div","stat-val");v.innerHTML=valHTML;b.appendChild(v);return b;}
-
-// ── TRIAGE ──
-function daysAgo(ms){ return ms==null?null:Math.floor((Date.now()-ms)/86400000); }
-function foodDays7(map){
-  var today=new Date();today.setHours(12,0,0,0);var n=0;
-  for(var i=0;i<7;i++){var d=new Date(today);d.setDate(d.getDate()-i);if(map[ymd(d)])n++;}
-  return n;
-}
-function daysUntil(dateStr){
-  if(!dateStr)return null;
-  var end=new Date(dateStr+"T12:00:00");var t=new Date();t.setHours(12,0,0,0);
-  return Math.round((end-t)/86400000);
-}
-// Returns {status:"red"|"amber"|"green", chips:[{t,cls}]}
-function triage(c, inactive, f7, contactDays, renewDays){
-  var chips=[], red=false, amber=false;
-  // grace period — a client onboarded this week isn't "slipping"
-  var age = c.created_at ? daysAgo(new Date(c.created_at).getTime()) : 999;
-  var fresh = age!=null && age < 7;
-
-  if(!fresh){
-    if(inactive==null||inactive>=7){ red=true; chips.push({t:(inactive==null?"never logged in":inactive+"d inactive"),cls:"red"}); }
-    else if(inactive>=4){ amber=true; chips.push({t:inactive+"d inactive",cls:"amber"}); }
-
-    if(f7<=2){ red=true; chips.push({t:"food "+f7+"/7",cls:"red"}); }
-    else if(f7<=4){ amber=true; chips.push({t:"food "+f7+"/7",cls:"amber"}); }
-
-    if(contactDays==null||contactDays>=14){ red=true; chips.push({t:(contactDays==null?"never contacted":"no contact "+contactDays+"d"),cls:"red"}); }
-    else if(contactDays>=7){ amber=true; chips.push({t:"no contact "+contactDays+"d",cls:"amber"}); }
-  } else {
-    chips.push({t:"new client",cls:"info"});
-  }
-
-  if(renewDays!=null){
-    if(renewDays<0){ red=true; chips.push({t:"package ended",cls:"red"}); }
-    else if(renewDays<=14){ red=true; chips.push({t:"renews in "+renewDays+"d",cls:"red"}); }
-    else if(renewDays<=30){ chips.push({t:"renews in "+renewDays+"d",cls:"info"}); }
-  }
-
-  return {status: red?"red":(amber?"amber":"green"), chips:chips};
-}
-
-// ── PHOTO LIGHTBOX (view only) ──
-function openLB(url){if(!url)return;document.getElementById("lb-img").src=url;document.getElementById("lightbox").classList.add("show");}
-function closeLB(){document.getElementById("lightbox").classList.remove("show");document.getElementById("lb-img").src="";}
-
-// ── BOOT ──
-async function loadDash(){
-  var res=await sb.from("clients").select("*").order("created_at");
-  clients=(res.data||[]).filter(function(c){return c.active!==false;});
-  var rfo=await sb.from("folders").select("*").order("name");
-  folders=(rfo.data||[]).map(function(f){return f.name;});
-  var pills=document.getElementById("cpills");pills.innerHTML="";
-  if(!clients.length){document.getElementById("dcontent").innerHTML='<div class="empty">No clients yet.<br>Add them in the admin panel.</div>';return;}
-  var ov=el("div","client-pill active","Overview");ov.onclick=function(){selAll(this);};pills.appendChild(ov);
-  clients.forEach(function(c){
-    var p=el("div","client-pill",c.name.split(" ")[0]);p.dataset.slug=c.slug;
-    p.onclick=function(){selOne(this.dataset.slug,this);};pills.appendChild(p);
-  });
-  renderOverview();
-}
-function selAll(elp){
-  document.querySelectorAll(".client-pill").forEach(function(p){p.classList.remove("active");});
-  if(elp)elp.classList.add("active");
-  curClient=null;renderOverview();
-}
-function selOne(slug,elp){
-  document.querySelectorAll(".client-pill").forEach(function(p){p.classList.remove("active");});
-  if(elp)elp.classList.add("active");
-  curClient=slug;window.scrollTo(0,0);renderClient(slug);
-}
-
-// ── OVERVIEW (all clients) ──
-async function renderOverview(){
-  var dc=document.getElementById("dcontent");
-  dc.innerHTML="";dc.appendChild(el("div","loader","Loading…"));
-  sync(true);
-  var rl=await sb.from("lift_logs").select("*");
-  var rb=await sb.from("body_logs").select("client_slug,logged_date,weight");
-  var rn=await sb.from("nutrition_logs").select("client_slug,logged_date");
-  var rf=await sb.from("food_logs").select("client_slug,logged_date");
-  var rc=await sb.from("coach_notes").select("client_slug,note_date");
-  var rq=await sb.from("change_requests").select("client_slug").eq("status","open");
-  sync(false);
-  function byKey(arr,k){var m={};(arr||[]).forEach(function(r){var v=r[k];if(!m[v])m[v]=[];m[v].push(r);});return m;}
-  var liftBy=byKey(rl.data,"client"),bodyBy=byKey(rb.data,"client_slug"),natBy=byKey(rn.data,"client_slug"),foodBy=byKey(rf.data,"client_slug"),noteBy=byKey(rc.data,"client_slug"),reqBy=byKey(rq.data,"client_slug");
-
-  // build a scored row per client, then sort by who needs attention
-  var rows=clients.map(function(c){
-    var lr=liftBy[c.slug]||[],br=bodyBy[c.slug]||[],nr=natBy[c.slug]||[],fr=foodBy[c.slug]||[],cn=noteBy[c.slug]||[];
-    var la=lastActiveMs(lr,br,nr,fr);
-    var inactive=daysAgo(la);
-    var map=loggedMapOf(nr,fr);
-    var f7=foodDays7(map);
-    var lastNote=cn.length?Math.max.apply(null,cn.map(function(n){return new Date(n.note_date+"T12:00:00").getTime();})):null;
-    var contactDays=daysAgo(lastNote);
-    var renewDays=daysUntil(c.end_date);
-    var t=triage(c,inactive,f7,contactDays,renewDays);
-    var reqCount=(reqBy[c.slug]||[]).length;
-    if(reqCount>0){
-      t.chips.unshift({t:reqCount+" request"+(reqCount>1?"s":""),cls:"req"});
-      if(t.status==="green")t.status="amber";
-    }
-    return {c:c,lr:lr,br:br,map:map,inactive:inactive,f7:f7,contactDays:contactDays,renewDays:renewDays,t:t,reqCount:reqCount};
-  });
-  var rank={red:0,amber:1,green:2};
-  rows.sort(function(a,b){
-    if(rank[a.t.status]!==rank[b.t.status])return rank[a.t.status]-rank[b.t.status];
-    return (b.inactive==null?999:b.inactive)-(a.inactive==null?999:a.inactive);
-  });
-
-  dc.innerHTML="";
-  dc.className="overview";
-
-  // folder bar
-  dc.appendChild(folderBar(rows));
-
-  // apply folder filter
-  var visible=rows.filter(function(r){
-    if(curFolder==="__all__")return true;
-    if(curFolder==="__unfiled__")return !r.c.folder;
-    return r.c.folder===curFolder;
-  });
-
-  // summary bar (reflects what's shown)
-  var nRed=visible.filter(function(r){return r.t.status==="red";}).length;
-  var nAmb=visible.filter(function(r){return r.t.status==="amber";}).length;
-  var nGrn=visible.filter(function(r){return r.t.status==="green";}).length;
-  var bar=el("div","triage-bar");
-  [["tri-red",nRed,"Needs you"],["tri-amber",nAmb,"Watch"],["tri-green",nGrn,"On track"]].forEach(function(s){
-    var b=el("div","tri-sum "+s[0]);
-    b.appendChild(el("div","tri-sum-n",String(s[1])));
-    b.appendChild(el("div","tri-sum-l",s[2]));
-    bar.appendChild(b);
-  });
-  dc.appendChild(bar);
-
-  visible.forEach(function(r){
-    var c=r.c;
-    var sessions=sessionCount(r.lr);
-    var wt=weightTrend(r.br);
-    var adh=adh30(r.map);
-
-    var card=el("div","tcard st-"+r.t.status);
-    card.onclick=(function(s){return function(){var pill=document.querySelector('.client-pill[data-slug="'+s+'"]');selOne(s,pill);};})(c.slug);
-    var head=el("div","tc-head");head.appendChild(el("div","av",initials(c.name)));
-    var hi=el("div");hi.appendChild(el("div","tc-name",c.name));hi.appendChild(el("div","tc-goal",c.goal||""));head.appendChild(hi);
-    head.appendChild(el("div","st-dot "+r.t.status));
-    card.appendChild(head);
-
-    if(r.t.chips.length){
-      var cr=el("div","chip-row");
-      r.t.chips.forEach(function(ch){cr.appendChild(el("span","chip "+ch.cls,ch.t));});
-      card.appendChild(cr);
-    }
-
-    var grid=el("div","stat-grid");
-    grid.appendChild(statBox("Sessions",String(sessions)));
-    grid.appendChild(statBox("Last active",r.inactive==null?"—":(r.inactive===0?"Today":r.inactive+"d")));
-    grid.appendChild(statBox("Food logged",adh.pct+"<small>%</small>"));
-    grid.appendChild(statBox("Weight",wt?signed(wt.delta)+"<small>kg</small>":"—"));
-    card.appendChild(grid);
-
-    // folder assignment
-    var fw=el("div","card-folder");
-    fw.onclick=function(ev){ev.stopPropagation();};
-    fw.appendChild(el("span","card-folder-l","Folder"));
-    var fs=el("select","fsel");
-    var o0=el("option","","— Unfiled —");o0.value="";fs.appendChild(o0);
-    folders.forEach(function(f){var o=el("option","",f);o.value=f;fs.appendChild(o);});
-    fs.value=c.folder||"";
-    fs.onchange=(function(slug){return function(){ setClientFolder(slug,this.value); };})(c.slug);
-    fw.appendChild(fs);
-    card.appendChild(fw);
-
-    card.appendChild(el("div","tlink","/client/"+c.slug));
-    dc.appendChild(card);
-  });
-}
-
-// ── FOLDERS ──
-function folderBar(rows){
-  var bar=el("div","folder-bar");
-  function count(fn){return rows.filter(fn).length;}
-  var all=el("div","fchip"+(curFolder==="__all__"?" on":""));
-  all.appendChild(el("span","","All"));
-  all.appendChild(el("span","fchip-n",String(rows.length)));
-  all.onclick=function(){curFolder="__all__";renderOverview();};
-  bar.appendChild(all);
-
-  folders.forEach(function(f){
-    var chip=el("div","fchip"+(curFolder===f?" on":""));
-    chip.appendChild(el("span","",f));
-    chip.appendChild(el("span","fchip-n",String(count(function(r){return r.c.folder===f;}))));
-    var x=el("span","fchip-x","✕");
-    x.onclick=function(ev){ev.stopPropagation();deleteFolder(f);};
-    chip.appendChild(x);
-    chip.onclick=function(){curFolder=f;renderOverview();};
-    bar.appendChild(chip);
-  });
-
-  var unf=el("div","fchip"+(curFolder==="__unfiled__"?" on":""));
-  unf.appendChild(el("span","","Unfiled"));
-  unf.appendChild(el("span","fchip-n",String(count(function(r){return !r.c.folder;}))));
-  unf.onclick=function(){curFolder="__unfiled__";renderOverview();};
-  bar.appendChild(unf);
-
-  var nb=el("div","fchip fchip-new","+ New folder");
-  nb.onclick=function(){newFolder();};
-  bar.appendChild(nb);
-  return bar;
-}
-
-async function newFolder(){
-  var name=(prompt("Folder name — e.g. Comp Prep, Online, In-person")||"").trim();
-  if(!name)return;
-  if(folders.indexOf(name)!==-1){alert("That folder already exists.");return;}
-  var ins=await sb.from("folders").insert({name:name});
-  if(ins.error){alert("Couldn't create folder: "+ins.error.message);return;}
-  folders.push(name);folders.sort();
-  curFolder=name;
-  renderOverview();
-}
-
-async function deleteFolder(name){
-  var inIt=clients.filter(function(c){return c.folder===name;}).length;
-  if(!confirm("Delete the folder \""+name+"\"?"+(inIt?("\n\n"+inIt+" client"+(inIt>1?"s":"")+" will move back to Unfiled. Nobody is deleted."):"")))return;
-  await sb.from("clients").update({folder:null}).eq("folder",name);
-  await sb.from("folders").delete().eq("name",name);
-  clients.forEach(function(c){if(c.folder===name)c.folder=null;});
-  folders=folders.filter(function(f){return f!==name;});
-  if(curFolder===name)curFolder="__all__";
-  renderOverview();
-}
-
-async function setClientFolder(slug,folder){
-  var val=folder||null;
-  await sb.from("clients").update({folder:val}).eq("slug",slug);
-  clients.forEach(function(c){if(c.slug===slug)c.folder=val;});
-  renderOverview();
-}
-
-// ── COACH NOTES ──
-var _cnotes=[];
-function drawCoachNotes(list,slug){
-  _cnotes=list||[];
-  var box=document.getElementById("cn-list");
-  if(!box)return;
-  box.innerHTML="";
-  if(!_cnotes.length){box.appendChild(el("div","wt-empty","No notes yet. Log your first call here."));return;}
-  _cnotes.forEach(function(n){
-    var card=el("div","note-card");
-    var h=el("div","note-head");
-    var d=new Date(n.note_date+"T12:00:00");
-    var ago=daysAgo(d.getTime());
-    h.appendChild(el("div","note-when", d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + (ago===0?" · today":(ago===1?" · 1d ago":" · "+ago+"d ago"))));
-    var del=el("button","note-del","✕");
-    del.onclick=(function(id,s){return function(){delCoachNote(id,s);};})(n.id,slug);
-    h.appendChild(del);
-    card.appendChild(h);
-    card.appendChild(el("div","note-txt",n.note));
-    box.appendChild(card);
-  });
-}
-async function addCoachNote(slug){
-  var t=document.getElementById("cn-txt");
-  var txt=(t.value||"").trim();
-  if(!txt){t.focus();return;}
-  var date=document.getElementById("cn-date").value||ymd(new Date());
-  var ins=await sb.from("coach_notes").insert({client_slug:slug,note_date:date,note:txt}).select().single();
-  if(ins.error){alert("Couldn't save note — try again.");return;}
-  t.value="";
-  var r=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
-  drawCoachNotes(r.data||[],slug);
-}
-async function delCoachNote(id,slug){
-  await sb.from("coach_notes").delete().eq("id",id);
-  drawCoachNotes(_cnotes.filter(function(n){return n.id!==id;}),slug);
-}
-
-function dayFull(k){return {mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"}[k]||k||"";}
-
-// ===== RECIPE PLACEMENT =====
-var DAY_ORDER=["mon","tue","wed","thu","fri","sat","sun"];
-var _fitReq=null,_fitSlug=null,_fitRecipe=null;
-
-function closeFit(){document.getElementById("fit-panel").classList.remove("show");}
-
 function openWin(name,lost,weeks){
   var first=(name||"").split(" ")[0]||"Client";
   document.getElementById("win-label").textContent=first+"'s progress";
@@ -642,394 +1350,825 @@ function openWin(name,lost,weeks){
   document.getElementById("win-panel").classList.add("show");
 }
 function closeWin(){document.getElementById("win-panel").classList.remove("show");}
-async function openFit(q,slug){
-  _fitReq=q;_fitSlug=slug;
-  var ov=document.getElementById("fit-panel");
-  var body=document.getElementById("fit-body");
-  document.getElementById("fit-title").textContent="Place: "+q.ref_name;
-  body.innerHTML='<div class="loader">Working out where it fits\u2026</div>';
-  ov.classList.add("show");
+function openLB(url){var img=document.getElementById("lb-img");img.src=url;document.getElementById("lightbox").classList.add("show");}
+function closeLB(){document.getElementById("lightbox").classList.remove("show");}
 
-  var rr=await sb.from("recipes").select("*").eq("title",q.ref_name).maybeSingle();
-  if(!rr.data){body.innerHTML='<div class="wt-empty">Couldn\'t find that recipe in the library \u2014 it may have been renamed or deleted.</div>';return;}
-  _fitRecipe=rr.data;
-  var rec=rr.data;
+async function pfProgress(b,c){
+  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading progress\u2026"));
+  var rb=await sb.from("body_logs").select("*").eq("client_slug",c.slug).order("logged_date",{ascending:true});
+  var rp=await sb.from("progress_photos").select("*").eq("client_slug",c.slug).order("taken_date",{ascending:false});
+  var body=rb.data||[], photos=rp.data||[];
+  b.innerHTML="";
 
-  var rm=await sb.from("meal_templates").select("*").eq("client_slug",slug);
-  var meals=rm.data||[];
-  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
-  var tgt=rt.data;
-
-  body.innerHTML="";
-
-  // recipe macros
-  var mr=el("div","fit-macros");
-  [[rec.calories||0,"Calories"],[(rec.protein||0)+"g","Protein"],[(rec.carbs||0)+"g","Carbs"],[(rec.fats||0)+"g","Fat"]].forEach(function(m){
-    var b=el("div","fit-m");
-    b.appendChild(el("div","fit-m-v",String(m[0])));
-    b.appendChild(el("div","fit-m-l",m[1]));
-    mr.appendChild(b);
-  });
-  body.appendChild(mr);
-
-  var n1=el("div","fit-note");
-  n1.textContent="Macros are per serving"+(rec.servings>1?(" \u00b7 recipe makes "+rec.servings):"")+
-    (tgt?("  \u2022  Their daily target: "+tgt.calories+" kcal / "+tgt.protein+"P / "+tgt.carbs+"C / "+tgt.fats+"F"):"");
-  body.appendChild(n1);
-
-  if(!meals.length){
-    body.appendChild(el("div","wt-empty","This client has no meal plan yet \u2014 build one in the admin first."));
-    return;
-  }
-
-  // rank every existing meal by how little it disrupts their macros
-  var scored=meals.map(function(m){
-    var dk=(rec.calories||0)-(m.calories||0);
-    var dp=(rec.protein||0)-(m.protein||0);
-    var s=Math.abs(dk)+5*Math.abs(dp);
-    var cat=(rec.category||"").toLowerCase();
-    var nm=(m.meal_name||"").toLowerCase();
-    var catMatch=cat&&nm&&nm.indexOf(cat)!==-1;
-    if(catMatch)s=s*0.35;
-    return {m:m,dk:dk,dp:dp,score:s,cat:catMatch};
-  });
-  scored.sort(function(a,b){
-    if(a.score!==b.score)return a.score-b.score;
-    return DAY_ORDER.indexOf(a.m.day_of_week)-DAY_ORDER.indexOf(b.m.day_of_week);
-  });
-
-  body.appendChild(el("div","sec-label","Best fits"));
-  scored.forEach(function(s,i){
-    var m=s.m;
-    var slot=el("div","fit-slot"+(i===0?" best":""));
-    if(i===0)slot.appendChild(el("div","fit-badge","Closest match"));
-    var top=el("div","fit-slot-top");
-    var lft=el("div","");
-    lft.appendChild(el("div","fit-slot-name",dayFull(m.day_of_week)+" \u00b7 "+(m.meal_name||"Meal")+(s.cat?"  \u2713":"")));
-    lft.appendChild(el("div","fit-slot-cur","Currently "+(m.calories||0)+" kcal \u00b7 "+(m.protein||0)+"P "+(m.carbs||0)+"C "+(m.fats||0)+"F"));
-    var cls=Math.abs(s.dk)<=75?"good":(Math.abs(s.dk)<=200?"warn":"bad");
-    var d=el("div","fit-delta "+cls);
-    d.textContent="Swap \u2192 "+(s.dk>=0?"+":"\u2212")+Math.abs(s.dk)+" kcal, "+(s.dp>=0?"+":"\u2212")+Math.abs(s.dp)+"g protein";
-    lft.appendChild(d);
-    top.appendChild(lft);
-    var btns=el("div","fit-btns");
-    var rb=el("button","fit-btn rep","Replace");
-    rb.onclick=(function(mm){return function(){placeRecipe(mm,"replace");};})(m);
-    var ab=el("button","fit-btn add","Add");
-    ab.onclick=(function(mm){return function(){placeRecipe(mm,"add");};})(m);
-    btns.appendChild(rb);btns.appendChild(ab);
-    top.appendChild(btns);
-    slot.appendChild(top);
-    body.appendChild(slot);
-  });
-}
-
-async function placeRecipe(targetMeal,mode){
-  var rec=_fitRecipe,slug=_fitSlug,q=_fitReq;
-  if(!rec||!slug)return;
-  var dayName=dayFull(targetMeal.day_of_week);
-  var msg = mode==="replace"
-    ? ("Replace "+dayName+" \u00b7 "+(targetMeal.meal_name||"meal")+" with \""+rec.title+"\"?\n\nTheir current meal will be overwritten.")
-    : ("Add \""+rec.title+"\" as an extra meal on "+dayName+"?\n\nThis adds "+(rec.calories||0)+" kcal to that day.");
-  if(!confirm(msg))return;
-
-  var payload={
-    meal_name:rec.title,
-    ingredients:rec.ingredients||"",
-    calories:rec.calories||0,
-    protein:rec.protein||0,
-    carbs:rec.carbs||0,
-    fats:rec.fats||0
-  };
-
-  if(mode==="replace"){
-    var u=await sb.from("meal_templates").update(payload).eq("id",targetMeal.id);
-    if(u.error){alert("Couldn't update that meal: "+u.error.message);return;}
-  } else {
-    var rmax=await sb.from("meal_templates").select("meal_order").eq("client_slug",slug).eq("day_of_week",targetMeal.day_of_week);
-    var mx=0;(rmax.data||[]).forEach(function(r){if((r.meal_order||0)>mx)mx=r.meal_order||0;});
-    payload.client_slug=slug;
-    payload.day_of_week=targetMeal.day_of_week;
-    payload.option_num=1;
-    payload.meal_order=mx+1;
-    var ins=await sb.from("meal_templates").insert(payload);
-    if(ins.error){alert("Couldn't add that meal: "+ins.error.message);return;}
-  }
-
-  if(q&&q.id) await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",q.id);
-  closeFit();
-  renderClient(slug);
-}
-
-async function resolveReq(id,slug){
-  await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",id);
-  renderClient(slug);
-}
-
-// ── PER-CLIENT DEEP VIEW ──
-async function renderClient(slug){
-  var dc=document.getElementById("dcontent");dc.className="";dc.innerHTML="";dc.appendChild(el("div","loader","Loading…"));
-  sync(true);
-  var c=clients.find(function(x){return x.slug===slug;})||{name:slug,slug:slug};
-  var r1=await sb.from("lift_logs").select("*").eq("client",slug).order("logged_at",{ascending:true});
-  var r2=await sb.from("programs").select("ex_id,ex_name").eq("client_slug",slug);
-  var rb=await sb.from("body_logs").select("client_slug,logged_date,weight").eq("client_slug",slug);
-  var rn=await sb.from("nutrition_logs").select("client_slug,logged_date,calories").eq("client_slug",slug);
-  var rf=await sb.from("food_logs").select("client_slug,logged_date,calories").eq("client_slug",slug);
-  var rp=await sb.from("progress_photos").select("*").eq("client_slug",slug).order("taken_date",{ascending:false});
-  var rx=await sb.from("extra_logs").select("logged_date,note,created_at").eq("client_slug",slug);
-  var rt=await sb.from("nutrition_targets").select("calories").eq("client_slug",slug).maybeSingle();
-  var rcn=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
-  var rcr=await sb.from("change_requests").select("*").eq("client_slug",slug).eq("status","open").order("created_at",{ascending:false});
-  sync(false);
-  var lift=r1.data||[],body=rb.data||[],nat=rn.data||[],food=rf.data||[],photos=rp.data||[];
-  var notes=rx.data||[],targetCal=(rt.data&&rt.data.calories)||0;
-  var cnotes=rcn.data||[];
-  var creqs=rcr.data||[];
-
-  var sessions=sessionCount(lift);
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Progress"));
   var wt=weightTrend(body);
-  var map=loggedMapOf(nat,food);
-  var adh=adh30(map);
-  var flags=getFlags(lift.slice().reverse());
-  var wkAnchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
-  var weeksIn=wkAnchor?Math.max(0,Math.floor((Date.now()-wkAnchor)/(7*86400000))):0;
-  var allEx=[];(r2.data||[]).forEach(function(r){if(!allEx.find(function(x){return x.id===r.ex_id;}))allEx.push({id:r.ex_id,name:r.ex_name});});
-
-  dc.innerHTML="";
-  var head=el("div","tc-head");head.style.marginTop="6px";head.appendChild(el("div","av",initials(c.name)));
-  var hi=el("div");hi.appendChild(el("div","tc-name",c.name));hi.appendChild(el("div","tc-goal",c.goal||(sessions+" sessions logged")));head.appendChild(hi);
-  dc.appendChild(head);
-
-  var grid=el("div","stat-grid");
-  grid.appendChild(statBox("Weeks in",String(weeksIn)));
-  grid.appendChild(statBox("Sessions",String(sessions)));
-  grid.appendChild(statBox("Weight",wt?signed(wt.delta)+"<small>kg</small>":"—"));
-  var lastNoteMs=cnotes.length?new Date(cnotes[0].note_date+"T12:00:00").getTime():null;
-  var contactDays=daysAgo(lastNoteMs);
-  grid.appendChild(statBox("Last contact",contactDays==null?"—":(contactDays===0?"Today":contactDays+"d")));
-  dc.appendChild(grid);
-
-  // Share a win — only when there's an actual loss between first and latest weigh-in
-  var wsorted=(body||[]).filter(function(d){return d.weight!=null;}).slice().sort(function(a,b){return (a.logged_date<b.logged_date?-1:1);});
-  if(wsorted.length>=2){
-    var w0=parseFloat(wsorted[0].weight), w1=parseFloat(wsorted[wsorted.length-1].weight);
-    var lost=w0-w1;
+  if(wt && wt.pts.length>=2){
+    var lost=wt.first-wt.last;
     if(lost>0.05){
-      var d0=new Date(wsorted[0].logged_date+"T12:00:00"), d1=new Date(wsorted[wsorted.length-1].logged_date+"T12:00:00");
+      var d0=new Date(wt.pts[0].logged_date+"T12:00:00"), d1=new Date(wt.pts[wt.pts.length-1].logged_date+"T12:00:00");
       var wks=Math.max(1,Math.round((d1-d0)/(7*86400000)));
-      var wb=el("button","win-btn","\u2728 Share this win");
+      var wb=el("button","btn-green pf-save-btn","\u2728 Share win");
       wb.onclick=(function(nm,l,w){return function(){openWin(nm,l,w);};})(c.name,lost,wks);
-      dc.appendChild(wb);
+      bar.appendChild(wb);
     }
   }
+  b.appendChild(bar);
 
-  // Meal change requests
-  if(creqs.length){
-    dc.appendChild(el("div","sec-label","Requests"));
-    var rbox=el("div","req-box");
-    creqs.forEach(function(q){
-      var item=el("div","req-item");
-      var left=el("div","");
-      var label = q.kind==="recipe"
-        ? ("\uD83C\uDF7D Wants recipe: "+q.ref_name)
-        : q.kind==="idea"
-        ? ("\uD83D\uDCA1 Wants ideas: "+q.ref_name)
-        : (dayFull(q.ref_day)+" \u00b7 "+q.ref_name+" \u2014 change requested");
-      left.appendChild(el("div","req-meal",label));
-      var da=daysAgo(new Date(q.created_at).getTime());
-      left.appendChild(el("div","req-when","Requested "+(da===0?"today":(da===1?"yesterday":da+" days ago"))));
-      item.appendChild(left);
-      var acts=el("div","req-acts");
-      if(q.kind==="recipe"){
-        var pbtn=el("button","req-place","Place it \u203a");
-        pbtn.onclick=(function(qq,s){return function(){openFit(qq,s);};})(q,slug);
-        acts.appendChild(pbtn);
-      }
-      var rbtn=el("button","req-resolve","Mark done");
-      rbtn.onclick=(function(id,s){return function(){resolveReq(id,s);};})(q.id,slug);
-      acts.appendChild(rbtn);
-      item.appendChild(acts);
-      rbox.appendChild(item);
-    });
-    dc.appendChild(rbox);
-  }
+  var csec=el("div","pf-nut-sec");
+  csec.appendChild(el("div","pf-sub","Weight"));
+  var cbox=el("div","chart-box2");
+  cbox.innerHTML=weightChartSVG(wt?wt.pts:[]);
+  if(wt){ var dd=el("div","");dd.style.cssText="font-size:12px;color:var(--ink-3);margin-top:8px";dd.textContent="From "+wt.first.toFixed(1)+"kg to "+wt.last.toFixed(1)+"kg  ("+(wt.delta>=0?"+":"")+wt.delta.toFixed(1)+"kg)";cbox.appendChild(dd);}
+  csec.appendChild(cbox);
+  b.appendChild(csec);
 
-  // Renewal
-  var renewDays=daysUntil(c.end_date);
-  if(c.end_date||c.package){
-    var rw=el("div","renew"+(renewDays!=null&&renewDays<=14?" soon":""));
-    var rl2=el("div","");
-    rl2.appendChild(el("div","renew-l",c.package||"Package"));
-    rl2.appendChild(el("div","renew-v", c.end_date?("Ends "+new Date(c.end_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})):"No end date"));
-    rw.appendChild(rl2);
-    if(renewDays!=null){
-      var rr=el("div","");rr.style.textAlign="right";
-      rr.appendChild(el("div","renew-l", renewDays<0?"Overdue":"Remaining"));
-      rr.appendChild(el("div","renew-v", renewDays<0?(Math.abs(renewDays)+"d ago"):(renewDays+" days")));
-      rw.appendChild(rr);
-    }
-    dc.appendChild(rw);
-  }
+  var wsec=el("div","pf-nut-sec");
+  wsec.appendChild(el("div","pf-sub","Weigh-ins"));
+  wsec.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
+  var addrow=el("div","wi-add-row");
+  var di=el("input","form-input");di.type="date";di.id="pf-wi-date";di.style.cssText="flex:1;min-width:130px";di.value=new Date().toISOString().split("T")[0];
+  var ki=el("input","form-input");ki.type="number";ki.step="0.1";ki.id="pf-wi-kg";ki.placeholder="kg";ki.style.width="100px";
+  var ab=el("button","btn-outline","Add / update");ab.style.whiteSpace="nowrap";
+  ab.onclick=function(){ addWeighIn(); };
+  addrow.appendChild(di);addrow.appendChild(ki);addrow.appendChild(ab);
+  wsec.appendChild(addrow);
+  var wlist=el("div","");wlist.id="pf-weighins";wlist.style.marginTop="12px";
+  wsec.appendChild(wlist);
+  b.appendChild(wsec);
+  weighInCont="pf-weighins"; wiDateId="pf-wi-date"; wiKgId="pf-wi-kg";
+  loadWeighIns(c.slug);
 
-  // Two-column detail on desktop
-  var dg=el("div","detail-grid");
-  var L=el("div","dcol"), R=el("div","dcol");
-  dg.appendChild(L);dg.appendChild(R);
-  dc.appendChild(dg);
-
-  // Coach notes — private log + check-in record
-  R.appendChild(el("div","sec-label","Coach notes"));
-  var na=el("div","note-add");
-  var nin=el("textarea","note-in");nin.id="cn-txt";nin.placeholder="What did you discuss? Agreed actions, excuses, wins…";
-  na.appendChild(nin);
-  var nrow=el("div","note-row");
-  var ndt=el("input","note-date");ndt.id="cn-date";ndt.type="date";ndt.value=ymd(new Date());
-  var nsv=el("button","note-save","Add note");
-  nsv.onclick=(function(s){return function(){addCoachNote(s);};})(slug);
-  nrow.appendChild(ndt);nrow.appendChild(nsv);
-  na.appendChild(nrow);
-  R.appendChild(na);
-
-  var nlist=el("div","");nlist.id="cn-list";
-  R.appendChild(nlist);
-  drawCoachNotes(cnotes,slug);
-
-  if(flags.length){
-    L.appendChild(el("div","sec-label","Ready to increase weight"));
-    flags.forEach(function(f){var row=el("div","po-item");row.appendChild(el("span","po-name",f));row.appendChild(el("span","po-tag","↑ Increase"));L.appendChild(row);});
-  }
-
-  // Weight
-  L.appendChild(el("div","sec-label","Weight"));
-  var wbox=el("div","wt-box");
-  if(wt){
-    var wh=el("div","wt-head");
-    var cur=el("div","wt-cur");cur.innerHTML=wt.last.toFixed(1)+"<small>kg</small>";wh.appendChild(cur);
-    var dl=el("div","wt-delta");dl.textContent=(wt.delta<0?"▼":(wt.delta>0?"▲":"—"))+" "+Math.abs(wt.delta).toFixed(1)+" kg";wh.appendChild(dl);
-    wh.appendChild(el("div","wt-start","from "+wt.first.toFixed(1)+"kg"));
-    wbox.appendChild(wh);
-    wbox.insertAdjacentHTML("beforeend",weightChartSVG(wt.pts));
-  }else{
-    wbox.appendChild(el("div","wt-empty","No weigh-ins logged yet."));
-  }
-  L.appendChild(wbox);
-
-  // Food logging adherence
-  R.appendChild(el("div","sec-label","Food logging — last 30 days"));
-  var aw=el("div","adh-wrap");
-  var at=el("div","adh-top");
-  var ap=el("div","adh-pct");ap.innerHTML=adh.pct+'<small style="font-size:16px;color:var(--ink-3);font-weight:600">%</small>';
-  at.appendChild(ap);
-  at.appendChild(el("div","adh-sub","logged on "+adh.count+" of 30 days"));
-  aw.appendChild(at);
-  var strip=el("div","adh-strip");
-  adhStrip(map).forEach(function(on){strip.appendChild(el("div","adh-dot"+(on?" on":"")));});
-  aw.appendChild(strip);
-  R.appendChild(aw);
-
-  // Recent food calories + snack notes
-  R.appendChild(el("div","sec-label","Recent food & notes"));
-  var rdays=recentDays(nat,food,notes);
-  if(rdays.length){
-    var ft=el("div","food-tbl");
-    rdays.forEach(function(day){
-      var fd=el("div","food-day");
-      var fh=el("div","food-day-head");
-      fh.appendChild(el("span","food-date",new Date(day.date+"T12:00:00").toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"})));
-      var calTxt=day.cal>0?(Math.round(day.cal)+(targetCal?(" / "+targetCal):"")+" kcal"):"no meals logged";
-      fh.appendChild(el("span","food-cal"+(targetCal&&day.cal>targetCal?" over":""),calTxt));
-      fd.appendChild(fh);
-      if(day.notes.length){
-        var nl=el("div","food-notes");
-        day.notes.forEach(function(n){nl.appendChild(el("div","food-note","• "+n));});
-        fd.appendChild(nl);
-      }
-      ft.appendChild(fd);
-    });
-    R.appendChild(ft);
-  }else{
-    R.appendChild(el("div","wt-empty","No food or notes logged yet."));
-  }
-
-  // Progress photos
   if(photos.length){
-    R.appendChild(el("div","sec-label","Progress photos"));
-    var pg=el("div","pgrid");
+    var psec=el("div","pf-nut-sec");
+    psec.appendChild(el("div","pf-sub","Progress photos"));
+    var pg=el("div","pgrid"); psec.appendChild(pg);
+    b.appendChild(psec);
     var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
     var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
     photos.forEach(function(p){
       var tile=el("div","ptile");var url=umap[p.storage_path];
       if(url)tile.style.backgroundImage="url('"+url+"')";
       tile.appendChild(el("div","pdate",new Date(p.taken_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"})));
-      tile.onclick=(function(u){return function(){openLB(u);};})(url);
+      tile.onclick=(function(u){return function(){ if(u)openLB(u); };})(url);
       pg.appendChild(tile);
     });
-    R.appendChild(pg);
   }
+}
 
-  // Gym progress — every exercise, last weight × reps, change since last time
-  L.appendChild(el("div","sec-label","Gym progress"));
-  var lrows=liftTable(lift);
-  if(lrows.length){
-    var tbl=el("div","lift-tbl");
-    var th=el("div","lift-row lift-head");
-    th.appendChild(el("div","lt-ex","Exercise"));
-    th.appendChild(el("div","lt-last","Last"));
-    th.appendChild(el("div","lt-chg","Change"));
-    tbl.appendChild(th);
-    lrows.forEach(function(r){
-      var tr=el("div","lift-row");
-      tr.appendChild(el("div","lt-ex",r.name));
-      tr.appendChild(el("div","lt-last", r.weight>0?(fmtW(r.weight)+"kg × "+r.reps):(r.reps+" reps")));
-      var chg=el("div","lt-chg");
-      if(r.change===null)chg.innerHTML='<span class="chg-none">first</span>';
-      else if(r.change>0)chg.innerHTML='<span class="chg-up">▲ +'+fmtW(r.change)+'kg</span>';
-      else if(r.change<0)chg.innerHTML='<span class="chg-dn">▼ −'+fmtW(Math.abs(r.change))+'kg</span>';
-      else chg.innerHTML='<span class="chg-none">—</span>';
-      tr.appendChild(chg);
-      tbl.appendChild(tr);
+async function pfHabits(b,c){  editSlug=c.slug;
+  b.innerHTML="";
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Daily habits"));
+  var shared=el("button","btn-outline pf-save-btn","\u2699 Shared list");
+  shared.onclick=function(){ if(typeof loadHabits==="function")loadHabits(); openModal("modal-habits"); };
+  bar.appendChild(shared);
+  b.appendChild(bar);
+  var note=el("div","");note.style.cssText="font-size:12px;color:var(--ink-3);margin-bottom:14px;line-height:1.6";
+  note.textContent="Untick a shared habit to hide it from this client, or add one just for them. Changes save instantly.";
+  b.appendChild(note);
+  var host=el("div","");host.id="pf-habits"; b.appendChild(host);
+  var addrow=el("div","");addrow.style.cssText="display:flex;gap:8px;margin-top:12px";
+  var inp=el("input","form-input");inp.id="pf-ehab-new";inp.placeholder="Add a habit just for this client";inp.style.flex="1";
+  var addb=el("button","btn-outline","Add");addb.style.whiteSpace="nowrap";
+  addb.onclick=function(){ addClientHabit(); };
+  addrow.appendChild(inp);addrow.appendChild(addb);
+  b.appendChild(addrow);
+  habitCont="pf-habits"; habitInputId="pf-ehab-new";
+  loadClientHabits(c.slug);
+}
+
+async function pfNutrition(b,c){
+  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading nutrition\u2026"));
+  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",c.slug).maybeSingle();
+  var rm=await sb.from("meal_templates").select("*").eq("client_slug",c.slug).order("meal_order");
+  var rc=await sb.from("conditioning_plan").select("*").eq("client_slug",c.slug).order("item_order");
+
+  editMealDays=emptyMealDays();
+  (rm.data||[]).forEach(function(m){
+    var d=m.day_of_week||"mon"; if(!editMealDays[d])editMealDays[d]=[];
+    editMealDays[d].push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,meal_order:m.meal_order||0});
+  });
+  DAYS.forEach(function(day){ if(editMealDays[day.k])editMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);}); });
+
+  editCondDays=emptyCondDays();
+  (rc.data||[]).forEach(function(it){
+    var d=it.day_of_week||"mon"; if(!editCondDays[d])editCondDays[d]=[];
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
+
+  b.innerHTML="";
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Nutrition"));
+  var save=el("button","btn-green pf-save-btn","Save nutrition");
+  save.onclick=function(){ saveNutritionOnly(c.slug,save); };
+  bar.appendChild(save);
+  b.appendChild(bar);
+
+  var tg=rt.data||{};
+  var tsec=el("div","pf-nut-sec");
+  tsec.appendChild(el("div","pf-sub","Daily targets"));
+  function ti(id,lbl,val){var w=el("div","");w.appendChild(el("div","nut-label",lbl));var i=el("input","nut-input");i.type="number";i.id=id;i.value=(val!=null?val:"");w.appendChild(i);return w;}
+  var r1=el("div","nut-row"); r1.appendChild(ti("pf-cal","Calories",tg.calories)); r1.appendChild(ti("pf-pro","Protein (g)",tg.protein)); tsec.appendChild(r1);
+  var r2=el("div","nut-row"); r2.appendChild(ti("pf-carb","Carbs (g)",tg.carbs)); r2.appendChild(ti("pf-fat","Fats (g)",tg.fats)); tsec.appendChild(r2);
+  b.appendChild(tsec);
+
+  var msec=el("div","pf-nut-sec");
+  msec.appendChild(el("div","pf-sub","Meals by day"));
+  var mhost=el("div","");mhost.id="pf-meal-days"; msec.appendChild(mhost);
+  b.appendChild(msec);
+  editMealCont="pf-meal-days"; renderMealDays("edit");
+
+  var csec=el("div","pf-nut-sec");
+  csec.appendChild(el("div","pf-sub","Conditioning schedule"));
+  var chost=el("div","");chost.id="pf-cond-days"; csec.appendChild(chost);
+  b.appendChild(csec);
+  editCondCont="pf-cond-days"; renderCondDays("edit");
+}
+
+async function saveNutritionOnly(slug,btn){
+  var old=btn?btn.textContent:"";
+  if(btn){btn.textContent="Saving\u2026";btn.disabled=true;}
+  try{
+    await saveNutrition(slug,"pf",editMealDays);
+    await saveCond(slug,editCondDays);
+    if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
+  }catch(e){ alert("Save failed: "+(e&&e.message?e.message:e)); if(btn){btn.textContent=old;btn.disabled=false;} }
+}
+
+async function pfProgram(b,c){  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading program\u2026"));
+  var r=await sb.from("programs").select("*").eq("client_slug",c.slug).order("exercise_order");
+  editDays=buildEditDays(r.data||[]);
+  editDaysCont="pf-prog-days";
+  b.innerHTML="";
+
+  var bar=el("div","pf-savebar");
+  var lbl=el("div","pf-savebar-l","Gym program");
+  bar.appendChild(lbl);
+  var save=el("button","btn-green pf-save-btn","Save program");
+  save.onclick=function(){ saveProgramOnly(c.slug,save); };
+  bar.appendChild(save);
+  b.appendChild(bar);
+
+  var host=el("div","");host.id="pf-prog-days";
+  b.appendChild(host);
+  renderDays("edit");
+
+  var addDayBtn=el("button","add-btn","+ Add training day");
+  addDayBtn.onclick=function(){ addDay("edit"); };
+  b.appendChild(addDayBtn);
+}
+
+async function saveProgramOnly(slug,btn){
+  var old=btn?btn.textContent:"";
+  if(btn){btn.textContent="Saving\u2026";btn.disabled=true;}
+  var rows=daysToRows(slug,editDays);
+  var del=await sb.from("programs").delete().eq("client_slug",slug);
+  if(del.error){ alert("Save failed: "+del.error.message); if(btn){btn.textContent=old;btn.disabled=false;} return; }
+  if(rows.length){
+    var pr=await sb.from("programs").insert(rows);
+    if(pr.error){ alert("Save failed: "+pr.error.message); if(btn){btn.textContent=old;btn.disabled=false;} return; }
+  }
+  if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
+}
+
+function pfOverview(b,c){  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
+  var weeks=anchor!=null?Math.max(0,Math.floor((Date.now()-anchor)/(7*86400000))):null;
+  var fmt=function(d){return d?new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"\u2014";};
+  var grid=el("div","pf-ov-grid");
+  function cell(l,v){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));x.appendChild(el("div","pf-ov-v",v));grid.appendChild(x);}
+  cell("Package", c.package||"\u2014");
+  cell("Weeks in", weeks==null?"\u2014":String(weeks));
+  cell("Start", fmt(c.start_date));
+  cell("Ends", fmt(c.end_date));
+  b.appendChild(grid);
+  var lk=el("div","pf-ov-cell"); lk.style.marginBottom="18px";
+  lk.appendChild(el("div","pf-ov-l","Client app link"));
+  lk.appendChild(el("div","pf-link","/client/"+c.slug));
+  b.appendChild(lk);
+  var row=el("div",""); row.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
+  var edit=el("button","btn-green","\u2699 Open full editor");
+  edit.onclick=function(){ openEdit(profileSlug); };
+  row.appendChild(edit);
+  var active=c.active!==false;
+  var arch=el("button","btn-outline",active?"Archive client":"Restore client");
+  arch.onclick=function(){ toggleActive(c.slug,!active,null); closeProfile(); };
+  row.appendChild(arch);
+  b.appendChild(row);
+  var note=el("div",""); note.style.cssText="font-size:12px;color:var(--ink-3);margin-top:18px;line-height:1.6";
+  note.textContent="Coming to this tab next: triage status, sessions, weight trend, last contact and the shareable win card \u2014 ported in from the trainer dashboard.";
+  b.appendChild(note);
+}
+
+// ── PROGRAM BUILDER ──
+function emptyDay() { return {key:"d"+Date.now(),label:"",focus:"",sections:[{label:"Compounds",exercises:[]}]}; }
+
+function addDay(mode) {
+  var days = mode==="add"?addDays:editDays;
+  days.push(emptyDay());
+  renderDays(mode);
+}
+
+// ===== EXERCISE LIBRARY (autocomplete) =====
+var EX_LIB=[
+// Chest
+"Barbell bench press","Incline barbell bench press","Decline barbell bench press","Dumbbell bench press","Incline dumbbell press","Decline dumbbell press","Machine chest press","Smith machine bench press","Dumbbell fly","Incline dumbbell fly","Cable fly","Low-to-high cable fly","Pec deck","Push-up","Incline push-up","Chest dip","Landmine press","Svend press",
+// Back
+"Deadlift","Conventional deadlift","Trap-bar deadlift","Romanian deadlift","Stiff-leg deadlift","Sumo deadlift","Rack pull","Bent-over barbell row","Pendlay row","Dumbbell row","Chest-supported row","T-bar row","Seated cable row","Wide-grip lat pulldown","Close-grip lat pulldown","Lat pulldown","Pull-up","Weighted pull-up","Chin-up","Assisted pull-up","Straight-arm pulldown","Cable face pull","Dumbbell pullover","Meadows row","Inverted row",
+// Shoulders
+"Overhead press","Seated barbell press","Seated dumbbell shoulder press","Dumbbell shoulder press","Seated DB shoulder press","Arnold press","Push press","Machine shoulder press","Dumbbell lateral raise","Cable lateral raise","Machine lateral raise","Front raise","Dumbbell rear delt fly","Reverse pec deck","Cable rear delt fly","Upright row","Barbell shrug","Dumbbell shrug","Landmine shoulder press",
+// Legs
+"Barbell back squat","Front squat","Box squat","Goblet squat","Dumbbell goblet squat","Hack squat","Leg press","Bulgarian split squat","Walking lunges","Reverse lunge","Forward lunge","Step-up","Leg extension","Lying leg curl","Seated leg curl","Nordic hamstring curl","Hip thrust","Barbell hip thrust","Single-leg hip thrust","Glute bridge","Kettlebell sumo deadlift","Cable kickback","Standing calf raise","Seated calf raise","Leg press calf raise","Adductor machine","Abductor machine","Lateral band walk","Sissy squat",
+// Arms
+"Barbell curl","EZ-bar curl","Dumbbell curl","Incline dumbbell curl","Hammer curl","Preacher curl","Cable curl","Concentration curl","Spider curl","Tricep rope pushdown","Tricep cable pushdown","Straight-bar pushdown","Overhead tricep extension","Cable overhead extension","Skull crushers","Close-grip bench press","Bench dip","Tricep kickback",
+// Core
+"Plank","Side plank","Dead bug","Bird dog","Pallof press","Hanging knee raise","Hanging leg raise","Cable crunch","Ab wheel rollout","Hollow body hold","Russian twist","Bicycle crunch","Mountain climbers","Leg raise","Toes-to-bar","Sit-up",
+// Conditioning
+"Treadmill incline walk","Incline treadmill","Rowing machine","Assault bike","Stationary bike","Stair climber","Jump rope","Sled push","Sled drag","Farmer's carry","Battle ropes","Box jump","Kettlebell swing"
+];
+
+function attachExPicker(input,setName){
+  var wrap=input.parentNode; var dd=null;
+  function close(){ if(dd){dd.remove();dd=null;} }
+  function open(){
+    close();
+    var q=input.value.trim().toLowerCase();
+    var matches=q?EX_LIB.filter(function(e){return e.toLowerCase().indexOf(q)!==-1;}):EX_LIB.slice();
+    if(q){matches.sort(function(a,b){return (a.toLowerCase().indexOf(q)===0?0:1)-(b.toLowerCase().indexOf(q)===0?0:1);});}
+    matches=matches.slice(0,50);
+    if(!matches.length)return;
+    dd=el("div","ex-pick");
+    matches.forEach(function(name){
+      var it=el("div","ex-pick-item",name);
+      it.onmousedown=function(ev){ev.preventDefault();input.value=name;setName(name);close();};
+      dd.appendChild(it);
     });
-    L.appendChild(tbl);
-  }else{
-    L.appendChild(el("div","wt-empty","No gym sessions logged yet."));
+    wrap.appendChild(dd);
   }
+  input.addEventListener("focus",open);
+  input.addEventListener("input",open);
+  input.addEventListener("blur",function(){setTimeout(close,160);});
 }
 
-function fmtW(w){ return (Math.round((w||0)*10)/10).toString(); }
+function parseReps(tag){
+  var nums=((tag||"").match(/\d+/g)||[]).map(Number);
+  if(nums.length>=2) return {bot:nums[0],top:nums[1]};
+  if(nums.length===1) return {bot:nums[0],top:nums[0]};
+  return {bot:0,top:0};
+}
 
-function liftTable(lift){
-  var byEx={};
-  lift.forEach(function(r){
-    if(!byEx[r.ex_id])byEx[r.ex_id]={name:r.ex_name,dates:{}};
-    var d=r.logged_at?new Date(r.logged_at).toDateString():"?";
-    if(!byEx[r.ex_id].dates[d])byEx[r.ex_id].dates[d]=[];
-    byEx[r.ex_id].dates[d].push(r);
+function renderDays(mode) {
+  var days = mode==="add"?addDays:editDays;
+  var container = document.getElementById(mode==="add"?"add-days":(editDaysCont||"edit-days"));
+  container.innerHTML = "";
+  // clipboard toolbar
+  var pbar=el("div","clip-bar");
+  pbar.appendChild(el("span","clip-status", progClip?("📋 "+progClip.label):"📋 Program clipboard empty"));
+  var pr2=el("div",""); pr2.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
+  var cpAll=el("button","clip-btn","⧉ Copy whole program");
+  cpAll.onclick=(function(m){return function(){ var d=m==="add"?addDays:editDays; if(!d.length)return; progClip={scope:"all",label:"Program · "+d.length+" days",data:deep(d)}; renderDays(m); };})(mode);
+  pr2.appendChild(cpAll);
+  if(progClip){
+    var pasteP=el("button","clip-btn paste", progClip.scope==="all"?"📥 Paste program":"📥 Paste day");
+    pasteP.onclick=(function(m){return function(){ var d=m==="add"?addDays:editDays; var ex=d.map(function(x){return x.key;}); var uk=function(pref){ if(pref&&ex.indexOf(pref)===-1)return pref; return "d"+Date.now()+Math.floor(Math.random()*10000); }; var list=progClip.scope==="all"?progClip.data:[progClip.data]; list.forEach(function(day){ var nd=deep(day); nd.key=uk(nd.key); ex.push(nd.key); d.push(nd); }); renderDays(m); };})(mode);
+    pr2.appendChild(pasteP);
+    var clrP=el("button","clip-btn","✕ Clear"); clrP.onclick=function(){progClip=null;renderDays(mode);}; pr2.appendChild(clrP);
+  }
+  pbar.appendChild(pr2); container.appendChild(pbar);
+  days.forEach(function(day, di) {
+    var block = el("div","day-block");
+    // Header
+    var WD={mon:"Mon",tue:"Tue",wed:"Wed",thu:"Thu",fri:"Fri",sat:"Sat",sun:"Sun"};
+    var hdr = el("div",""); hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px";
+    hdr.appendChild(el("span","day-block-title","Day "+(di+1)+(WD[day.key]?" · "+WD[day.key]:"")));
+    var hr = el("div",""); hr.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end";
+    if(days.length>1){
+      var sw=el("select","day-swap");
+      var ph=el("option","","⇄ swap"); ph.value=""; sw.appendChild(ph);
+      days.forEach(function(od,oi){ if(oi!==di){ var o=el("option","",(WD[od.key]?WD[od.key]+" — ":"Day "+(oi+1)+" — ")+(od.label||"untitled")); o.value=String(oi); sw.appendChild(o); } });
+      sw.onchange=(function(i,m){return function(){ var ti=parseInt(this.value); if(isNaN(ti))return; var d=m==="add"?addDays:editDays; var a=d[i],b=d[ti]; var t={label:a.label,focus:a.focus,sections:a.sections}; a.label=b.label;a.focus=b.focus;a.sections=b.sections; b.label=t.label;b.focus=t.focus;b.sections=t.sections; renderDays(m); };})(di,mode);
+      hr.appendChild(sw);
+    }
+    var cpDay=el("button","clip-btn","⧉ Copy");
+    cpDay.onclick=(function(i,m){return function(){ var d=(m==="add"?addDays:editDays)[i]; var exc=d.sections.reduce(function(a,s){return a+s.exercises.length;},0); progClip={scope:"day",label:(d.label||"Day "+(i+1))+" · "+exc+" ex",data:deep(d)}; renderDays(m); };})(di,mode);
+    hr.appendChild(cpDay);
+    var db = el("button","del-btn","✕");
+    db.onclick = (function(i,m){return function(){var d=m==="add"?addDays:editDays;d.splice(i,1);renderDays(m);};})(di,mode);
+    hr.appendChild(db); hdr.appendChild(hr); block.appendChild(hdr);
+    // Label + Focus
+    var li = el("input","form-input"); li.placeholder="Day label (e.g. Monday)"; li.value=day.label;
+    li.oninput = (function(i,m){return function(){(m==="add"?addDays:editDays)[i].label=this.value;};})(di,mode);
+    li.style.marginBottom="6px"; block.appendChild(li);
+    var fi = el("input","form-input"); fi.placeholder="Focus (e.g. Push — chest, shoulders)"; fi.value=day.focus;
+    fi.oninput = (function(i,m){return function(){(m==="add"?addDays:editDays)[i].focus=this.value;};})(di,mode);
+    fi.style.marginBottom="10px"; block.appendChild(fi);
+    // Sections
+    day.sections.forEach(function(sec, si) {
+      var sb2 = el("div","sec-block");
+      var sh = el("div",""); sh.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px";
+      var sn = el("input",""); sn.style.cssText="background:transparent;border:none;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);width:120px;outline:none";
+      sn.value=sec.label; sn.placeholder="Section";
+      sn.oninput=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].label=this.value;};})(di,si,mode);
+      var sd=el("button","del-btn","✕"); sd.style.cssText="width:24px;height:24px;font-size:11px";
+      sd.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections.splice(j,1);renderDays(m);};})(di,si,mode);
+      sh.appendChild(sn); sh.appendChild(sd); sb2.appendChild(sh);
+      // Exercises
+      sec.exercises.forEach(function(ex, ei) {
+        var er = el("div","ex-row-admin");
+        var pickWrap=el("div","ex-pick-wrap");
+        var en2 = el("input","ex-name-input");
+        en2.placeholder="Search or type exercise\u2026"; en2.value=ex.name; en2.setAttribute("autocomplete","off");
+        var setName=(function(i,j,k,m){return function(val){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].name=val;};})(di,si,ei,mode);
+        en2.oninput=function(){setName(this.value);};
+        attachExPicker(en2,setName);
+        pickWrap.appendChild(en2);
+        er.appendChild(pickWrap);
+        var setsBox=el("div","sets-box");
+        (function(){
+          function draw(){
+            setsBox.innerHTML="";
+            ex.sets.forEach(function(sObj,idx){
+              var unit=el("div","set-unit");
+              var s=el("input","set-tag-input2"); s.placeholder="Set "+(idx+1); s.value=sObj.tag||"";
+              s.oninput=function(){ sObj.tag=this.value; var tb=parseReps(this.value); sObj.top=tb.top; sObj.bot=tb.bot; };
+              unit.appendChild(s);
+              if(ex.sets.length>1){
+                var x=el("button","set-x","\u2715");
+                x.onclick=function(){ ex.sets.splice(idx,1); draw(); };
+                unit.appendChild(x);
+              }
+              setsBox.appendChild(unit);
+            });
+            var addS=el("button","set-add","+ Set");
+            addS.onclick=function(){ ex.sets.push({tag:"",top:0,bot:0}); draw(); };
+            setsBox.appendChild(addS);
+          }
+          draw();
+        })();
+        er.appendChild(setsBox);
+        var noteI=el("textarea","ex-note"); noteI.placeholder="Note for this exercise (drop set, form cue, tempo\u2026)"; noteI.value=ex.note||"";
+        noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;};})(di,si,ei,mode);
+        er.appendChild(noteI);
+        var tr=el("div",""); tr.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:4px 0";
+        tr.appendChild(el("span","",ex.ss?"Superset ✓":"Superset"));
+        var tb=el("button","toggle"+(ex.ss?" on":""));
+        tb.onclick=(function(i,j,k,m){return function(){var ex2=(m==="add"?addDays:editDays)[i].sections[j].exercises[k];ex2.ss=!ex2.ss;this.classList.toggle("on",ex2.ss);};})(di,si,ei,mode);
+        tr.appendChild(tb); er.appendChild(tr);
+        var ed=el("button","del-btn","✕"); ed.style.alignSelf="flex-start";
+        ed.onclick=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.splice(k,1);renderDays(m);};})(di,si,ei,mode);
+        var erow=el("div",""); erow.style.cssText="display:flex;gap:8px;align-items:flex-start";
+        erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
+      });
+      var ae=el("button","add-btn","+ Add exercise");
+      ae.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.push({name:"",ss:false,note:"",sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderDays(m);};})(di,si,mode);
+      sb2.appendChild(ae); block.appendChild(sb2);
+    });
+    var as=el("button","add-btn","+ Add section");
+    as.onclick=(function(i,m){return function(){(m==="add"?addDays:editDays)[i].sections.push({label:"Isolation",exercises:[]});renderDays(m);};})(di,mode);
+    block.appendChild(as); container.appendChild(block);
   });
-  var out=[];
-  Object.keys(byEx).forEach(function(id){
-    var ex=byEx[id];
-    var dks=Object.keys(ex.dates).sort(function(a,b){return new Date(a)-new Date(b);});
-    if(!dks.length)return;
-    function top(rows){var t=rows[0];rows.forEach(function(r){if((r.weight||0)>(t.weight||0))t=r;});return t;}
-    var lastT=top(ex.dates[dks[dks.length-1]]);
-    var prevT=dks.length>1?top(ex.dates[dks[dks.length-2]]):null;
-    out.push({name:ex.name,weight:lastT.weight||0,reps:lastT.reps||0,change:prevT?((lastT.weight||0)-(prevT.weight||0)):null,lastMs:new Date(dks[dks.length-1]).getTime()});
+}
+
+// ── NUTRITION MEAL BUILDER ──
+function emptyMealDays() {
+  var d = {};
+  DAYS.forEach(function(day){d[day.k]=[];});
+  return d;
+}
+
+// ===== CONDITIONING SCHEDULE =====
+var addCondDays = {}, editCondDays = {};
+function emptyCondDays(){ var d={}; DAYS.forEach(function(day){d[day.k]=[];}); return d; }
+
+function renderCondDays(mode){
+  var days = mode==="add"?addCondDays:editCondDays;
+  var container = document.getElementById(mode==="add"?"add-cond-days":(editCondCont||"edit-cond-days"));
+  container.innerHTML="";
+  DAYS.forEach(function(day){
+    var items = days[day.k]||[];
+    var block = el("div","day-block");
+    block.appendChild(el("div","day-block-title",day.l));
+    items.forEach(function(it,ii){
+      var mb = el("div","meal-block");
+      var pills = el("div","cond-pills");
+      [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+        var pill = el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
+        pill.onclick=(function(k,dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].kind=k; renderCondDays(m); };})(p[0],day.k,ii,mode);
+        pills.appendChild(pill);
+      });
+      mb.appendChild(pills);
+      var ti=el("input");ti.className="cond-in";ti.placeholder="Session — e.g. Threshold bike";ti.value=it.title||"";
+      ti.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].title=this.value; };})(day.k,ii,mode);
+      mb.appendChild(ti);
+      var de=el("input");de.className="cond-in";de.placeholder="Protocol / detail — e.g. 5 on/1 off \u00b7 4\u21928 sets \u00b7 RPE 7-8";de.value=it.detail||"";
+      de.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].detail=this.value; };})(day.k,ii,mode);
+      mb.appendChild(de);
+      var rm=el("button","add-btn","Remove");rm.style.color="var(--bad)";
+      rm.onclick=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk].splice(i,1); renderCondDays(m); };})(day.k,ii,mode);
+      mb.appendChild(rm);
+      block.appendChild(mb);
+    });
+    var ab=el("button","add-btn","+ Add conditioning");
+    ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:""}); renderCondDays(m); };})(day.k,mode);
+    block.appendChild(ab);
+    container.appendChild(block);
   });
-  out.sort(function(a,b){return b.lastMs-a.lastMs;});
-  return out;
 }
 
-function recentDays(nat,food,notes){
-  var by={};
-  function bump(d,c){if(!d)return;if(!by[d])by[d]={cal:0,notes:[]};by[d].cal+=c||0;}
-  (nat||[]).forEach(function(r){bump(r.logged_date,r.calories);});
-  (food||[]).forEach(function(r){bump(r.logged_date,r.calories);});
-  (notes||[]).forEach(function(r){if(!r.logged_date)return;if(!by[r.logged_date])by[r.logged_date]={cal:0,notes:[]};by[r.logged_date].notes.push(r.note);});
-  return Object.keys(by).sort().reverse().slice(0,7).map(function(d){return {date:d,cal:by[d].cal,notes:by[d].notes};});
+async function saveCond(slug, condDays){
+  await sb.from("conditioning_plan").delete().eq("client_slug",slug);
+  var rows=[];
+  DAYS.forEach(function(day){
+    (condDays[day.k]||[]).forEach(function(it,i){
+      if(!it.title)return;
+      rows.push({client_slug:slug,day_of_week:day.k,item_order:i,kind:it.kind||"easy",title:it.title,detail:it.detail||null});
+    });
+  });
+  if(rows.length) await sb.from("conditioning_plan").insert(rows);
 }
 
-loadDash();
+function renderMealDays(mode) {
+  var meals = mode==="add"?addMealDays:editMealDays;
+  var container = document.getElementById(mode==="add"?"add-meal-days":(editMealCont||"edit-meal-days"));
+  container.innerHTML = "";
+  // clipboard toolbar
+  var cbar=el("div","clip-bar");
+  cbar.appendChild(el("span","clip-status", mealClip?("📋 "+mealClip.label):"📋 Meal clipboard empty"));
+  var cr2=el("div",""); cr2.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
+  var cpAllM=el("button","clip-btn","⧉ Copy all days");
+  cpAllM.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var cnt=0; DAYS.forEach(function(d){cnt+=(M[d.k]||[]).length;}); if(!cnt)return; mealClip={scope:"all",label:"All meals · "+cnt,data:deep(M)}; renderMealDays(m); };})(mode);
+  cr2.appendChild(cpAllM);
+  if(mealClip&&mealClip.scope==="all"){
+    var pasteAll=el("button","clip-btn paste","📥 Paste all days");
+    pasteAll.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var src=mealClip.data; DAYS.forEach(function(d){ if(!M[d.k])M[d.k]=[]; (src[d.k]||[]).forEach(function(x){M[d.k].push(deep(x));}); }); renderMealDays(m); };})(mode);
+    cr2.appendChild(pasteAll);
+  }
+  if(mealClip){ var clrM=el("button","clip-btn","✕ Clear"); clrM.onclick=function(){mealClip=null;renderMealDays(mode);}; cr2.appendChild(clrM); }
+  cbar.appendChild(cr2); container.appendChild(cbar);
+  DAYS.forEach(function(day) {
+    var dayMeals = meals[day.k]||[];
+    var block = el("div","day-block");
+    var mh = el("div",""); mh.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px";
+    mh.appendChild(el("div","day-block-title",day.l));
+    var mctl=el("div",""); mctl.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap";
+    var msw=el("select","day-swap");
+    var mph=el("option","","⇄ swap with"); mph.value=""; msw.appendChild(mph);
+    DAYS.forEach(function(od){ if(od.k!==day.k){ var o=el("option","",od.l); o.value=od.k; msw.appendChild(o); } });
+    msw.onchange=(function(srcK,m){return function(){ var tgtK=this.value; if(!tgtK)return; var M=m==="add"?addMealDays:editMealDays; var tmp=M[srcK]; M[srcK]=M[tgtK]; M[tgtK]=tmp; renderMealDays(m); };})(day.k,mode);
+    mctl.appendChild(msw);
+    var cpd=el("button","clip-btn","⧉ Copy day");
+    cpd.onclick=(function(k,lbl,m){return function(){ var arr=(m==="add"?addMealDays:editMealDays)[k]||[]; if(!arr.length)return; mealClip={scope:"day",label:lbl+" · "+arr.length+" meals",data:deep(arr)}; renderMealDays(m); };})(day.k,day.l,mode);
+    mctl.appendChild(cpd);
+    if(mealClip&&(mealClip.scope==="meal"||mealClip.scope==="day")){
+      var pbtn=el("button","clip-btn paste", mealClip.scope==="meal"?"📥 Paste meal":"📥 Paste day");
+      pbtn.onclick=(function(k,m){return function(){ var M=m==="add"?addMealDays:editMealDays; if(!M[k])M[k]=[]; if(mealClip.scope==="meal"){M[k].push(deep(mealClip.data));}else{mealClip.data.forEach(function(x){M[k].push(deep(x));});} renderMealDays(m); };})(day.k,mode);
+      mctl.appendChild(pbtn);
+      if(mealClip.scope==="day"){
+        var rpl=el("button","clip-btn paste","\u21A9 Replace day");
+        rpl.onclick=(function(k,m){return function(){ (m==="add"?addMealDays:editMealDays)[k]=deep(mealClip.data); renderMealDays(m); };})(day.k,mode);
+        mctl.appendChild(rpl);
+      }
+    }
+    mh.appendChild(mctl); block.appendChild(mh);
+    dayMeals.forEach(function(meal, mi) {
+      var mb = el("div","meal-block");
+      // Meal name
+      var mn = el("input","form-input"); mn.placeholder="Meal name (e.g. Breakfast)"; mn.value=meal.name||"";
+      mn.style.marginBottom="8px";
+      mn.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].name=this.value;};})(day.k,mi,mode);
+      mb.appendChild(mn);
+      // Ingredients
+      var il=el("div","nut-label","Ingredients (one per line)"); il.style.marginBottom="4px"; mb.appendChild(il);
+      var ta=el("textarea","form-input"); ta.style.cssText="min-height:80px;resize:vertical;font-family:inherit;margin-bottom:8px";
+      ta.placeholder="e.g. 120g oats, 250g Greek yoghurt (one per line)"; ta.value=meal.ingredients||"";
+      ta.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].ingredients=this.value;};})(day.k,mi,mode);
+      mb.appendChild(ta);
+      // Macros
+      var ml=el("div","nut-label","Macros"); ml.style.marginBottom="4px"; mb.appendChild(ml);
+      var mg=el("div","macro-grid");
+      [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
+        var wrap=el("div");
+        wrap.appendChild(el("div","macro-lbl",f[0]));
+        var inp=el("input","macro-inp"); inp.type="number"; inp.min="0"; inp.value=meal[f[1]]||0;
+        inp.oninput=(function(d2,i,field,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i][field]=parseInt(this.value)||0;};})(day.k,mi,f[1],mode);
+        wrap.appendChild(inp); mg.appendChild(wrap);
+      });
+      mb.appendChild(mg);
+      // Copy / Remove
+      var mrow=el("div",""); mrow.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+      var cpm=el("button","clip-btn","⧉ Copy meal");
+      cpm.onclick=(function(k,i,lbl,m){return function(){ var meal=(m==="add"?addMealDays:editMealDays)[k][i]; mealClip={scope:"meal",label:(meal.name||"Meal")+" · "+lbl,data:deep(meal)}; renderMealDays(m); };})(day.k,mi,day.l,mode);
+      mrow.appendChild(cpm);
+      if(mealClip&&mealClip.scope==="meal"){
+        var pov=el("button","clip-btn paste","\u21A9 Paste over");
+        pov.onclick=(function(k,i,m){return function(){ (m==="add"?addMealDays:editMealDays)[k][i]=deep(mealClip.data); renderMealDays(m); };})(day.k,mi,mode);
+        mrow.appendChild(pov);
+      }
+      var rd=el("button","add-btn","Remove meal"); rd.style.color="var(--bad)";
+      rd.onclick=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2].splice(i,1);renderMealDays(m);};})(day.k,mi,mode);
+      mrow.appendChild(rd);
+      mb.appendChild(mrow);
+      block.appendChild(mb);
+    });
+    var ab=el("button","add-btn","+ Add meal");
+    ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
+    block.appendChild(ab); container.appendChild(block);
+  });
+}
+
+// ── OPEN ADD ──
+function openAdd() {
+  addDays = []; addMealDays = emptyMealDays(); addCondDays = emptyCondDays();
+  var cs = document.getElementById("clone-src");
+  cs.innerHTML = '<option value="">Blank — build from scratch</option>';
+  allClients.forEach(function(c){
+    var o = el("option","", c.name + (c.active===false?" (inactive)":""));
+    o.value = c.slug; cs.appendChild(o);
+  });
+  cs.value = "";
+  cs.onchange = function(){ cloneFrom(this.value); };
+  document.getElementById("a-pkg").value="";
+  document.getElementById("a-start").value=new Date().toISOString().split("T")[0];
+  document.getElementById("a-end").value="";
+  wirePkg("a");
+  document.getElementById("an").value="";
+  document.getElementById("ag").value="";
+  document.getElementById("asl").value="";
+  document.getElementById("sp").textContent="slug";
+  document.getElementById("a-cal").value="";
+  document.getElementById("a-pro").value="";
+  document.getElementById("a-carb").value="";
+  document.getElementById("a-fat").value="";
+  renderDays("add");
+  renderMealDays("add");
+  renderCondDays("add");
+  openModal("modal-add");
+}
+
+// ── OPEN EDIT ──
+// ── PACKAGE / RENEWAL ──
+var PKG_DAYS={"8 Week":56,"3 Month":91,"6 Month":182};
+function wirePkg(p){
+  var pkg=document.getElementById(p+"-pkg"), st=document.getElementById(p+"-start"), en=document.getElementById(p+"-end");
+  function calc(){
+    var d=PKG_DAYS[pkg.value];
+    if(!d||!st.value)return;
+    var s=new Date(st.value+"T12:00:00");
+    s.setDate(s.getDate()+d);
+    en.value=s.toISOString().split("T")[0];
+  }
+  pkg.onchange=calc; st.onchange=calc;
+}
+
+async function cloneFrom(slug) {
+  var tgt = ["a-cal","a-pro","a-carb","a-fat"];
+  if (!slug) {
+    addDays = []; addMealDays = emptyMealDays(); addCondDays = emptyCondDays();
+    tgt.forEach(function(id){ document.getElementById(id).value = ""; });
+    renderDays("add"); renderMealDays("add"); renderCondDays("add");
+    return;
+  }
+  var r2 = await sb.from("programs").select("*").eq("client_slug",slug).order("exercise_order");
+  var r3 = await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
+  var r4 = await sb.from("meal_templates").select("*").eq("client_slug",slug).order("meal_order");
+  var r5 = await sb.from("conditioning_plan").select("*").eq("client_slug",slug).order("item_order");
+
+  addDays = buildEditDays(r2.data||[]);
+
+  addMealDays = emptyMealDays();
+  (r4.data||[]).forEach(function(m){
+    var d = m.day_of_week||"mon";
+    if(!addMealDays[d]) addMealDays[d]=[];
+    addMealDays[d].push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,meal_order:m.meal_order||0});
+  });
+  DAYS.forEach(function(day){
+    if(addMealDays[day.k]) addMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);});
+  });
+
+  addCondDays = emptyCondDays();
+  (r5.data||[]).forEach(function(it){
+    var d = it.day_of_week||"mon";
+    if(!addCondDays[d]) addCondDays[d]=[];
+    addCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
+
+  if (r3.data) {
+    document.getElementById("a-cal").value = r3.data.calories||"";
+    document.getElementById("a-pro").value = r3.data.protein||"";
+    document.getElementById("a-carb").value = r3.data.carbs||"";
+    document.getElementById("a-fat").value = r3.data.fats||"";
+  } else {
+    tgt.forEach(function(id){ document.getElementById(id).value = ""; });
+  }
+
+  renderDays("add"); renderMealDays("add"); renderCondDays("add");
+}
+
+async function openEdit(slug) {
+  editSlug = slug;
+  var r1 = await sb.from("clients").select("*").eq("slug",slug).single();
+  var r2 = await sb.from("programs").select("*").eq("client_slug",slug).order("exercise_order");
+  var r3 = await sb.from("nutrition_targets").select("*").eq("client_slug",slug).single();
+  var r4 = await sb.from("meal_templates").select("*").eq("client_slug",slug).order("meal_order");
+  var r5 = await sb.from("conditioning_plan").select("*").eq("client_slug",slug).order("item_order");
+  if (!r1.data) return;
+  document.getElementById("edit-title").textContent = "Edit — " + r1.data.name;
+  document.getElementById("en").value = r1.data.name;
+  document.getElementById("eg").value = r1.data.goal||"";
+  var esl = document.getElementById("e-slug");
+  esl.value = r1.data.slug;
+  document.getElementById("e-sp").textContent = r1.data.slug;
+  esl.oninput = function(){ this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,""); document.getElementById("e-sp").textContent=this.value||"slug"; };
+  document.getElementById("e-pkg").value = r1.data.package||"";
+  document.getElementById("e-start").value = r1.data.start_date||"";
+  document.getElementById("e-end").value = r1.data.end_date||"";
+  wirePkg("e");
+  if (r3.data) {
+    document.getElementById("e-cal").value = r3.data.calories||"";
+    document.getElementById("e-pro").value = r3.data.protein||"";
+    document.getElementById("e-carb").value = r3.data.carbs||"";
+    document.getElementById("e-fat").value = r3.data.fats||"";
+  } else {
+    document.getElementById("e-cal").value="";
+    document.getElementById("e-pro").value="";
+    document.getElementById("e-carb").value="";
+    document.getElementById("e-fat").value="";
+  }
+  // Build program days
+  editDays = buildEditDays(r2.data||[]);
+  // Build meal days
+  editMealDays = emptyMealDays();
+  (r4.data||[]).forEach(function(m) {
+    var d = m.day_of_week||"mon";
+    if (!editMealDays[d]) editMealDays[d]=[];
+    editMealDays[d].push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,meal_order:m.meal_order||0});
+  });
+  DAYS.forEach(function(day){
+    if(editMealDays[day.k])editMealDays[day.k].sort(function(a,b){return (a.meal_order||0)-(b.meal_order||0);});
+  });
+  // Build conditioning schedule
+  editCondDays = emptyCondDays();
+  (r5.data||[]).forEach(function(it){
+    var d = it.day_of_week||"mon";
+    if(!editCondDays[d])editCondDays[d]=[];
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+  });
+  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; habitCont="edit-habits"; habitInputId="ehab-new"; weighInCont="edit-weighins"; wiDateId="wi-date"; wiKgId="wi-kg";
+  renderDays("edit");
+  renderMealDays("edit");
+  renderCondDays("edit");
+  loadClientHabits(slug);
+  loadWeighIns(slug);
+  document.getElementById("wi-date").value=new Date().toISOString().split("T")[0];
+  document.getElementById("wi-kg").value="";
+  openModal("modal-edit");
+}
+
+function buildEditDays(rows) {
+  var dm={};
+  rows.forEach(function(r){
+    if(!dm[r.day_key])dm[r.day_key]={key:r.day_key,label:r.day_label,focus:r.day_focus,sections:[]};
+    var sec=dm[r.day_key].sections.find(function(s){return s.label===r.section_label;});
+    if(!sec){sec={label:r.section_label,exercises:[]};dm[r.day_key].sections.push(sec);}
+    sec.exercises.push({name:r.ex_name,ss:r.is_superset,note:r.note||"",sets:r.sets});
+  });
+  return Object.values(dm);
+}
+
+function daysToRows(slug, days) {
+  var rows=[], order=0;
+  days.forEach(function(day, di) {
+    var dk=day.key||("d"+di);
+    day.sections.forEach(function(sec){
+      sec.exercises.forEach(function(ex){
+        if(!ex.name)return;
+        rows.push({client_slug:slug,day_key:dk,day_label:day.label,day_focus:day.focus,section_label:sec.label,exercise_order:order++,ex_id:slug+"_"+ex.name.toLowerCase().replace(/[^a-z0-9]/g,"_").slice(0,20)+"_"+dk,ex_name:ex.name,is_superset:ex.ss||false,note:ex.note||null,sets:ex.sets.map(function(s){return {tag:s.tag,top:s.top||8,bot:s.bot||6};})});
+      });
+    });
+  });
+  return rows;
+}
+
+async function saveNutrition(slug, prefix, mealDays) {
+  var cal=parseInt(document.getElementById(prefix+"-cal").value)||0;
+  var pro=parseInt(document.getElementById(prefix+"-pro").value)||0;
+  var carb=parseInt(document.getElementById(prefix+"-carb").value)||0;
+  var fat=parseInt(document.getElementById(prefix+"-fat").value)||0;
+  if(cal||pro||carb||fat){
+    await sb.from("nutrition_targets").upsert({client_slug:slug,calories:cal,protein:pro,carbs:carb,fats:fat},{onConflict:"client_slug"});
+  }
+  await sb.from("meal_templates").delete().eq("client_slug",slug);
+  var rows=[];
+  DAYS.forEach(function(day){
+    var dayMeals=mealDays[day.k]||[];
+    dayMeals.forEach(function(m,i){
+      if(!m.name)return;
+      rows.push({client_slug:slug,day_of_week:day.k,option_num:1,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+    });
+  });
+  if(rows.length) await sb.from("meal_templates").insert(rows);
+}
+
+async function saveNew() {
+  var name=document.getElementById("an").value.trim();
+  var goal=document.getElementById("ag").value.trim();
+  var slug=document.getElementById("asl").value.trim();
+  if(!name||!slug){showErr("Name and URL slug are required");return;}
+  var newRec={slug:slug,name:name,goal:goal};
+  var apk=document.getElementById("a-pkg").value, ast=document.getElementById("a-start").value, aen=document.getElementById("a-end").value;
+  if(apk)newRec.package=apk;
+  if(ast)newRec.start_date=ast;
+  if(aen)newRec.end_date=aen;
+  var res=await sb.from("clients").insert(newRec);
+  if(res.error){showErr("Error: "+res.error.message);return;}
+  var progRows=daysToRows(slug,addDays);
+  if(progRows.length){var pr=await sb.from("programs").insert(progRows);if(pr.error){showErr("Program error: "+pr.error.message);return;}}
+  await saveNutrition(slug,"a",addMealDays);
+  await saveCond(slug,addCondDays);
+  closeModal("modal-add");
+  showSucc(name+" added! Link: /client/"+slug);
+  loadClients();
+}
+
+async function saveEdit() {
+  var name=document.getElementById("en").value.trim();
+  var goal=document.getElementById("eg").value.trim();
+  var newSlug=(document.getElementById("e-slug").value||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
+  if(!name){showErr("Name is required");return;}
+  if(!newSlug){showErr("URL slug can't be empty");return;}
+  var epk=document.getElementById("e-pkg").value, est=document.getElementById("e-start").value, een=document.getElementById("e-end").value;
+  var pkgFields={package:epk||null, start_date:est||null, end_date:een||null};
+
+  if(newSlug!==editSlug){
+    var oldSlug=editSlug;
+    var clash=await sb.from("clients").select("slug").eq("slug",newSlug).maybeSingle();
+    if(clash.data){showErr("The slug '"+newSlug+"' is already used by another client.");return;}
+    // Foreign keys block renaming the slug in place. So: create the new client row first,
+    // repoint every child table to it, then delete the old row (now safe — nothing references it).
+    var oldRow=await sb.from("clients").select("created_at,active,folder").eq("slug",oldSlug).maybeSingle();
+    var newRow={slug:newSlug,name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date};
+    if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
+    if(oldRow.data&&oldRow.data.active===false)newRow.active=false;
+    if(oldRow.data&&oldRow.data.folder)newRow.folder=oldRow.data.folder;
+    var ins=await sb.from("clients").insert(newRow);
+    if(ins.error){showErr("Couldn't change slug: "+ins.error.message);return;}
+    // repoint every table that references the slug
+    await sb.from("programs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("meal_templates").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("nutrition_targets").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("body_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("nutrition_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("food_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("progress_photos").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("extra_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("conditioning_plan").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("conditioning_logs").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("coach_notes").update({client_slug:newSlug}).eq("client_slug",oldSlug);
+    await sb.from("lift_logs").update({client:newSlug}).eq("client",oldSlug);
+    // keep lift history linked to the program: re-prefix exercise ids (one update per distinct exercise)
+    var lr=await sb.from("lift_logs").select("ex_id").eq("client",newSlug);
+    if(lr.data){
+      var done={};
+      for(var i=0;i<lr.data.length;i++){
+        var oldEx=lr.data[i].ex_id;
+        if(!oldEx||done[oldEx]||oldEx.indexOf(oldSlug+"_")!==0)continue;
+        done[oldEx]=1;
+        var newEx=newSlug+oldEx.slice(oldSlug.length);
+        await sb.from("lift_logs").update({ex_id:newEx}).eq("client",newSlug).eq("ex_id",oldEx);
+      }
+    }
+    // every child now points at the new slug — the old row is childless and safe to remove
+    var delOld=await sb.from("clients").delete().eq("slug",oldSlug);
+    if(delOld.error){showErr("Data moved to '"+newSlug+"', but the old '"+oldSlug+"' record couldn't be removed: "+delOld.error.message);return;}
+    editSlug=newSlug;
+  } else {
+    await sb.from("clients").update({name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date}).eq("slug",editSlug);
+  }
+
+  await sb.from("programs").delete().eq("client_slug",editSlug);
+  var progRows=daysToRows(editSlug,editDays);
+  if(progRows.length) await sb.from("programs").insert(progRows);
+  await saveNutrition(editSlug,"e",editMealDays);
+  await saveCond(editSlug,editCondDays);
+  closeModal("modal-edit");
+  showSucc(name+" updated!");
+  loadClients();
+}
+
+async function delClient() {
+  if(!confirm("Delete this client? Their lift history stays but program and profile are removed."))return;
+  await sb.from("programs").delete().eq("client_slug",editSlug);
+  await sb.from("meal_templates").delete().eq("client_slug",editSlug);
+  await sb.from("clients").delete().eq("slug",editSlug);
+  closeModal("modal-edit");
+  showSucc("Client deleted.");
+  loadClients();
+}
+
+loadClients();
 </script>
 </body>
 </html>

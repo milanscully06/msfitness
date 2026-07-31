@@ -100,6 +100,53 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .win-sub{position:relative;font-size:16px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
 .win-foot{position:relative;margin-top:auto;font-size:15px;font-weight:700;color:#C8622E}
 .win-hint{font-size:12px;color:var(--ink-3);text-align:center;max-width:400px}
+.req-box{margin-bottom:16px}
+.req-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(200,98,46,.08);border:1px solid rgba(200,98,46,.3);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.req-meal{font-size:14px;font-weight:700;color:var(--ink)}
+.req-when{font-size:11px;color:var(--ink-3);margin-top:3px}
+.req-resolve{background:#C8622E;color:var(--bg);border:none;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.req-place{background:none;border:1px solid #C8622E;color:#C8622E;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.req-acts{display:flex;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.fit-overlay{position:fixed;inset:0;background:rgba(14,12,11,.75);backdrop-filter:blur(5px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.fit-overlay.show{display:flex}
+.fit-box{background:var(--bg);border:1px solid var(--line-2);border-radius:18px;width:100%;max-width:680px;max-height:88vh;display:flex;flex-direction:column}
+.fit-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line);flex-shrink:0}
+.fit-title{font-family:var(--display);font-weight:700;font-size:19px;color:var(--ink);line-height:1.25}
+.fit-x{background:var(--surface-2);border:none;border-radius:10px;color:var(--ink-2);font-size:15px;width:34px;height:34px;cursor:pointer;flex-shrink:0}
+.fit-body{overflow-y:auto;padding:16px 20px 22px}
+.fit-macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.fit-m{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 6px;text-align:center}
+.fit-m-v{font-family:var(--display);font-weight:700;font-size:17px;color:#C8622E}
+.fit-m-l{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+.fit-note{font-size:12px;color:var(--ink-3);line-height:1.5;margin-bottom:4px}
+.fit-slot{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px}
+.fit-slot.best{border-color:rgba(200,98,46,.45);background:rgba(200,98,46,.07)}
+.fit-slot-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fit-slot-name{font-size:14px;font-weight:700;color:var(--ink)}
+.fit-slot-cur{font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.fit-delta{font-size:12px;font-weight:700;margin-top:6px}
+.fit-delta.good{color:var(--good,#5FA46C)}
+.fit-delta.warn{color:#CBA67D}
+.fit-delta.bad{color:var(--bad)}
+.fit-btns{display:flex;gap:7px;flex-shrink:0}
+.fit-btn{border:none;border-radius:9px;font-family:var(--body);font-weight:700;font-size:12px;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.fit-btn.rep{background:#C8622E;color:var(--bg)}
+.fit-btn.add{background:none;border:1px solid var(--line-2);color:var(--ink-2)}
+.fit-btn.add:hover{border-color:var(--ink-3);color:var(--ink)}
+.fit-badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:#C8622E;color:var(--bg);padding:2px 7px;border-radius:6px;margin-bottom:5px}
+.note-add{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.note-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;resize:vertical;min-height:64px;margin-bottom:8px}
+.note-in:focus{border-color:var(--sage)}
+.note-row{display:flex;gap:8px;align-items:center}
+.note-date{flex:1;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink-2);font-family:var(--body);font-size:13px;padding:9px 10px;outline:none}
+.note-save{background:var(--sage);color:var(--bg);border:none;border-radius:10px;font-family:var(--body);font-weight:700;font-size:13px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.note-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.note-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.note-when{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.note-del{background:none;border:none;color:var(--ink-3);font-size:13px;cursor:pointer;padding:0 2px}
+.note-txt{font-size:13.5px;color:var(--ink-2);line-height:1.55;white-space:pre-wrap}
+.sec-label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 12px}
+.wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -284,6 +331,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div class="win-hint">Screenshot this card to share — no bodyweight is shown</div>
 </div>
 <div class="lb" id="lightbox"><button class="lb-x" onclick="closeLB()">✕</button><img id="lb-img" alt=""></div>
+
+<div class="fit-overlay" id="fit-panel">
+  <div class="fit-box">
+    <div class="fit-head">
+      <div class="fit-title" id="fit-title">Place recipe</div>
+      <button class="fit-x" onclick="closeFit()">✕</button>
+    </div>
+    <div class="fit-body" id="fit-body"></div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="modal-resources">
 <div class="modal-box">
@@ -1062,17 +1119,200 @@ function renderPfTab(){
   if(profileTabName==="nutrition"){ pfNutrition(b,c); return; }
   if(profileTabName==="habits"){ pfHabits(b,c); return; }
   if(profileTabName==="progress"){ pfProgress(b,c); return; }
-  var map={
-    coaching:["Coaching","Coach notes and open meal/recipe requests move here. These live in the current trainer dashboard until the next stage."]
-  };
-  var m=map[profileTabName];
-  var ph=el("div","pf-ph");
-  ph.appendChild(el("div","pf-ph-t",m[0]+" \u2014 moving here next"));
-  ph.appendChild(el("div","pf-ph-d",m[1]));
-  var ob=el("button","btn-green","\u2699 Open full editor");
-  ob.onclick=function(){ openEdit(profileSlug); };
-  ph.appendChild(ob);
-  b.appendChild(ph);
+  if(profileTabName==="coaching"){ pfCoaching(b,c); return; }
+}
+
+// ===== ported from trainer dashboard: coach notes + requests + recipe placement =====
+function daysAgo(ms){return ms==null?null:Math.floor((Date.now()-ms)/86400000);}
+function ymd(d){return d.toISOString().split("T")[0];}
+function dayFull(k){return {mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"}[k]||k||"";}
+var DAY_ORDER=["mon","tue","wed","thu","fri","sat","sun"];
+var _cnotes=[];
+function drawCoachNotes(list,slug){
+  _cnotes=list||[];
+  var box=document.getElementById("cn-list");
+  if(!box)return;
+  box.innerHTML="";
+  if(!_cnotes.length){box.appendChild(el("div","wt-empty","No notes yet. Log your first call here."));return;}
+  _cnotes.forEach(function(n){
+    var card=el("div","note-card");
+    var h=el("div","note-head");
+    var d=new Date(n.note_date+"T12:00:00");
+    var ago=daysAgo(d.getTime());
+    h.appendChild(el("div","note-when", d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + (ago===0?" \u00b7 today":(ago===1?" \u00b7 1d ago":" \u00b7 "+ago+"d ago"))));
+    var del=el("button","note-del","\u2715");
+    del.onclick=(function(id,s){return function(){delCoachNote(id,s);};})(n.id,slug);
+    h.appendChild(del);
+    card.appendChild(h);
+    card.appendChild(el("div","note-txt",n.note));
+    box.appendChild(card);
+  });
+}
+async function addCoachNote(slug){
+  var t=document.getElementById("cn-txt");
+  var txt=(t.value||"").trim();
+  if(!txt){t.focus();return;}
+  var date=document.getElementById("cn-date").value||ymd(new Date());
+  var ins=await sb.from("coach_notes").insert({client_slug:slug,note_date:date,note:txt}).select().single();
+  if(ins.error){alert("Couldn't save note \u2014 try again.");return;}
+  t.value="";
+  var r=await sb.from("coach_notes").select("*").eq("client_slug",slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  drawCoachNotes(r.data||[],slug);
+}
+async function delCoachNote(id,slug){
+  await sb.from("coach_notes").delete().eq("id",id);
+  drawCoachNotes(_cnotes.filter(function(n){return n.id!==id;}),slug);
+}
+
+var _fitReq=null,_fitSlug=null,_fitRecipe=null;
+function closeFit(){document.getElementById("fit-panel").classList.remove("show");}
+async function openFit(q,slug){
+  _fitReq=q;_fitSlug=slug;
+  var ov=document.getElementById("fit-panel");
+  var body=document.getElementById("fit-body");
+  document.getElementById("fit-title").textContent="Place: "+q.ref_name;
+  body.innerHTML='<div class="loader">Working out where it fits\u2026</div>';
+  ov.classList.add("show");
+  var rr=await sb.from("recipes").select("*").eq("title",q.ref_name).maybeSingle();
+  if(!rr.data){body.innerHTML='<div class="wt-empty">Couldn\'t find that recipe in the library \u2014 it may have been renamed or deleted.</div>';return;}
+  _fitRecipe=rr.data;
+  var rec=rr.data;
+  var rm=await sb.from("meal_templates").select("*").eq("client_slug",slug);
+  var meals=rm.data||[];
+  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
+  var tgt=rt.data;
+  body.innerHTML="";
+  var mr=el("div","fit-macros");
+  [[rec.calories||0,"Calories"],[(rec.protein||0)+"g","Protein"],[(rec.carbs||0)+"g","Carbs"],[(rec.fats||0)+"g","Fat"]].forEach(function(m){
+    var bx=el("div","fit-m");
+    bx.appendChild(el("div","fit-m-v",String(m[0])));
+    bx.appendChild(el("div","fit-m-l",m[1]));
+    mr.appendChild(bx);
+  });
+  body.appendChild(mr);
+  var n1=el("div","fit-note");
+  n1.textContent="Macros are per serving"+(rec.servings>1?(" \u00b7 recipe makes "+rec.servings):"")+
+    (tgt?("  \u2022  Their daily target: "+tgt.calories+" kcal / "+tgt.protein+"P / "+tgt.carbs+"C / "+tgt.fats+"F"):"");
+  body.appendChild(n1);
+  if(!meals.length){
+    body.appendChild(el("div","wt-empty","This client has no meal plan yet \u2014 build one in the Nutrition tab first."));
+    return;
+  }
+  var scored=meals.map(function(m){
+    var dk=(rec.calories||0)-(m.calories||0);
+    var dp=(rec.protein||0)-(m.protein||0);
+    var sc=Math.abs(dk)+5*Math.abs(dp);
+    var cat=(rec.category||"").toLowerCase();
+    var nm=(m.meal_name||"").toLowerCase();
+    var catMatch=cat&&nm&&nm.indexOf(cat)!==-1;
+    if(catMatch)sc=sc*0.35;
+    return {m:m,dk:dk,dp:dp,score:sc,cat:catMatch};
+  });
+  scored.sort(function(a,b){
+    if(a.score!==b.score)return a.score-b.score;
+    return DAY_ORDER.indexOf(a.m.day_of_week)-DAY_ORDER.indexOf(b.m.day_of_week);
+  });
+  body.appendChild(el("div","sec-label","Best fits"));
+  scored.forEach(function(sObj,i){
+    var m=sObj.m;
+    var slot=el("div","fit-slot"+(i===0?" best":""));
+    if(i===0)slot.appendChild(el("div","fit-badge","Closest match"));
+    var top=el("div","fit-slot-top");
+    var lft=el("div","");
+    lft.appendChild(el("div","fit-slot-name",dayFull(m.day_of_week)+" \u00b7 "+(m.meal_name||"Meal")+(sObj.cat?"  \u2713":"")));
+    lft.appendChild(el("div","fit-slot-cur","Currently "+(m.calories||0)+" kcal \u00b7 "+(m.protein||0)+"P "+(m.carbs||0)+"C "+(m.fats||0)+"F"));
+    var cls=Math.abs(sObj.dk)<=75?"good":(Math.abs(sObj.dk)<=200?"warn":"bad");
+    var d=el("div","fit-delta "+cls);
+    d.textContent="Swap \u2192 "+(sObj.dk>=0?"+":"\u2212")+Math.abs(sObj.dk)+" kcal, "+(sObj.dp>=0?"+":"\u2212")+Math.abs(sObj.dp)+"g protein";
+    lft.appendChild(d);
+    top.appendChild(lft);
+    var btns=el("div","fit-btns");
+    var rb=el("button","fit-btn rep","Replace");
+    rb.onclick=(function(mm){return function(){placeRecipe(mm,"replace");};})(m);
+    var ab=el("button","fit-btn add","Add");
+    ab.onclick=(function(mm){return function(){placeRecipe(mm,"add");};})(m);
+    btns.appendChild(rb);btns.appendChild(ab);
+    top.appendChild(btns);
+    slot.appendChild(top);
+    body.appendChild(slot);
+  });
+}
+async function placeRecipe(targetMeal,mode){
+  var rec=_fitRecipe,slug=_fitSlug,q=_fitReq;
+  if(!rec||!slug)return;
+  var dayName=dayFull(targetMeal.day_of_week);
+  var msg = mode==="replace"
+    ? ("Replace "+dayName+" \u00b7 "+(targetMeal.meal_name||"meal")+" with \""+rec.title+"\"?\n\nTheir current meal will be overwritten.")
+    : ("Add \""+rec.title+"\" as an extra meal on "+dayName+"?\n\nThis adds "+(rec.calories||0)+" kcal to that day.");
+  if(!confirm(msg))return;
+  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0 };
+  if(mode==="replace"){
+    var u=await sb.from("meal_templates").update(payload).eq("id",targetMeal.id);
+    if(u.error){alert("Couldn't update that meal: "+u.error.message);return;}
+  } else {
+    var rmax=await sb.from("meal_templates").select("meal_order").eq("client_slug",slug).eq("day_of_week",targetMeal.day_of_week);
+    var mx=0;(rmax.data||[]).forEach(function(r){if((r.meal_order||0)>mx)mx=r.meal_order||0;});
+    payload.client_slug=slug; payload.day_of_week=targetMeal.day_of_week; payload.option_num=1; payload.meal_order=mx+1;
+    var ins=await sb.from("meal_templates").insert(payload);
+    if(ins.error){alert("Couldn't add that meal: "+ins.error.message);return;}
+  }
+  if(q&&q.id) await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",q.id);
+  closeFit();
+  renderPfTab();
+}
+async function resolveReq(id,slug){
+  await sb.from("change_requests").update({status:"resolved",resolved_at:new Date().toISOString()}).eq("id",id);
+  renderPfTab();
+}
+
+async function pfCoaching(b,c){
+  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading\u2026"));
+  var rcr=await sb.from("change_requests").select("*").eq("client_slug",c.slug).eq("status","open").order("created_at",{ascending:false});
+  var rcn=await sb.from("coach_notes").select("*").eq("client_slug",c.slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
+  var creqs=rcr.data||[], cnotes=rcn.data||[];
+  b.innerHTML="";
+
+  if(creqs.length){
+    b.appendChild(el("div","pf-sub","Open requests"));
+    var rbox=el("div","req-box");
+    creqs.forEach(function(q){
+      var item=el("div","req-item");
+      var left=el("div","");
+      var label = q.kind==="recipe" ? ("\uD83C\uDF7D Wants recipe: "+q.ref_name) : (dayFull(q.ref_day)+" \u00b7 "+q.ref_name+" \u2014 change requested");
+      left.appendChild(el("div","req-meal",label));
+      var da=daysAgo(new Date(q.created_at).getTime());
+      left.appendChild(el("div","req-when","Requested "+(da===0?"today":(da===1?"yesterday":da+" days ago"))));
+      item.appendChild(left);
+      var acts=el("div","req-acts");
+      if(q.kind==="recipe"){
+        var pb=el("button","req-place","Place it \u203a");
+        pb.onclick=(function(qq,s){return function(){openFit(qq,s);};})(q,c.slug);
+        acts.appendChild(pb);
+      }
+      var rb=el("button","req-resolve","Mark done");
+      rb.onclick=(function(id,s){return function(){resolveReq(id,s);};})(q.id,c.slug);
+      acts.appendChild(rb);
+      item.appendChild(acts);
+      rbox.appendChild(item);
+    });
+    b.appendChild(rbox);
+  }
+
+  b.appendChild(el("div","pf-sub","Coach notes"));
+  var na=el("div","note-add");
+  var nin=el("textarea","note-in");nin.id="cn-txt";nin.placeholder="What did you discuss? Agreed actions, excuses, wins\u2026";
+  na.appendChild(nin);
+  var nrow=el("div","note-row");
+  var ndt=el("input","note-date");ndt.id="cn-date";ndt.type="date";ndt.value=new Date().toISOString().split("T")[0];
+  var nsv=el("button","note-save","Add note");
+  nsv.onclick=function(){ addCoachNote(c.slug); };
+  nrow.appendChild(ndt);nrow.appendChild(nsv);
+  na.appendChild(nrow);
+  b.appendChild(na);
+  var nlist=el("div","");nlist.id="cn-list";
+  b.appendChild(nlist);
+  drawCoachNotes(cnotes,c.slug);
 }
 
 // ===== ported from trainer dashboard: weight chart + win card + lightbox =====

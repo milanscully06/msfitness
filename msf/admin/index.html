@@ -72,6 +72,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-ov-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .pf-ov-v{font-size:15px;font-weight:700;color:var(--ink);margin-top:5px;word-break:break-word}
 .pf-link{font-size:13px;color:var(--sage);word-break:break-all}
+.pf-savebar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg);padding:2px 0 14px;margin-bottom:6px;z-index:1}
+.pf-savebar-l{font-size:15px;font-weight:700;color:var(--ink)}
+.pf-save-btn{padding:9px 18px;font-size:13px}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -978,6 +981,7 @@ async function toggleActive(slug, makeActive, ev) {
 }
 
 // ===== CLIENT PROFILE (merged app — stage 1 shell) =====
+var editDaysCont="edit-days";
 var profileSlug=null, profileTabName="overview";
 var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
 
@@ -1014,8 +1018,8 @@ function renderPfTab(){
   var c=allClients.find(function(x){return x.slug===profileSlug;});
   if(!c)return;
   if(profileTabName==="overview"){ pfOverview(b,c); return; }
+  if(profileTabName==="program"){ pfProgram(b,c); return; }
   var map={
-    program:["Program","The gym program builder \u2014 days, exercises, sets and per-exercise notes \u2014 moves into this tab next. For now, open the full editor to build it."],
     nutrition:["Nutrition","Meal plans, macro targets and the conditioning schedule land here. Use the full editor for now."],
     habits:["Habits","This client\u2019s habit tweaks move here. Use the full editor for now."],
     progress:["Progress","Weigh-in editor, weight chart and progress photos come here. Weigh-ins are in the full editor now; charts and photos live in the current trainer dashboard until the next stage."],
@@ -1031,8 +1035,45 @@ function renderPfTab(){
   b.appendChild(ph);
 }
 
-function pfOverview(b,c){
-  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
+async function pfProgram(b,c){
+  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading program\u2026"));
+  var r=await sb.from("programs").select("*").eq("client_slug",c.slug).order("exercise_order");
+  editDays=buildEditDays(r.data||[]);
+  editDaysCont="pf-prog-days";
+  b.innerHTML="";
+
+  var bar=el("div","pf-savebar");
+  var lbl=el("div","pf-savebar-l","Gym program");
+  bar.appendChild(lbl);
+  var save=el("button","btn-green pf-save-btn","Save program");
+  save.onclick=function(){ saveProgramOnly(c.slug,save); };
+  bar.appendChild(save);
+  b.appendChild(bar);
+
+  var host=el("div","");host.id="pf-prog-days";
+  b.appendChild(host);
+  renderDays("edit");
+
+  var addDayBtn=el("button","add-btn","+ Add training day");
+  addDayBtn.onclick=function(){ addDay("edit"); };
+  b.appendChild(addDayBtn);
+}
+
+async function saveProgramOnly(slug,btn){
+  var old=btn?btn.textContent:"";
+  if(btn){btn.textContent="Saving\u2026";btn.disabled=true;}
+  var rows=daysToRows(slug,editDays);
+  var del=await sb.from("programs").delete().eq("client_slug",slug);
+  if(del.error){ alert("Save failed: "+del.error.message); if(btn){btn.textContent=old;btn.disabled=false;} return; }
+  if(rows.length){
+    var pr=await sb.from("programs").insert(rows);
+    if(pr.error){ alert("Save failed: "+pr.error.message); if(btn){btn.textContent=old;btn.disabled=false;} return; }
+  }
+  if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
+}
+
+function pfOverview(b,c){  var anchor=c.start_date?new Date(c.start_date+"T12:00:00").getTime():(c.created_at?new Date(c.created_at).getTime():null);
   var weeks=anchor!=null?Math.max(0,Math.floor((Date.now()-anchor)/(7*86400000))):null;
   var fmt=function(d){return d?new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}):"\u2014";};
   var grid=el("div","pf-ov-grid");
@@ -1119,7 +1160,7 @@ function parseReps(tag){
 
 function renderDays(mode) {
   var days = mode==="add"?addDays:editDays;
-  var container = document.getElementById(mode==="add"?"add-days":"edit-days");
+  var container = document.getElementById(mode==="add"?"add-days":(editDaysCont||"edit-days"));
   container.innerHTML = "";
   // clipboard toolbar
   var pbar=el("div","clip-bar");
@@ -1513,6 +1554,7 @@ async function openEdit(slug) {
     if(!editCondDays[d])editCondDays[d]=[];
     editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
   });
+  editDaysCont="edit-days";
   renderDays("edit");
   renderMealDays("edit");
   renderCondDays("edit");

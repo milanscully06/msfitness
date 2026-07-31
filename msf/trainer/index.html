@@ -116,6 +116,21 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .fit-btn.add{background:none;border:1px solid var(--line-2);color:var(--ink-2)}
 .fit-btn.add:hover{border-color:var(--ink-3);color:var(--ink)}
 .fit-badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:#C8622E;color:var(--bg);padding:2px 7px;border-radius:6px;margin-bottom:5px}
+/* ===== win card ===== */
+.win-btn{width:100%;background:none;border:1px solid #C8622E;color:#C8622E;border-radius:12px;font-family:var(--body);font-weight:700;font-size:14px;padding:13px;cursor:pointer;margin:2px 0 16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.win-btn:hover{background:rgba(200,98,46,.08)}
+.win-overlay{position:fixed;inset:0;background:rgba(8,7,6,.92);backdrop-filter:blur(6px);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:16px}
+.win-overlay.show{display:flex}
+.win-x{position:absolute;top:20px;right:20px;background:var(--surface-2);border:none;border-radius:12px;color:var(--ink-2);font-size:16px;width:40px;height:40px;cursor:pointer}
+.win-card{width:100%;max-width:400px;aspect-ratio:4/5;background:linear-gradient(160deg,#1a1310 0%,#0E0C0B 55%,#160f0b 100%);border:1px solid rgba(200,98,46,.35);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:34px;position:relative;overflow:hidden}
+.win-card::before{content:"";position:absolute;top:-40%;left:-30%;width:160%;height:80%;background:radial-gradient(ellipse at center,rgba(200,98,46,.22),transparent 65%);pointer-events:none}
+.win-brand{position:relative;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.28em;color:#C8622E;margin-bottom:auto}
+.win-label{position:relative;font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--ink-2);text-transform:uppercase}
+.win-big{position:relative;font-family:var(--display);font-weight:800;font-size:82px;line-height:1;color:var(--ink);margin:10px 0 4px;letter-spacing:-.02em}
+.win-unit{font-size:34px;font-weight:700;color:#C8622E;margin-left:4px}
+.win-sub{position:relative;font-size:16px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.win-foot{position:relative;margin-top:auto;font-size:15px;font-weight:700;color:#C8622E}
+.win-hint{font-size:12px;color:var(--ink-3);text-align:center;max-width:400px}
 .chip{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;white-space:nowrap}
 .chip.red{background:rgba(201,122,109,.14);color:var(--bad)}
 .chip.amber{background:rgba(203,166,125,.14);color:#CBA67D}
@@ -240,6 +255,18 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div class="fit-body" id="fit-body"></div>
   </div>
+</div>
+
+<div class="win-overlay" id="win-panel">
+  <button class="win-x" onclick="closeWin()">✕</button>
+  <div class="win-card" id="win-card">
+    <div class="win-brand">MS FITNESS</div>
+    <div class="win-label" id="win-label">Client win</div>
+    <div class="win-big" id="win-big">−0.0<span class="win-unit">kg</span></div>
+    <div class="win-sub" id="win-sub">lost</div>
+    <div class="win-foot" id="win-foot"></div>
+  </div>
+  <div class="win-hint">Screenshot this card to share \u2014 no bodyweight is shown</div>
 </div>
 
 <script>
@@ -606,6 +633,15 @@ var _fitReq=null,_fitSlug=null,_fitRecipe=null;
 
 function closeFit(){document.getElementById("fit-panel").classList.remove("show");}
 
+function openWin(name,lost,weeks){
+  var first=(name||"").split(" ")[0]||"Client";
+  document.getElementById("win-label").textContent=first+"'s progress";
+  document.getElementById("win-big").innerHTML="\u2212"+lost.toFixed(1)+'<span class="win-unit">kg</span>';
+  document.getElementById("win-sub").textContent="lost";
+  document.getElementById("win-foot").textContent="in "+weeks+" week"+(weeks===1?"":"s");
+  document.getElementById("win-panel").classList.add("show");
+}
+function closeWin(){document.getElementById("win-panel").classList.remove("show");}
 async function openFit(q,slug){
   _fitReq=q;_fitSlug=slug;
   var ov=document.getElementById("fit-panel");
@@ -772,6 +808,20 @@ async function renderClient(slug){
   var contactDays=daysAgo(lastNoteMs);
   grid.appendChild(statBox("Last contact",contactDays==null?"—":(contactDays===0?"Today":contactDays+"d")));
   dc.appendChild(grid);
+
+  // Share a win — only when there's an actual loss between first and latest weigh-in
+  var wsorted=(body||[]).filter(function(d){return d.weight!=null;}).slice().sort(function(a,b){return (a.logged_date<b.logged_date?-1:1);});
+  if(wsorted.length>=2){
+    var w0=parseFloat(wsorted[0].weight), w1=parseFloat(wsorted[wsorted.length-1].weight);
+    var lost=w0-w1;
+    if(lost>0.05){
+      var d0=new Date(wsorted[0].logged_date+"T12:00:00"), d1=new Date(wsorted[wsorted.length-1].logged_date+"T12:00:00");
+      var wks=Math.max(1,Math.round((d1-d0)/(7*86400000)));
+      var wb=el("button","win-btn","\u2728 Share this win");
+      wb.onclick=(function(nm,l,w){return function(){openWin(nm,l,w);};})(c.name,lost,wks);
+      dc.appendChild(wb);
+    }
+  }
 
   // Meal change requests
   if(creqs.length){

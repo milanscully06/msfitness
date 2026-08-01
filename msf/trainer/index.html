@@ -78,6 +78,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .act-dot{height:14px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
 .act-dot.on-gym{background:var(--sage);border-color:var(--sage)}
 .act-dot.on-food{background:#C8A24A;border-color:#C8A24A}
+.cal-bars{display:flex;gap:6px;align-items:flex-end;height:76px}
+.cal-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%}
+.cal-bar-track{flex:1;width:100%;background:var(--surface-2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden;border:1px solid var(--line)}
+.cal-bar-fill{width:100%;background:var(--sage);border-radius:6px 6px 0 0;transition:height .2s}
+.cal-bar-day{font-size:10px;color:var(--ink-3);font-weight:600}
 .lift-tbl{border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .lift-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line)}
 .lift-row:last-child{border-bottom:none}
@@ -522,6 +527,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">Start date</label><input class="form-input" type="date" id="e-start"></div>
     <div class="form-group" style="flex:1;min-width:130px"><label class="form-label">End date</label><input class="form-input" type="date" id="e-end"></div>
+  </div>
+  <div class="form-group" style="max-width:220px">
+    <label class="form-label">Gym sessions / week</label>
+    <input class="form-input" type="number" min="0" max="14" id="e-spw" placeholder="e.g. 3">
   </div>
   <div class="form-group">
     <label class="form-label">URL slug (lowercase, no spaces)</label>
@@ -1641,51 +1650,99 @@ async function pfOverview(b,c){
 }
 
 async function loadPfActivity(slug, wrap){
+  var c=allClients.find(function(x){return x.slug===slug;})||{};
   var rl=await sb.from("lift_logs").select("logged_at").eq("client",slug);
-  var rn=await sb.from("nutrition_logs").select("logged_date").eq("client_slug",slug);
-  var lifts=rl.data||[], foods=rn.data||[];
+  var rn=await sb.from("nutrition_logs").select("logged_date,calories,protein").eq("client_slug",slug);
+  var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();
+  var lifts=rl.data||[], foods=rn.data||[], tgt=rt.data||{};
   wrap.innerHTML="";
 
-  // distinct gym-session dates + last session
+  var todayD=new Date(); todayD.setHours(12,0,0,0);
+  var dkLocal=function(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+
+  // ---- gym sessions: distinct dates, last session, current streak, missed ----
   var gymDays={}, lastGym=null;
-  lifts.forEach(function(r){ if(r.logged_at){ var d=new Date(r.logged_at); gymDays[d.toDateString()]=1; if(!lastGym||d>lastGym)lastGym=d; } });
+  lifts.forEach(function(r){ if(r.logged_at){ var d=new Date(r.logged_at); gymDays[dkLocal(d)]=1; if(!lastGym||d>lastGym)lastGym=d; } });
   var sessions=Object.keys(gymDays).length;
 
-  // food-log dates + last food log
-  var foodDays={}, lastFood=null;
-  foods.forEach(function(r){ if(r.logged_date){ foodDays[r.logged_date]=1; var d=new Date(r.logged_date+"T12:00:00"); if(!lastFood||d>lastFood)lastFood=d; } });
-
-  var agoTxt=function(d){
-    if(!d)return "never";
-    var days=Math.floor((Date.now()-d.getTime())/86400000);
-    return days<=0?"today":(days===1?"yesterday":days+"d ago");
-  };
-
-  wrap.appendChild(el("div","pf-sub","Activity"));
-  var ag=el("div","pf-ov-grid");
-  function acell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);ag.appendChild(x);}
-  var gymStale = !lastGym || (Date.now()-lastGym.getTime())/86400000 > 7;
-  var foodStale = !lastFood || (Date.now()-lastFood.getTime())/86400000 > 3;
-  acell("Sessions logged", String(sessions));
-  acell("Last gym session", agoTxt(lastGym), gymStale);
-  acell("Last food log", agoTxt(lastFood), foodStale);
-  acell("Days food logged", String(Object.keys(foodDays).length));
-  wrap.appendChild(ag);
-
-  // 14-day strip: gym (top) + food (bottom)
-  wrap.appendChild(el("div","act-strip-lbl","Last 14 days \u2014 \u25cf gym  \u25cb food"));
-  var strip=el("div","act-strip");
-  for(var i=13;i>=0;i--){
-    var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-i);
-    var dk=d.toDateString();
-    var ymdk=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    var col=el("div","act-col");
-    col.title=d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
-    col.appendChild(el("div","act-dot"+(gymDays[dk]?" on-gym":"")));
-    col.appendChild(el("div","act-dot"+(foodDays[ymdk]?" on-food":"")));
-    strip.appendChild(col);
+  // consecutive-week streak: count back week-by-week (Mon–Sun) while >=1 session logged
+  function weekStart(d){ var x=new Date(d); x.setHours(12,0,0,0); var wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); return x; } // Monday
+  var thisWeekMon=weekStart(todayD);
+  var streakWeeks=0;
+  for(var w=0; w<104; w++){
+    var ws=new Date(thisWeekMon); ws.setDate(ws.getDate()-w*7);
+    var we=new Date(ws); we.setDate(we.getDate()+7);
+    var any=Object.keys(gymDays).some(function(k){ var d=new Date(k+"T12:00:00"); return d>=ws && d<we; });
+    if(any) streakWeeks++;
+    else if(w===0) continue; // don't break the streak just because this week isn't done yet
+    else break;
   }
+  // sessions this week + missed vs target
+  var weekEnd=new Date(thisWeekMon); weekEnd.setDate(weekEnd.getDate()+7);
+  var doneThisWeek=Object.keys(gymDays).filter(function(k){ var d=new Date(k+"T12:00:00"); return d>=thisWeekMon && d<weekEnd; }).length;
+  var target=c.sessions_per_week;
+  var missed = (target!=null)?Math.max(0,target-doneThisWeek):null;
+
+  // ---- food: last log, calories today, protein today ----
+  var foodByDay={}; foods.forEach(function(r){ if(r.logged_date){ if(!foodByDay[r.logged_date])foodByDay[r.logged_date]={cal:0,pro:0}; foodByDay[r.logged_date].cal+=r.calories||0; foodByDay[r.logged_date].pro+=r.protein||0; } });
+  var lastFood=null; Object.keys(foodByDay).forEach(function(k){ var d=new Date(k+"T12:00:00"); if(!lastFood||d>lastFood)lastFood=d; });
+  var todK=dkLocal(todayD);
+  var todCal=(foodByDay[todK]||{}).cal||0;
+  var todPro=(foodByDay[todK]||{}).pro||0;
+
+  var agoTxt=function(d){ if(!d)return "never"; var days=Math.floor((Date.now()-d.getTime())/86400000); return days<=0?"today":(days===1?"yesterday":days+"d ago"); };
+
+  // ===== GYM =====
+  wrap.appendChild(el("div","pf-sub","Gym sessions"));
+  var gg=el("div","pf-ov-grid");
+  function scell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);gg.appendChild(x);}
+  var gymStale=!lastGym||(Date.now()-lastGym.getTime())/86400000>7;
+  scell("Week streak", streakWeeks+(streakWeeks===1?" wk":" wks"));
+  scell("Last session", agoTxt(lastGym), gymStale);
+  if(target!=null){
+    scell("This week", doneThisWeek+" / "+target);
+    scell("Missed this wk", missed===0?"\u2014 on track":String(missed), missed>0);
+  } else {
+    scell("Total sessions", String(sessions));
+    var setc=el("div","pf-ov-cell"); setc.appendChild(el("div","pf-ov-l","Weekly target"));
+    var sv=el("div","pf-ov-v","Not set"); sv.style.color="var(--ink-3)"; sv.style.fontSize="13px"; setc.appendChild(sv); gg.appendChild(setc);
+  }
+  wrap.appendChild(gg);
+
+  // 14-day gym strip
+  wrap.appendChild(el("div","act-strip-lbl","Last 14 days"));
+  var strip=el("div","act-strip");
+  for(var i=13;i>=0;i--){ var d=new Date(todayD); d.setDate(d.getDate()-i); var col=el("div","act-col"); col.title=d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}); col.appendChild(el("div","act-dot"+(gymDays[dkLocal(d)]?" on-gym":""))); strip.appendChild(col); }
   wrap.appendChild(strip);
+
+  // ===== FOOD =====
+  var fh=el("div","pf-sub"); fh.style.marginTop="18px"; fh.textContent="Nutrition logging"; wrap.appendChild(fh);
+  var fg=el("div","pf-ov-grid");
+  function fcell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);fg.appendChild(x);}
+  var foodStale=!lastFood||(Date.now()-lastFood.getTime())/86400000>3;
+  fcell("Calories today", tgt.calories?(todCal+" / "+tgt.calories):String(todCal));
+  fcell("Protein today", tgt.protein?(todPro+" / "+tgt.protein+"g"):(todPro+"g"));
+  fcell("Last food log", agoTxt(lastFood), foodStale);
+  fcell("Days logged", String(Object.keys(foodByDay).length));
+  wrap.appendChild(fg);
+
+  // 7-day calories vs target bars
+  wrap.appendChild(el("div","act-strip-lbl","Calories logged \u2014 last 7 days"));
+  var cbars=el("div","cal-bars");
+  var goal=tgt.calories||0;
+  for(var j=6;j>=0;j--){
+    var d2=new Date(todayD); d2.setDate(d2.getDate()-j);
+    var cal=(foodByDay[dkLocal(d2)]||{}).cal||0;
+    var pct = goal>0 ? Math.min(100,Math.round(cal/goal*100)) : (cal>0?100:0);
+    var over = goal>0 && cal>goal;
+    var b2=el("div","cal-bar-col"); b2.title=d2.toLocaleDateString("en-AU",{weekday:"short",day:"numeric"})+": "+cal+" kcal"+(goal?(" / "+goal):"");
+    var track=el("div","cal-bar-track");
+    var fill=el("div","cal-bar-fill"); fill.style.height=Math.max(3,pct)+"%"; if(over)fill.style.background="var(--bad)";
+    track.appendChild(fill); b2.appendChild(track);
+    b2.appendChild(el("div","cal-bar-day",["Su","Mo","Tu","We","Th","Fr","Sa"][d2.getDay()]));
+    cbars.appendChild(b2);
+  }
+  wrap.appendChild(cbars);
   wrap.style.marginBottom="18px";
 }
 
@@ -2111,6 +2168,7 @@ async function openEdit(slug) {
   document.getElementById("e-pkg").value = r1.data.package||"";
   document.getElementById("e-start").value = r1.data.start_date||"";
   document.getElementById("e-end").value = r1.data.end_date||"";
+  document.getElementById("e-spw").value = (r1.data.sessions_per_week!=null?r1.data.sessions_per_week:"");
   wirePkg("e");
   if (r3.data) {
     document.getElementById("e-cal").value = r3.data.calories||"";
@@ -2226,6 +2284,7 @@ async function saveEdit() {
   if(!name){showErr("Name is required");return;}
   if(!newSlug){showErr("URL slug can't be empty");return;}
   var epk=document.getElementById("e-pkg").value, est=document.getElementById("e-start").value, een=document.getElementById("e-end").value;
+  var espwRaw=document.getElementById("e-spw").value; var espw=espwRaw===""?null:parseInt(espwRaw);
   var pkgFields={package:epk||null, start_date:est||null, end_date:een||null};
 
   if(newSlug!==editSlug){
@@ -2235,7 +2294,7 @@ async function saveEdit() {
     // Foreign keys block renaming the slug in place. So: create the new client row first,
     // repoint every child table to it, then delete the old row (now safe — nothing references it).
     var oldRow=await sb.from("clients").select("created_at,active,folder").eq("slug",oldSlug).maybeSingle();
-    var newRow={slug:newSlug,name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date};
+    var newRow={slug:newSlug,name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date,sessions_per_week:espw};
     if(oldRow.data&&oldRow.data.created_at)newRow.created_at=oldRow.data.created_at;
     if(oldRow.data&&oldRow.data.active===false)newRow.active=false;
     if(oldRow.data&&oldRow.data.folder)newRow.folder=oldRow.data.folder;
@@ -2271,7 +2330,7 @@ async function saveEdit() {
     if(delOld.error){showErr("Data moved to '"+newSlug+"', but the old '"+oldSlug+"' record couldn't be removed: "+delOld.error.message);return;}
     editSlug=newSlug;
   } else {
-    await sb.from("clients").update({name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date}).eq("slug",editSlug);
+    await sb.from("clients").update({name:name,goal:goal,package:pkgFields.package,start_date:pkgFields.start_date,end_date:pkgFields.end_date,sessions_per_week:espw}).eq("slug",editSlug);
   }
 
   await sb.from("programs").delete().eq("client_slug",editSlug);

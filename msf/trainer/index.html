@@ -243,6 +243,22 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .ehab-check{width:22px;height:22px;flex-shrink:0;border-radius:6px;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--bg);cursor:pointer}
 .ehab-check.on{background:var(--sage);border-color:var(--sage)}
 .ehab-label{font-size:13px;color:var(--ink);font-weight:500}
+.lead-newbar{background:var(--orange-soft,rgba(200,98,46,.14));border:1px solid rgba(200,98,46,.4);color:#C8622E;font-size:12px;font-weight:700;padding:8px 12px;border-radius:9px;margin-bottom:12px}
+.lead-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:10px}
+.lead-card.is-new{border-color:rgba(200,98,46,.45)}
+.lead-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lead-name{font-size:16px;font-weight:700;color:var(--ink)}
+.lead-booked{font-size:11px;font-weight:700;color:var(--good,#5FA46C);background:rgba(95,164,108,.14);padding:3px 9px;border-radius:99px;white-space:nowrap}
+.lead-when{font-size:11px;color:var(--ink-3);margin-top:3px}
+.lead-contact{font-size:13px;margin-top:9px}
+.lead-contact a{color:var(--sage);text-decoration:none;font-weight:600}
+.lead-contact a:hover{text-decoration:underline}
+.lead-fld{margin-top:11px}
+.lead-fld-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
+.lead-fld-v{font-size:13.5px;color:var(--ink-2);line-height:1.5;white-space:pre-wrap}
+.lead-status-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+.lead-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 13px;cursor:pointer;text-transform:capitalize}
+.lead-chip.on{background:#C8622E;border-color:#C8622E;color:var(--bg)}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -310,6 +326,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
     <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
     <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="leads-btn">Leads</button>
       <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="hab-btn">Habits</button>
       <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="rec-btn">Recipes</button>
       <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="res-btn">Resources</button>
@@ -388,6 +405,17 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div id="r-list"></div>
   <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
     <button class="btn-outline" style="width:100%" id="r-close-btn">Done</button>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-leads">
+<div class="modal-box">
+  <div class="modal-title">Inquiry leads</div>
+  <div class="modal-sub">People who applied through your Instagram link. Newest first.</div>
+  <div id="leads-list"><div class="loader">Loading leads...</div></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="leads-close-btn">Done</button>
   </div>
 </div>
 </div>
@@ -614,6 +642,52 @@ document.getElementById("rc-save-btn").onclick = saveRec;
 document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
 document.getElementById("res-btn").onclick = openResources;
+
+// ===== LEADS =====
+document.getElementById("leads-btn").onclick = function(){ loadLeads(); openModal("modal-leads"); };
+document.getElementById("leads-close-btn").onclick = function(){ closeModal("modal-leads"); };
+var LEAD_STATUS=["new","contacted","converted","closed"];
+async function loadLeads(){
+  var box=document.getElementById("leads-list");
+  box.innerHTML='<div class="loader">Loading leads...</div>';
+  var r=await sb.from("leads").select("*").order("created_at",{ascending:false});
+  if(r.error){ box.innerHTML='<div style="font-size:13px;color:var(--bad)">Couldn\'t load leads: '+r.error.message+'</div>'; return; }
+  var leads=r.data||[];
+  box.innerHTML="";
+  if(!leads.length){ box.innerHTML='<div style="font-size:13px;color:var(--ink-3);padding:10px 0">No inquiries yet. Share your link!</div>'; return; }
+  var newCount=leads.filter(function(l){return l.status==="new";}).length;
+  if(newCount){ var nb=el("div","lead-newbar"); nb.textContent=newCount+" new "+(newCount===1?"inquiry":"inquiries")+" to follow up"; box.appendChild(nb); }
+  leads.forEach(function(l){
+    var card=el("div","lead-card"+(l.status==="new"?" is-new":""));
+    var top=el("div","lead-top");
+    var nm=el("div","lead-name",l.name||"—");
+    top.appendChild(nm);
+    if(l.booked){ var bk=el("span","lead-booked","\u2713 Booked"); top.appendChild(bk); }
+    card.appendChild(top);
+    var when=el("div","lead-when",new Date(l.created_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+" · "+new Date(l.created_at).toLocaleTimeString("en-AU",{hour:"numeric",minute:"2-digit"}));
+    card.appendChild(when);
+    var contact=el("div","lead-contact");
+    contact.innerHTML='<a href="mailto:'+enc(l.email)+'">'+esc(l.email)+'</a>'+(l.phone?(' · <a href="tel:'+enc(l.phone)+'">'+esc(l.phone)+'</a>'):"");
+    card.appendChild(contact);
+    if(l.struggle){ card.appendChild(leadField("Struggling with",l.struggle)); }
+    if(l.goals){ card.appendChild(leadField("Goals",l.goals)); }
+    var sr=el("div","lead-status-row");
+    LEAD_STATUS.forEach(function(st){
+      var chip=el("button","lead-chip"+(l.status===st?" on":""),st);
+      chip.onclick=(function(id,s){return function(){ setLeadStatus(id,s); };})(l.id,st);
+      sr.appendChild(chip);
+    });
+    card.appendChild(sr);
+    box.appendChild(card);
+  });
+}
+function leadField(label,val){ var w=el("div","lead-fld"); w.appendChild(el("div","lead-fld-l",label)); w.appendChild(el("div","lead-fld-v",val)); return w; }
+function esc(s){ var d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+function enc(s){ return encodeURIComponent(s||""); }
+async function setLeadStatus(id,st){
+  await sb.from("leads").update({status:st}).eq("id",id);
+  loadLeads();
+}
 
 // ===== HABITS (shared list) =====
 var allHabits=[];

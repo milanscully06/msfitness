@@ -72,6 +72,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-ov-l{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .pf-ov-v{font-size:15px;font-weight:700;color:var(--ink);margin-top:5px;word-break:break-word}
 .pf-link{font-size:13px;color:var(--sage);word-break:break-all}
+.link-change-btn{margin-top:10px;background:var(--surface-2);border:1px solid var(--line2,#3a2e24);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer}
+.link-change-btn:hover{border-color:var(--sage);color:var(--sage)}
 .act-strip-lbl{font-size:11px;color:var(--ink-3);font-weight:600;margin:14px 0 7px}
 .act-strip{display:flex;gap:4px}
 .act-col{display:flex;flex-direction:column;gap:3px;flex:1}
@@ -1704,6 +1706,9 @@ async function pfOverview(b,c){
   var lk=el("div","pf-ov-cell"); lk.style.marginBottom="18px";
   lk.appendChild(el("div","pf-ov-l","Client app link"));
   lk.appendChild(el("div","pf-link","/client/"+c.slug));
+  var chg=el("button","link-change-btn","Change link");
+  chg.onclick=function(){ renameSlug(c.slug); };
+  lk.appendChild(chg);
   b.appendChild(lk);
 
   // ---- logging activity (are they actually using the app?) ----
@@ -1723,8 +1728,36 @@ async function pfOverview(b,c){
   b.appendChild(row);
 }
 
-async function loadPfActivity(slug, wrap){
-  var c=allClients.find(function(x){return x.slug===slug;})||{};
+async function renameSlug(oldSlug){
+  var next=prompt(
+    "New app-link slug for this client.\n\n"+
+    "\u2022 lowercase letters, numbers and hyphens only\n"+
+    "\u2022 this changes their app URL \u2014 their old link stops working\n"+
+    "\u2022 you'll need to resend them the new link\n\n"+
+    "Current: "+oldSlug,
+    oldSlug
+  );
+  if(next==null) return;
+  next=next.trim().toLowerCase();
+  if(next===oldSlug) return;
+  if(!/^[a-z0-9-]+$/.test(next)){ alert("Slug can only contain lowercase letters, numbers and hyphens \u2014 no spaces or symbols."); return; }
+  var chk=await sb.from("clients").select("slug").eq("slug",next).maybeSingle();
+  if(chk.data){ alert('"'+next+'" is already taken by another client. Pick a different one.'); return; }
+  if(!confirm("Change this client's link from\n\n  /client/"+oldSlug+"\n\nto\n\n  /client/"+next+"\n\nTheir current link will stop working immediately. Continue?")) return;
+
+  var r=await sb.rpc("rename_client_slug",{old_slug:oldSlug,new_slug:next});
+  if(r.error){
+    alert("Rename failed: "+r.error.message+"\n\nIf it mentions a missing function, run rename_client_slug_setup.sql in the Supabase SQL Editor first, then try again.");
+    return;
+  }
+  allClients.forEach(function(c){ if(c.slug===oldSlug) c.slug=next; });
+  profileSlug=next; editSlug=next;
+  renderPfTab();
+  renderClients();
+  alert("Done \u2705\n\nNew link:\n/client/"+next+"\n\nSend this to the client \u2014 their old link no longer works.");
+}
+
+async function loadPfActivity(slug, wrap){  var c=allClients.find(function(x){return x.slug===slug;})||{};
   var rl=await sb.from("lift_logs").select("logged_at").eq("client",slug);
   var rn=await sb.from("nutrition_logs").select("logged_date,calories,protein").eq("client_slug",slug);
   var rt=await sb.from("nutrition_targets").select("*").eq("client_slug",slug).maybeSingle();

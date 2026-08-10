@@ -261,6 +261,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .lead-status-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
 .lead-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 13px;cursor:pointer;text-transform:capitalize}
 .lead-chip.on{background:#C8622E;border-color:#C8622E;color:var(--bg)}
+.lib-add-btn{border-color:var(--sage) !important;color:var(--sage) !important}
+.mealib-count{font-size:11px;color:var(--ink-3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.mealib-item{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,background .12s}
+.mealib-item:hover{border-color:var(--sage);background:var(--surface-2)}
+.mealib-name{font-size:14px;font-weight:700;color:var(--ink)}
+.mealib-ing{font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.45}
+.mealib-macros{font-size:12px;color:var(--sage);font-weight:600;margin-top:6px}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -408,6 +415,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
     <button class="btn-outline" style="width:100%" id="r-close-btn">Done</button>
   </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-mealib">
+<div class="modal-box">
+  <div class="modal-title">Meal library</div>
+  <div class="modal-sub">Meals from all your clients' plans. Tap one to drop it into the day \u2014 then adjust portions and macros for this client.</div>
+  <input class="form-input" id="mealib-search" placeholder="Search meals or ingredients\u2026" style="margin-bottom:12px">
+  <div id="mealib-list"><div class="loader">Loading\u2026</div></div>
+  <div class="modal-actions" style="margin-top:16px"><button class="btn-outline" style="width:100%" id="mealib-close">Close</button></div>
 </div>
 </div>
 
@@ -644,6 +661,55 @@ document.getElementById("rc-save-btn").onclick = saveRec;
 document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
 document.getElementById("res-btn").onclick = openResources;
+
+// ===== MEAL LIBRARY (pick meals from other clients' plans) =====
+var mealibTarget=null, mealibMode=null, mealibCache=null;
+document.getElementById("mealib-close").onclick=function(){ closeModal("modal-mealib"); };
+document.getElementById("mealib-search").oninput=function(){ renderMealLib(this.value.trim().toLowerCase()); };
+function openMealLib(dayKey, mode){
+  mealibTarget=dayKey; mealibMode=mode; mealibCache=null;
+  document.getElementById("mealib-search").value="";
+  openModal("modal-mealib");
+  loadMealLib();
+}
+async function loadMealLib(){
+  var box=document.getElementById("mealib-list");
+  box.innerHTML='<div class="loader">Loading\u2026</div>';
+  var r=await sb.from("meal_templates").select("meal_name,ingredients,calories,protein,carbs,fats");
+  if(r.error){ box.innerHTML='<div style="color:var(--bad);font-size:13px">Couldn\'t load meals: '+r.error.message+'</div>'; return; }
+  var seen={}, lib=[];
+  (r.data||[]).forEach(function(m){
+    if(!(m.meal_name||m.ingredients))return;
+    var key=((m.meal_name||"")+"|"+(m.ingredients||"")).toLowerCase().replace(/\s+/g," ").trim();
+    if(seen[key])return; seen[key]=1;
+    lib.push(m);
+  });
+  lib.sort(function(a,b){ var an=(a.meal_name||"").toLowerCase(), bn=(b.meal_name||"").toLowerCase(); if(an<bn)return -1; if(an>bn)return 1; return (a.calories||0)-(b.calories||0); });
+  mealibCache=lib;
+  renderMealLib("");
+}
+function renderMealLib(q){
+  var box=document.getElementById("mealib-list"); box.innerHTML="";
+  var lib=mealibCache||[];
+  var filtered=q?lib.filter(function(m){ return ((m.meal_name||"")+" "+(m.ingredients||"")).toLowerCase().indexOf(q)!==-1; }):lib;
+  if(!filtered.length){ box.innerHTML='<div style="color:var(--ink-3);font-size:13px;padding:10px 0">'+(lib.length?"No meals match that search.":"No meals saved in any plan yet.")+'</div>'; return; }
+  box.appendChild(el("div","mealib-count", filtered.length+" meal"+(filtered.length===1?"":"s")+(q?" found":" in your plans")));
+  filtered.forEach(function(m){
+    var card=el("div","mealib-item");
+    card.appendChild(el("div","mealib-name", m.meal_name||"(unnamed meal)"));
+    if(m.ingredients){ card.appendChild(el("div","mealib-ing", m.ingredients.split("\n").map(function(s){return s.trim();}).filter(Boolean).slice(0,3).join(" \u00b7 "))); }
+    card.appendChild(el("div","mealib-macros", (m.calories||0)+" kcal \u00b7 "+(m.protein||0)+"P "+(m.carbs||0)+"C "+(m.fats||0)+"F"));
+    card.onclick=function(){ addFromLib(m); };
+    box.appendChild(card);
+  });
+}
+function addFromLib(m){
+  var M=mealibMode==="add"?addMealDays:editMealDays;
+  if(!M[mealibTarget])M[mealibTarget]=[];
+  M[mealibTarget].push({name:m.meal_name||"",ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+  closeModal("modal-mealib");
+  renderMealDays(mealibMode);
+}
 
 // ===== LEADS =====
 document.getElementById("leads-btn").onclick = function(){ loadLeads(); openModal("modal-leads"); };
@@ -2165,7 +2231,11 @@ function renderMealDays(mode) {
     });
     var ab=el("button","add-btn","+ Add meal");
     ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
-    block.appendChild(ab); container.appendChild(block);
+    block.appendChild(ab);
+    var libB=el("button","add-btn lib-add-btn","\uFF0B From library");
+    libB.onclick=(function(d2,m){return function(){ openMealLib(d2,m); };})(day.k,mode);
+    block.appendChild(libB);
+    container.appendChild(block);
   });
 }
 

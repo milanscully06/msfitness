@@ -268,6 +268,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .mealib-name{font-size:14px;font-weight:700;color:var(--ink)}
 .mealib-ing{font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.45}
 .mealib-macros{font-size:12px;color:var(--sage);font-weight:600;margin-top:6px}
+.builder-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:2px}
+.builder-tabs::-webkit-scrollbar{display:none}
+.builder-tab{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink-3);font-family:var(--body);font-size:13px;font-weight:600;padding:8px 12px;cursor:pointer;white-space:nowrap}
+.builder-tab.on{background:#C8622E;border-color:#C8622E;color:#fff}
+.bt-dot{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--sage);color:var(--bg);font-size:10px;font-weight:700}
+.builder-tab.on .bt-dot{background:rgba(0,0,0,.22);color:#fff}
+.meal-total-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--surface-2);border:1px solid var(--line2,#3a2e24);border-radius:12px;padding:13px 12px;margin-bottom:16px}
+.mt-cell{text-align:center}
+.mt-l{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.mt-v{font-size:15px;font-weight:800;color:var(--ink)}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -1242,6 +1252,7 @@ async function toggleActive(slug, makeActive, ev) {
 
 // ===== CLIENT PROFILE (merged app — stage 1 shell) =====
 var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
+var mealActiveDay="mon";
 var habitCont="edit-habits", habitInputId="ehab-new";
 var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
 var profileSlug=null, profileTabName="overview";
@@ -2150,93 +2161,139 @@ function renderMealDays(mode) {
   var meals = mode==="add"?addMealDays:editMealDays;
   var container = document.getElementById(mode==="add"?"add-meal-days":(editMealCont||"edit-meal-days"));
   container.innerHTML = "";
-  // clipboard toolbar
+  if(!mealActiveDay) mealActiveDay="mon";
+
+  // clipboard toolbar (global)
   var cbar=el("div","clip-bar");
-  cbar.appendChild(el("span","clip-status", mealClip?("📋 "+mealClip.label):"📋 Meal clipboard empty"));
+  cbar.appendChild(el("span","clip-status", mealClip?("\uD83D\uDCCB "+mealClip.label):"\uD83D\uDCCB Meal clipboard empty"));
   var cr2=el("div",""); cr2.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
-  var cpAllM=el("button","clip-btn","⧉ Copy all days");
-  cpAllM.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var cnt=0; DAYS.forEach(function(d){cnt+=(M[d.k]||[]).length;}); if(!cnt)return; mealClip={scope:"all",label:"All meals · "+cnt,data:deep(M)}; renderMealDays(m); };})(mode);
+  var cpAllM=el("button","clip-btn","\u29C9 Copy all days");
+  cpAllM.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var cnt=0; DAYS.forEach(function(d){cnt+=(M[d.k]||[]).length;}); if(!cnt)return; mealClip={scope:"all",label:"All meals \u00b7 "+cnt,data:deep(M)}; renderMealDays(m); };})(mode);
   cr2.appendChild(cpAllM);
   if(mealClip&&mealClip.scope==="all"){
-    var pasteAll=el("button","clip-btn paste","📥 Paste all days");
+    var pasteAll=el("button","clip-btn paste","\uD83D\uDCE5 Paste all days");
     pasteAll.onclick=(function(m){return function(){ var M=m==="add"?addMealDays:editMealDays; var src=mealClip.data; DAYS.forEach(function(d){ if(!M[d.k])M[d.k]=[]; (src[d.k]||[]).forEach(function(x){M[d.k].push(deep(x));}); }); renderMealDays(m); };})(mode);
     cr2.appendChild(pasteAll);
   }
-  if(mealClip){ var clrM=el("button","clip-btn","✕ Clear"); clrM.onclick=function(){mealClip=null;renderMealDays(mode);}; cr2.appendChild(clrM); }
+  if(mealClip){ var clrM=el("button","clip-btn","\u2715 Clear"); clrM.onclick=function(){mealClip=null;renderMealDays(mode);}; cr2.appendChild(clrM); }
   cbar.appendChild(cr2); container.appendChild(cbar);
-  DAYS.forEach(function(day) {
-    var dayMeals = meals[day.k]||[];
-    var block = el("div","day-block");
-    var mh = el("div",""); mh.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px";
-    mh.appendChild(el("div","day-block-title",day.l));
-    var mctl=el("div",""); mctl.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap";
-    var msw=el("select","day-swap");
-    var mph=el("option","","⇄ swap with"); mph.value=""; msw.appendChild(mph);
-    DAYS.forEach(function(od){ if(od.k!==day.k){ var o=el("option","",od.l); o.value=od.k; msw.appendChild(o); } });
-    msw.onchange=(function(srcK,m){return function(){ var tgtK=this.value; if(!tgtK)return; var M=m==="add"?addMealDays:editMealDays; var tmp=M[srcK]; M[srcK]=M[tgtK]; M[tgtK]=tmp; renderMealDays(m); };})(day.k,mode);
-    mctl.appendChild(msw);
-    var cpd=el("button","clip-btn","⧉ Copy day");
-    cpd.onclick=(function(k,lbl,m){return function(){ var arr=(m==="add"?addMealDays:editMealDays)[k]||[]; if(!arr.length)return; mealClip={scope:"day",label:lbl+" · "+arr.length+" meals",data:deep(arr)}; renderMealDays(m); };})(day.k,day.l,mode);
-    mctl.appendChild(cpd);
-    if(mealClip&&(mealClip.scope==="meal"||mealClip.scope==="day")){
-      var pbtn=el("button","clip-btn paste", mealClip.scope==="meal"?"📥 Paste meal":"📥 Paste day");
-      pbtn.onclick=(function(k,m){return function(){ var M=m==="add"?addMealDays:editMealDays; if(!M[k])M[k]=[]; if(mealClip.scope==="meal"){M[k].push(deep(mealClip.data));}else{mealClip.data.forEach(function(x){M[k].push(deep(x));});} renderMealDays(m); };})(day.k,mode);
-      mctl.appendChild(pbtn);
-      if(mealClip.scope==="day"){
-        var rpl=el("button","clip-btn paste","\u21A9 Replace day");
-        rpl.onclick=(function(k,m){return function(){ (m==="add"?addMealDays:editMealDays)[k]=deep(mealClip.data); renderMealDays(m); };})(day.k,mode);
-        mctl.appendChild(rpl);
-      }
-    }
-    mh.appendChild(mctl); block.appendChild(mh);
-    dayMeals.forEach(function(meal, mi) {
-      var mb = el("div","meal-block");
-      // Meal name
-      var mn = el("input","form-input"); mn.placeholder="Meal name (e.g. Breakfast)"; mn.value=meal.name||"";
-      mn.style.marginBottom="8px";
-      mn.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].name=this.value;};})(day.k,mi,mode);
-      mb.appendChild(mn);
-      // Ingredients
-      var il=el("div","nut-label","Ingredients (one per line)"); il.style.marginBottom="4px"; mb.appendChild(il);
-      var ta=el("textarea","form-input"); ta.style.cssText="min-height:80px;resize:vertical;font-family:inherit;margin-bottom:8px";
-      ta.placeholder="e.g. 120g oats, 250g Greek yoghurt (one per line)"; ta.value=meal.ingredients||"";
-      ta.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].ingredients=this.value;};})(day.k,mi,mode);
-      mb.appendChild(ta);
-      // Macros
-      var ml=el("div","nut-label","Macros"); ml.style.marginBottom="4px"; mb.appendChild(ml);
-      var mg=el("div","macro-grid");
-      [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
-        var wrap=el("div");
-        wrap.appendChild(el("div","macro-lbl",f[0]));
-        var inp=el("input","macro-inp"); inp.type="number"; inp.min="0"; inp.value=meal[f[1]]||0;
-        inp.oninput=(function(d2,i,field,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i][field]=parseInt(this.value)||0;};})(day.k,mi,f[1],mode);
-        wrap.appendChild(inp); mg.appendChild(wrap);
-      });
-      mb.appendChild(mg);
-      // Copy / Remove
-      var mrow=el("div",""); mrow.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
-      var cpm=el("button","clip-btn","⧉ Copy meal");
-      cpm.onclick=(function(k,i,lbl,m){return function(){ var meal=(m==="add"?addMealDays:editMealDays)[k][i]; mealClip={scope:"meal",label:(meal.name||"Meal")+" · "+lbl,data:deep(meal)}; renderMealDays(m); };})(day.k,mi,day.l,mode);
-      mrow.appendChild(cpm);
-      if(mealClip&&mealClip.scope==="meal"){
-        var pov=el("button","clip-btn paste","\u21A9 Paste over");
-        pov.onclick=(function(k,i,m){return function(){ (m==="add"?addMealDays:editMealDays)[k][i]=deep(mealClip.data); renderMealDays(m); };})(day.k,mi,mode);
-        mrow.appendChild(pov);
-      }
-      var rd=el("button","add-btn","Remove meal"); rd.style.color="var(--bad)";
-      rd.onclick=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2].splice(i,1);renderMealDays(m);};})(day.k,mi,mode);
-      mrow.appendChild(rd);
-      mb.appendChild(mrow);
-      block.appendChild(mb);
-    });
-    var ab=el("button","add-btn","+ Add meal");
-    ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
-    block.appendChild(ab);
-    var libB=el("button","add-btn lib-add-btn","\uFF0B From library");
-    libB.onclick=(function(d2,m){return function(){ openMealLib(d2,m); };})(day.k,mode);
-    block.appendChild(libB);
-    container.appendChild(block);
+
+  // DAY TABS
+  var tabs=el("div","builder-tabs");
+  DAYS.forEach(function(day){
+    var cnt=(meals[day.k]||[]).length;
+    var t=el("button","builder-tab"+(day.k===mealActiveDay?" on":""));
+    t.appendChild(el("span","",day.l.slice(0,3)));
+    if(cnt)t.appendChild(el("span","bt-dot",String(cnt)));
+    t.onclick=(function(k,m){return function(){ mealActiveDay=k; renderMealDays(m); };})(day.k,mode);
+    tabs.appendChild(t);
   });
+  container.appendChild(tabs);
+
+  // LIVE DAILY TOTAL
+  var totalBar=el("div","meal-total-bar"); totalBar.id="meal-total";
+  container.appendChild(totalBar);
+
+  // ACTIVE DAY ONLY
+  var day=DAYS.find(function(d){return d.k===mealActiveDay;})||DAYS[0];
+  var dayMeals=meals[day.k]||[];
+  var block=el("div","day-block");
+
+  // per-day controls
+  var mctl=el("div",""); mctl.style.cssText="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px";
+  var msw=el("select","day-swap");
+  var mph=el("option","","\u21C4 swap with"); mph.value=""; msw.appendChild(mph);
+  DAYS.forEach(function(od){ if(od.k!==day.k){ var o=el("option","",od.l); o.value=od.k; msw.appendChild(o); } });
+  msw.onchange=(function(srcK,m){return function(){ var tgtK=this.value; if(!tgtK)return; var M=m==="add"?addMealDays:editMealDays; var tmp=M[srcK]; M[srcK]=M[tgtK]; M[tgtK]=tmp; renderMealDays(m); };})(day.k,mode);
+  mctl.appendChild(msw);
+  var cpd=el("button","clip-btn","\u29C9 Copy day");
+  cpd.onclick=(function(k,lbl,m){return function(){ var arr=(m==="add"?addMealDays:editMealDays)[k]||[]; if(!arr.length)return; mealClip={scope:"day",label:lbl+" \u00b7 "+arr.length+" meals",data:deep(arr)}; renderMealDays(m); };})(day.k,day.l,mode);
+  mctl.appendChild(cpd);
+  if(mealClip&&(mealClip.scope==="meal"||mealClip.scope==="day")){
+    var pbtn=el("button","clip-btn paste", mealClip.scope==="meal"?"\uD83D\uDCE5 Paste meal":"\uD83D\uDCE5 Paste day");
+    pbtn.onclick=(function(k,m){return function(){ var M=m==="add"?addMealDays:editMealDays; if(!M[k])M[k]=[]; if(mealClip.scope==="meal"){M[k].push(deep(mealClip.data));}else{mealClip.data.forEach(function(x){M[k].push(deep(x));});} renderMealDays(m); };})(day.k,mode);
+    mctl.appendChild(pbtn);
+    if(mealClip.scope==="day"){
+      var rpl=el("button","clip-btn paste","\u21A9 Replace day");
+      rpl.onclick=(function(k,m){return function(){ (m==="add"?addMealDays:editMealDays)[k]=deep(mealClip.data); renderMealDays(m); };})(day.k,mode);
+      mctl.appendChild(rpl);
+    }
+  }
+  block.appendChild(mctl);
+
+  // meals for the active day
+  dayMeals.forEach(function(meal, mi) {
+    var mb = el("div","meal-block");
+    var mn = el("input","form-input"); mn.placeholder="Meal name (e.g. Breakfast)"; mn.value=meal.name||"";
+    mn.style.marginBottom="8px";
+    mn.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].name=this.value;};})(day.k,mi,mode);
+    mb.appendChild(mn);
+    var il=el("div","nut-label","Ingredients (one per line)"); il.style.marginBottom="4px"; mb.appendChild(il);
+    var ta=el("textarea","form-input"); ta.style.cssText="min-height:80px;resize:vertical;font-family:inherit;margin-bottom:8px";
+    ta.placeholder="e.g. 120g oats, 250g Greek yoghurt (one per line)"; ta.value=meal.ingredients||"";
+    ta.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].ingredients=this.value;};})(day.k,mi,mode);
+    mb.appendChild(ta);
+    var ml=el("div","nut-label","Macros"); ml.style.marginBottom="4px"; mb.appendChild(ml);
+    var mg=el("div","macro-grid");
+    [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
+      var wrap=el("div");
+      wrap.appendChild(el("div","macro-lbl",f[0]));
+      var inp=el("input","macro-inp"); inp.type="number"; inp.min="0"; inp.value=meal[f[1]]||0;
+      inp.oninput=(function(d2,i,field,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i][field]=parseInt(this.value)||0; updateMealTotal(m);};})(day.k,mi,f[1],mode);
+      wrap.appendChild(inp); mg.appendChild(wrap);
+    });
+    mb.appendChild(mg);
+    var mrow=el("div",""); mrow.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap";
+    var cpm=el("button","clip-btn","\u29C9 Copy meal");
+    cpm.onclick=(function(k,i,lbl,m){return function(){ var meal=(m==="add"?addMealDays:editMealDays)[k][i]; mealClip={scope:"meal",label:(meal.name||"Meal")+" \u00b7 "+lbl,data:deep(meal)}; renderMealDays(m); };})(day.k,mi,day.l,mode);
+    mrow.appendChild(cpm);
+    if(mealClip&&mealClip.scope==="meal"){
+      var pov=el("button","clip-btn paste","\u21A9 Paste over");
+      pov.onclick=(function(k,i,m){return function(){ (m==="add"?addMealDays:editMealDays)[k][i]=deep(mealClip.data); renderMealDays(m); };})(day.k,mi,mode);
+      mrow.appendChild(pov);
+    }
+    var rd=el("button","add-btn","Remove meal"); rd.style.color="var(--bad)";
+    rd.onclick=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2].splice(i,1);renderMealDays(m);};})(day.k,mi,mode);
+    mrow.appendChild(rd);
+    mb.appendChild(mrow);
+    block.appendChild(mb);
+  });
+
+  var ab=el("button","add-btn","+ Add meal");
+  ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
+  block.appendChild(ab);
+  var libB=el("button","add-btn lib-add-btn","\uFF0B From library");
+  libB.onclick=(function(d2,m){return function(){ openMealLib(d2,m); };})(day.k,mode);
+  block.appendChild(libB);
+  container.appendChild(block);
+
+  updateMealTotal(mode);
+}
+
+function mealDayTotals(mode, dayKey){
+  var M=mode==="add"?addMealDays:editMealDays;
+  var arr=M[dayKey]||[];
+  var t={calories:0,protein:0,carbs:0,fats:0};
+  arr.forEach(function(m){ t.calories+=+m.calories||0; t.protein+=+m.protein||0; t.carbs+=+m.carbs||0; t.fats+=+m.fats||0; });
+  return t;
+}
+function updateMealTotal(mode){
+  var bar=document.getElementById("meal-total"); if(!bar)return;
+  var t=mealDayTotals(mode, mealActiveDay);
+  function tv(id){ var e=document.getElementById(id); return (mode==="edit"&&e&&e.value!=="")?parseInt(e.value):null; }
+  var tg={calories:tv("pf-cal"),protein:tv("pf-pro"),carbs:tv("pf-carb"),fats:tv("pf-fat")};
+  bar.innerHTML="";
+  function cell(label,val,target,unit,redOver){
+    var c=el("div","mt-cell");
+    c.appendChild(el("div","mt-l",label));
+    var vv=el("div","mt-v", val+(target!=null?(" / "+target):"")+(unit||""));
+    if(redOver&&target!=null&&val>target) vv.style.color="var(--bad)";
+    c.appendChild(vv); return c;
+  }
+  bar.appendChild(cell("Calories", t.calories, tg.calories, "", true));
+  bar.appendChild(cell("Protein", t.protein, tg.protein, "g", false));
+  bar.appendChild(cell("Carbs", t.carbs, tg.carbs, "g", false));
+  bar.appendChild(cell("Fats", t.fats, tg.fats, "g", false));
 }
 
 // ── OPEN ADD ──

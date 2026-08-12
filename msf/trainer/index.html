@@ -281,6 +281,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .prog-sum{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;background:var(--surface-2);border:1px solid var(--line2,#3a2e24);border-radius:12px;padding:13px 12px;margin-bottom:16px}
 .builder-tab.bt-add{color:var(--sage);border-style:dashed}
 .builder-tab.bt-add:hover{border-color:var(--sage)}
+.cond-detail-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin:10px 0 5px}
+.cond-detail-ta{width:100%;resize:vertical;min-height:44px;line-height:1.5;font-family:inherit;overflow:hidden;white-space:pre-wrap}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -1257,6 +1259,7 @@ async function toggleActive(slug, makeActive, ev) {
 var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
 var mealActiveDay="mon";
 var progActiveDay=0;
+var condActiveDay="mon";
 var habitCont="edit-habits", habitInputId="ehab-new";
 var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
 var profileSlug=null, profileTabName="overview";
@@ -2160,35 +2163,58 @@ function renderCondDays(mode){
   var days = mode==="add"?addCondDays:editCondDays;
   var container = document.getElementById(mode==="add"?"add-cond-days":(editCondCont||"edit-cond-days"));
   container.innerHTML="";
-  DAYS.forEach(function(day){
-    var items = days[day.k]||[];
-    var block = el("div","day-block");
-    block.appendChild(el("div","day-block-title",day.l));
-    items.forEach(function(it,ii){
-      var mb = el("div","meal-block");
-      var pills = el("div","cond-pills");
-      [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
-        var pill = el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
-        pill.onclick=(function(k,dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].kind=k; renderCondDays(m); };})(p[0],day.k,ii,mode);
-        pills.appendChild(pill);
-      });
-      mb.appendChild(pills);
-      var ti=el("input");ti.className="cond-in";ti.placeholder="Session — e.g. Threshold bike";ti.value=it.title||"";
-      ti.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].title=this.value; };})(day.k,ii,mode);
-      mb.appendChild(ti);
-      var de=el("input");de.className="cond-in";de.placeholder="Protocol / detail — e.g. 5 on/1 off \u00b7 4\u21928 sets \u00b7 RPE 7-8";de.value=it.detail||"";
-      de.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].detail=this.value; };})(day.k,ii,mode);
-      mb.appendChild(de);
-      var rm=el("button","add-btn","Remove");rm.style.color="var(--bad)";
-      rm.onclick=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk].splice(i,1); renderCondDays(m); };})(day.k,ii,mode);
-      mb.appendChild(rm);
-      block.appendChild(mb);
-    });
-    var ab=el("button","add-btn","+ Add conditioning");
-    ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:""}); renderCondDays(m); };})(day.k,mode);
-    block.appendChild(ab);
-    container.appendChild(block);
+  if(!condActiveDay) condActiveDay="mon";
+
+  // DAY TABS
+  var tabs=el("div","builder-tabs");
+  DAYS.forEach(function(d){
+    var cnt=(days[d.k]||[]).length;
+    var t=el("button","builder-tab"+(d.k===condActiveDay?" on":""));
+    t.appendChild(el("span","",d.l.slice(0,3)));
+    if(cnt)t.appendChild(el("span","bt-dot",String(cnt)));
+    t.onclick=(function(k,m){return function(){ condActiveDay=k; renderCondDays(m); };})(d.k,mode);
+    tabs.appendChild(t);
   });
+  container.appendChild(tabs);
+
+  var day=DAYS.find(function(d){return d.k===condActiveDay;})||DAYS[0];
+  var items=days[day.k]||[];
+  var block=el("div","day-block");
+
+  items.forEach(function(it,ii){
+    var mb=el("div","meal-block");
+    var pills=el("div","cond-pills");
+    [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+      var pill=el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
+      pill.onclick=(function(k,dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].kind=k; renderCondDays(m); };})(p[0],day.k,ii,mode);
+      pills.appendChild(pill);
+    });
+    mb.appendChild(pills);
+
+    var ti=el("input");ti.className="cond-in";ti.placeholder="Session \u2014 e.g. Threshold bike";ti.value=it.title||"";
+    ti.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].title=this.value; };})(day.k,ii,mode);
+    mb.appendChild(ti);
+
+    var dl=el("div","cond-detail-lbl","Protocol / detail \u2014 one line per block");
+    mb.appendChild(dl);
+    var de=el("textarea");de.className="cond-in cond-detail-ta";
+    de.placeholder="e.g.\nWarm-up: 10 min easy spin\n5 \u00d7 3 min @ threshold, 2 min easy between\nCool-down: 5 min";
+    de.value=it.detail||"";
+    function autosize(){ de.style.height="auto"; de.style.height=Math.max(de.scrollHeight,44)+"px"; }
+    de.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].detail=this.value; autosize(); };})(day.k,ii,mode);
+    mb.appendChild(de);
+    setTimeout(autosize,0);
+
+    var rm=el("button","add-btn","Remove");rm.style.color="var(--bad)";
+    rm.onclick=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk].splice(i,1); renderCondDays(m); };})(day.k,ii,mode);
+    mb.appendChild(rm);
+    block.appendChild(mb);
+  });
+
+  var ab=el("button","add-btn","+ Add conditioning");
+  ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:""}); renderCondDays(m); };})(day.k,mode);
+  block.appendChild(ab);
+  container.appendChild(block);
 }
 
 async function saveCond(slug, condDays){

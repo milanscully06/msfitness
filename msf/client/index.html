@@ -86,7 +86,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .habit-row{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .15s}
 .habit-row:active{border-color:var(--line-2)}
 .habit-row.done{background:rgba(95,164,108,.07);border-color:rgba(95,164,108,.28)}
-.habit-check{width:26px;height:26px;flex-shrink:0;border-radius:8px;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--bg);transition:all .15s}
+.habit-check{width:26px;height:26px;flex-shrink:0;border-radius:50%;border:2px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--bg);transition:all .15s}
 .habit-check.on{background:var(--good,#5FA46C);border-color:var(--good,#5FA46C)}
 .habit-mid{flex:1;min-width:0}
 .habit-label{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.3}
@@ -230,20 +230,32 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .tday-focus{font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,54px);line-height:.92;letter-spacing:-.03em;margin-top:8px}
 .tday-focus .lt{color:var(--ink-3)}
 .tday-date{margin-top:14px;font-size:13px;color:var(--ink-2)}
-.tday-tiles{margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;min-height:128px;cursor:pointer;transition:border-color .2s,transform .15s}
-.tile:active{transform:scale(.985)}
-.tile-k{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
-.tile-big{font-family:var(--display);font-weight:700;letter-spacing:-.02em;margin-top:auto}
-.tile-big .n{font-size:34px;line-height:1}
-.tile-sub{font-size:12px;color:var(--ink-2);margin-top:6px;line-height:1.4}
-.tday-weight{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;cursor:pointer}
-.tday-wl{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px}
-.tday-wrow{display:flex;align-items:baseline;justify-content:space-between}
-.tday-wnum{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1}
-.tday-wnum small{font-size:14px;color:var(--ink-3);font-weight:600;margin-left:2px}
-.tday-wd{font-family:var(--display);font-weight:700;font-size:15px;color:var(--sage)}
-.tday-wempty{font-size:13px;color:var(--ink-3)}
+
+/* status-card feed (replaces old tiles/weight blocks) */
+.tday-feed{margin-top:22px;display:flex;flex-direction:column;gap:12px}
+.scard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:border-color .15s,transform .15s}
+.scard:active{transform:scale(.985);border-color:var(--line-2)}
+.scard-top{display:flex;align-items:center;gap:12px}
+.scard-dot{width:26px;height:26px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:2px solid transparent;box-sizing:border-box}
+.scard-dot.on{color:#0E0C0B}
+.scard-dot.good.on{background:var(--good);border-color:var(--good)}
+.scard-dot.good.off{background:transparent;border-color:rgba(95,164,108,.4)}
+.scard-dot.brand.on{background:var(--sage);border-color:var(--sage)}
+.scard-dot.brand.off{background:transparent;border-color:rgba(200,98,46,.4)}
+.scard-dot.dash{background:transparent;border-color:var(--line-2);color:var(--ink-3);font-weight:700}
+.scard-title{flex:1;min-width:0;font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scard-chev{color:var(--ink-3);font-size:17px;font-weight:700;flex-shrink:0}
+.scard-sub{margin-top:8px;font-size:12.5px;color:var(--ink-2);padding-left:38px;line-height:1.4}
+
+/* macro rings (nutrition status card) */
+.ring-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:16px}
+.ring-cell{display:flex;flex-direction:column;align-items:center;gap:7px}
+.ring{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.ring-in{width:46px;height:46px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-v{font-family:var(--display);font-weight:800;font-size:12px;line-height:1;color:var(--ink)}
+.ring-tgt{font-size:8.5px;color:var(--ink-3);margin-top:2px}
+.ring-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+.ring-left{font-size:9.5px;color:var(--ink-2);text-align:center;line-height:1.3}
 
 /* progress photos */
 .pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:4px}
@@ -715,12 +727,16 @@ async function renderToday(){
   var todayKey=todayProgKey();
   var todayProg=todayKey?PROG[todayKey]:null;
   var dStr=todayStr();
+  var todayDow=DAY_KEYS[new Date().getDay()];
   var rT=await sb.from("nutrition_targets").select("*").eq("client_slug",CLIENT).maybeSingle();
-  var rN=await sb.from("nutrition_logs").select("calories").eq("client_slug",CLIENT).eq("logged_date",dStr);
+  var rN=await sb.from("nutrition_logs").select("calories,protein,carbs,fats").eq("client_slug",CLIENT).eq("logged_date",dStr);
   var rR=await sb.from("resources").select("*").order("sort_order");
   var rHab=await sb.from("habits").select("*").eq("active",true).order("sort_order");
   var rCH=await sb.from("client_habits").select("*").eq("client_slug",CLIENT).order("sort_order");
   var rHL=await sb.from("habit_logs").select("*").eq("client_slug",CLIENT);
+  var rLift=todayKey?await sb.from("lift_logs").select("id",{count:"exact",head:true}).eq("client",CLIENT).eq("day",todayKey).gte("logged_at",dStr+"T00:00:00"):{count:0};
+  var rCondLog=await sb.from("conditioning_logs").select("id",{count:"exact",head:true}).eq("client_slug",CLIENT).eq("logged_date",dStr);
+  var rCondPlan=await sb.from("conditioning_plan").select("*").eq("client_slug",CLIENT).eq("day_of_week",todayDow).order("item_order");
   var body=await loadBody();
 
   vt.innerHTML="";
@@ -742,50 +758,80 @@ async function renderToday(){
   vt.appendChild(head);
   vt.appendChild(el("div","tday-date",new Date().toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"})));
 
-  // tiles
-  var tiles=el("div","tday-tiles");
-  var tt=el("div","tile");
-  tt.appendChild(el("div","tile-k","Training"));
+  // status-card feed
+  var feed=el("div","tday-feed");
+
+  // -- nutrition: meals logged + macro rings --
+  var cals=0,pro=0,carb=0,fat=0;
+  if(rN.data)rN.data.forEach(function(r){cals+=r.calories||0;pro+=r.protein||0;carb+=r.carbs||0;fat+=r.fats||0;});
+  var mealCount=(rN.data||[]).length;
+  var tg=rT.data||{};
+  var calTarget=tg.calories||0;
+  var nutCard=el("div","scard");
+  var nutTop=el("div","scard-top");
+  var nutDotState=mealCount===0?"na":(calTarget&&cals>calTarget?"pending":"done");
+  var nutDot=el("div","scard-dot "+(nutDotState==="na"?"dash":("brand "+(nutDotState==="done"?"on":"off"))));
+  nutDot.textContent=nutDotState==="na"?"\u2013":(nutDotState==="done"?"\u2713":"");
+  nutTop.appendChild(nutDot);
+  nutTop.appendChild(el("div","scard-title",mealCount?(mealCount+" meal"+(mealCount===1?"":"s")+" logged today"):"No meals logged yet"));
+  nutTop.appendChild(el("div","scard-chev","\u203A"));
+  nutCard.appendChild(nutTop);
+  var ringRow=el("div","ring-row");
+  ringRow.appendChild(macroRing("Calories",cals,calTarget,"--sage","cal"));
+  ringRow.appendChild(macroRing("Protein",pro,tg.protein||0,"--pro","g"));
+  ringRow.appendChild(macroRing("Carbs",carb,tg.carbs||0,"--carb","g"));
+  ringRow.appendChild(macroRing("Fat",fat,tg.fats||0,"--fat","g"));
+  nutCard.appendChild(ringRow);
+  nutCard.onclick=function(){goTab("nutrition");};
+  feed.appendChild(nutCard);
+
+  // -- training --
+  var liftCount=rLift.count||0;
   if(todayProg){
-    var tb=el("div","tile-big");tb.innerHTML='<span class="n">'+exCount+'</span>';tt.appendChild(tb);
-    tt.appendChild(el("div","tile-sub",(todayProg.focus||todayProg.label||"")+" \u00b7 tap to start"));
-    tt.onclick=function(){curDay=todayKey;goTab("log");};
+    feed.appendChild(statusCard({
+      state:liftCount>0?"done":"pending",tone:liftCount>0?"good":"brand",
+      title:todayProg.focus||todayProg.label||"Training",
+      sub:liftCount>0?("Completed \u00b7 "+liftCount+" set"+(liftCount===1?"":"s")+" logged"):(exCount+" exercise"+(exCount===1?"":"s")+" \u00b7 tap to start"),
+      onClick:function(){curDay=todayKey;goTab("log");}
+    }));
   }else{
-    var tb2=el("div","tile-big");tb2.innerHTML='<span class="n" style="font-size:24px">Rest</span>';tt.appendChild(tb2);
-    tt.appendChild(el("div","tile-sub","No session today"));
-    tt.onclick=function(){goTab("log");};
+    feed.appendChild(statusCard({state:"na",title:"Rest day",sub:"No session scheduled",onClick:function(){goTab("log");}}));
   }
-  tiles.appendChild(tt);
 
-  var cals=0;if(rN.data)rN.data.forEach(function(r){cals+=r.calories||0;});
-  var calTarget=(rT.data&&rT.data.calories)||0;
-  var nt=el("div","tile");
-  nt.appendChild(el("div","tile-k","Nutrition"));
-  var nb=el("div","tile-big");nb.innerHTML='<span class="n">'+cals+'</span>';nt.appendChild(nb);
-  nt.appendChild(el("div","tile-sub",calTarget?("of "+calTarget+" kcal"):"kcal today"));
-  nt.onclick=function(){goTab("nutrition");};
-  tiles.appendChild(nt);
-  vt.appendChild(tiles);
+  // -- conditioning --
+  var condCount=rCondLog.count||0;
+  var condPlanToday=rCondPlan.data||[];
+  if(condCount>0){
+    feed.appendChild(statusCard({state:"done",tone:"good",title:"Conditioning",sub:"Completed today",onClick:function(){goTab("conditioning");}}));
+  }else if(condPlanToday.length){
+    var firstItem=condPlanToday[0];
+    var condSub=condPlanToday.length>1?(condPlanToday.length+" sessions scheduled \u00b7 tap to log"):((firstItem.detail?firstItem.detail.split("\n")[0]+" \u00b7 ":"")+"tap to log");
+    feed.appendChild(statusCard({state:"pending",tone:"brand",title:firstItem.title||"Conditioning",sub:condSub,onClick:function(){goTab("conditioning");}}));
+  }else{
+    feed.appendChild(statusCard({state:"na",title:"Conditioning",sub:"Nothing scheduled today",onClick:function(){goTab("conditioning");}}));
+  }
 
-  // weight glance
+  // -- weigh-in --
   var withW=body.filter(function(d){return d.weight!=null;});
-  var wg=el("div","tday-weight");
-  wg.onclick=function(){goTab("progress");};
-  wg.appendChild(el("div","tday-wl","Weight"));
+  var loggedToday=withW.length&&withW[withW.length-1].logged_date===dStr;
   if(withW.length){
     var cur=parseFloat(withW[withW.length-1].weight);
-    var row=el("div","tday-wrow");
-    var num=el("div","tday-wnum");num.innerHTML=cur.toFixed(1)+'<small>kg</small>';row.appendChild(num);
+    var trendTxt="";
     if(withW.length>1){
       var diff=cur-parseFloat(withW[0].weight);
       var arr=diff<0?"\u25BC":(diff>0?"\u25B2":"\u2014");
-      row.appendChild(el("div","tday-wd",arr+" "+Math.abs(diff).toFixed(1)+" kg"));
+      trendTxt=" \u00b7 "+arr+" "+Math.abs(diff).toFixed(1)+"kg";
     }
-    wg.appendChild(row);
+    feed.appendChild(statusCard({
+      state:loggedToday?"done":"pending",tone:loggedToday?"good":"brand",title:"Weigh-in",
+      sub:cur.toFixed(1)+"kg"+trendTxt+(loggedToday?"":" \u00b7 tap to log today"),
+      onClick:function(){goTab("progress");}
+    }));
   }else{
-    wg.appendChild(el("div","tday-wempty","No weigh-ins yet \u2014 tap to log"));
+    feed.appendChild(statusCard({state:"pending",tone:"brand",title:"Weigh-in",sub:"No weigh-ins yet \u2014 tap to log",onClick:function(){goTab("progress");}}));
   }
-  vt.appendChild(wg);
+
+  vt.appendChild(feed);
 
   // Daily habits
   habitLogsCache={};
@@ -828,6 +874,44 @@ async function renderToday(){
       vt.appendChild(row);
     });
   }
+}
+
+// -- Today feed helpers --
+function macroRing(label,val,tgt,colorVar,unit){
+  val=Math.round(val||0);tgt=Math.round(tgt||0);
+  var pct=tgt>0?Math.max(0,Math.min(100,Math.round(val/tgt*100))):0;
+  var cell=el("div","ring-cell");
+  var ring=el("div","ring");
+  ring.style.background=tgt>0?("conic-gradient(var("+colorVar+") "+pct+"%, var(--surface-2) 0)"):"var(--surface-2)";
+  var ringIn=el("div","ring-in");
+  ringIn.appendChild(el("div","ring-v",String(val)));
+  if(tgt>0)ringIn.appendChild(el("div","ring-tgt","/"+tgt));
+  ring.appendChild(ringIn);
+  cell.appendChild(ring);
+  cell.appendChild(el("div","ring-lbl",label));
+  var leftTxt;
+  if(tgt<=0){leftTxt="no target";}
+  else{
+    var left=tgt-val;
+    leftTxt=left>=0?(left+(unit==="cal"?" left":"g left")):(Math.abs(left)+(unit==="cal"?" over":"g over"));
+  }
+  cell.appendChild(el("div","ring-left",leftTxt));
+  return cell;
+}
+function statusCard(opts){
+  // opts: {state:'done'|'pending'|'na', tone:'good'|'brand', title, sub, onClick}
+  var card=el("div","scard");
+  var top=el("div","scard-top");
+  var dot;
+  if(opts.state==="na"){ dot=el("div","scard-dot dash","–"); }
+  else{ dot=el("div","scard-dot "+opts.tone+" "+(opts.state==="done"?"on":"off"),opts.state==="done"?"✓":""); }
+  top.appendChild(dot);
+  top.appendChild(el("div","scard-title",opts.title));
+  top.appendChild(el("div","scard-chev","›"));
+  card.appendChild(top);
+  if(opts.sub)card.appendChild(el("div","scard-sub",opts.sub));
+  if(opts.onClick)card.onclick=opts.onClick;
+  return card;
 }
 
 var habitLogsCache={};

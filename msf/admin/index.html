@@ -240,6 +240,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .set-add{background:none;border:1px dashed var(--line-2);border-radius:8px;color:var(--ink-2);font-size:12px;font-weight:600;padding:0 12px;cursor:pointer}
 .set-add:hover{border-color:var(--sage);color:var(--sage)}
 .ex-note{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:12px;padding:8px 9px;outline:none;resize:vertical;min-height:34px;margin-bottom:5px;line-height:1.4}
+.ex-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ex-badge{font-size:10.5px;font-weight:700;color:var(--ink-2);background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:3px 9px}
+.ex-badge.ss{color:#C8622E;border-color:rgba(200,98,46,.4)}
+.ex-more-toggle{background:none;border:none;color:var(--sage);font-family:var(--body);font-size:11.5px;font-weight:700;cursor:pointer;padding:3px 0}
+.ex-more{display:none}
+.ex-more.open{display:block;margin-top:8px}
+.reorder-col{display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding-top:2px}
+.reorder-btn{width:24px;height:22px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.reorder-btn:disabled{opacity:.25;cursor:default}
+.reorder-btn:not(:disabled):hover{border-color:var(--sage);color:var(--sage)}
 .ex-note:focus{border-color:var(--sage)}
 .ex-note::placeholder{color:var(--ink-3)}
 
@@ -2269,18 +2279,49 @@ function renderDays(mode) {
         draw();
       })();
       er.appendChild(setsBox);
+      // note + superset are tucked behind a toggle unless already set \u2014 most
+      // exercises use neither, and showing an empty textarea + switch on every
+      // single row was most of what made this screen feel cluttered
       var noteI=el("textarea","ex-note"); noteI.placeholder="Note for this exercise (drop set, form cue, tempo\u2026)"; noteI.value=ex.note||"";
-      noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;};})(di,si,ei,mode);
-      er.appendChild(noteI);
+      noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;refreshExMeta();};})(di,si,ei,mode);
       var tr=el("div",""); tr.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:4px 0";
-      tr.appendChild(el("span","",ex.ss?"Superset \u2713":"Superset"));
+      var trLbl=el("span","",ex.ss?"Superset \u2713":"Superset"); tr.appendChild(trLbl);
       var tb=el("button","toggle"+(ex.ss?" on":""));
-      tb.onclick=(function(i,j,k,m){return function(){var ex2=(m==="add"?addDays:editDays)[i].sections[j].exercises[k];ex2.ss=!ex2.ss;this.classList.toggle("on",ex2.ss);};})(di,si,ei,mode);
-      tr.appendChild(tb); er.appendChild(tr);
+      tb.onclick=(function(i,j,k,m){return function(){var ex2=(m==="add"?addDays:editDays)[i].sections[j].exercises[k];ex2.ss=!ex2.ss;this.classList.toggle("on",ex2.ss);trLbl.textContent=ex2.ss?"Superset \u2713":"Superset";refreshExMeta();};})(di,si,ei,mode);
+      tr.appendChild(tb);
+
+      var moreBox=el("div","ex-more");
+      moreBox.appendChild(noteI); moreBox.appendChild(tr);
+      var metaRow=el("div","ex-meta-row");
+      var moreToggle=el("button","ex-more-toggle","+ Note / superset");
+      moreToggle.onclick=function(){
+        var open=moreBox.classList.contains("open");
+        moreBox.classList.toggle("open",!open);
+        moreToggle.textContent=open?"+ Note / superset":"Hide details \u2304";
+      };
+      function refreshExMeta(){
+        metaRow.querySelectorAll(".ex-badge").forEach(function(n){n.remove();});
+        if(ex.note&&ex.note.trim())metaRow.insertBefore(el("span","ex-badge","\ud83d\udcdd Note"),moreToggle);
+        if(ex.ss)metaRow.insertBefore(el("span","ex-badge ss","Superset"),moreToggle);
+      }
+      metaRow.appendChild(moreToggle);
+      refreshExMeta();
+      var hasExtra=!!(ex.note&&ex.note.trim())||ex.ss;
+      if(hasExtra){moreBox.classList.add("open");moreToggle.textContent="Hide details \u2304";}
+      er.appendChild(metaRow);
+      er.appendChild(moreBox);
+
+      var reorderCol=el("div","reorder-col");
+      var upBtn=el("button","reorder-btn","\u25b4"); if(ei===0)upBtn.disabled=true;
+      upBtn.onclick=(function(i,j,k,m){return function(){ var arr=(m==="add"?addDays:editDays)[i].sections[j].exercises; if(k>0){ var t=arr[k-1]; arr[k-1]=arr[k]; arr[k]=t; renderDays(m); } };})(di,si,ei,mode);
+      var dnBtn=el("button","reorder-btn","\u25be"); if(ei===sec.exercises.length-1)dnBtn.disabled=true;
+      dnBtn.onclick=(function(i,j,k,m){return function(){ var arr=(m==="add"?addDays:editDays)[i].sections[j].exercises; if(k<arr.length-1){ var t=arr[k+1]; arr[k+1]=arr[k]; arr[k]=t; renderDays(m); } };})(di,si,ei,mode);
+      reorderCol.appendChild(upBtn); reorderCol.appendChild(dnBtn);
+
       var ed=el("button","del-btn","\u2715"); ed.style.alignSelf="flex-start";
       ed.onclick=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.splice(k,1);renderDays(m);};})(di,si,ei,mode);
-      var erow=el("div",""); erow.style.cssText="display:flex;gap:8px;align-items:flex-start";
-      erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
+      var erow=el("div",""); erow.style.cssText="display:flex;gap:6px;align-items:flex-start";
+      erow.appendChild(reorderCol); erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
     });
     var ae=el("button","add-btn","+ Add exercise");
     ae.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.push({name:"",ss:false,note:"",sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderDays(m);};})(di,si,mode);

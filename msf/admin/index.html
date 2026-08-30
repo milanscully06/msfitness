@@ -1655,9 +1655,10 @@ async function pfProgress(b,c){
   var body=rb.data||[], photos=rp.data||[];
   b.innerHTML="";
 
+  var wt=weightTrend(body);
+
   var bar=el("div","pf-savebar");
   bar.appendChild(el("div","pf-savebar-l","Progress"));
-  var wt=weightTrend(body);
   if(wt && wt.pts.length>=2){
     var lost=wt.first-wt.last;
     if(lost>0.05){
@@ -1670,35 +1671,77 @@ async function pfProgress(b,c){
   }
   b.appendChild(bar);
 
+  // -- stat tiles: current / change / last log / rate, all at a glance --
+  var statsSec=el("div","pf-nut-sec");
+  var grid=el("div","pf-ov-grid");
+  function statCell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);grid.appendChild(x);}
+  if(wt){
+    var lastDate=new Date(wt.pts[wt.pts.length-1].logged_date+"T12:00:00");
+    var lastDays=Math.max(0,Math.floor((Date.now()-lastDate.getTime())/86400000));
+    var lastStale=lastDays>14;
+    statCell("Current",wt.last.toFixed(1)+"kg");
+    var arrow=wt.delta<0?"\u25bc":(wt.delta>0?"\u25b2":"\u2014");
+    statCell("Change (all-time)",arrow+" "+Math.abs(wt.delta).toFixed(1)+"kg");
+    statCell("Last weigh-in",lastDays===0?"today":(lastDays===1?"yesterday":lastDays+"d ago"),lastStale);
+    var firstDate=new Date(wt.pts[0].logged_date+"T12:00:00");
+    var spanDays=(lastDate-firstDate)/86400000;
+    if(wt.pts.length>=2&&spanDays>=7){
+      var rate=wt.delta/(spanDays/7);
+      statCell("Rate",(rate<0?"":"+")+rate.toFixed(2)+"kg/wk");
+    }else{
+      statCell("Rate","\u2014");
+    }
+  }else{
+    statCell("Current","\u2014");statCell("Change (all-time)","\u2014");statCell("Last weigh-in","No logs yet");statCell("Rate","\u2014");
+  }
+  statsSec.appendChild(grid);
+  b.appendChild(statsSec);
+
+  // -- chart --
   var csec=el("div","pf-nut-sec");
-  csec.appendChild(el("div","pf-sub","Weight"));
+  csec.appendChild(el("div","pf-sub","Weight trend"));
   var cbox=el("div","chart-box2");
   cbox.innerHTML=weightChartSVG(wt?wt.pts:[]);
-  if(wt){ var dd=el("div","");dd.style.cssText="font-size:12px;color:var(--ink-3);margin-top:8px";dd.textContent="From "+wt.first.toFixed(1)+"kg to "+wt.last.toFixed(1)+"kg  ("+(wt.delta>=0?"+":"")+wt.delta.toFixed(1)+"kg)";cbox.appendChild(dd);}
+  if(wt){
+    var since=el("div","");since.style.cssText="font-size:11px;color:var(--ink-3);margin-top:8px";
+    since.textContent="Since "+new Date(wt.pts[0].logged_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+" \u00b7 "+wt.pts.length+" weigh-in"+(wt.pts.length===1?"":"s")+" logged";
+    cbox.appendChild(since);
+  }
   csec.appendChild(cbox);
   b.appendChild(csec);
 
+  // -- weigh-in editor: collapsed by default so a long history doesn't dominate the tab --
   var wsec=el("div","pf-nut-sec");
   wsec.appendChild(el("div","pf-sub","Weigh-ins"));
-  wsec.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
+  var manageBox=el("div","");manageBox.style.display="none";manageBox.style.marginTop="10px";
+  var toggle=el("button","add-btn","Add or correct a weigh-in \u203a");
+  toggle.onclick=function(){
+    var open=manageBox.style.display!=="none";
+    manageBox.style.display=open?"none":"block";
+    toggle.textContent=open?"Add or correct a weigh-in \u203a":"Hide weigh-in editor \u2304";
+  };
+  wsec.appendChild(toggle);
+  manageBox.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
   var addrow=el("div","wi-add-row");
   var di=el("input","form-input");di.type="date";di.id="pf-wi-date";di.style.cssText="flex:1;min-width:130px";di.value=new Date().toISOString().split("T")[0];
   var ki=el("input","form-input");ki.type="number";ki.step="0.1";ki.id="pf-wi-kg";ki.placeholder="kg";ki.style.width="100px";
   var ab=el("button","btn-outline","Add / update");ab.style.whiteSpace="nowrap";
   ab.onclick=function(){ addWeighIn(); };
   addrow.appendChild(di);addrow.appendChild(ki);addrow.appendChild(ab);
-  wsec.appendChild(addrow);
+  manageBox.appendChild(addrow);
   var wlist=el("div","");wlist.id="pf-weighins";wlist.style.marginTop="12px";
-  wsec.appendChild(wlist);
+  manageBox.appendChild(wlist);
+  wsec.appendChild(manageBox);
   b.appendChild(wsec);
   weighInCont="pf-weighins"; wiDateId="pf-wi-date"; wiKgId="pf-wi-kg";
   loadWeighIns(c.slug);
 
+  // -- photos: always show the section so it's clear this exists, even when empty --
+  var psec=el("div","pf-nut-sec");
+  psec.appendChild(el("div","pf-sub","Progress photos"));
+  b.appendChild(psec);
   if(photos.length){
-    var psec=el("div","pf-nut-sec");
-    psec.appendChild(el("div","pf-sub","Progress photos"));
     var pg=el("div","pgrid"); psec.appendChild(pg);
-    b.appendChild(psec);
     var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
     var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
     photos.forEach(function(p){
@@ -1708,6 +1751,8 @@ async function pfProgress(b,c){
       tile.onclick=(function(u){return function(){ if(u)openLB(u); };})(url);
       pg.appendChild(tile);
     });
+  }else{
+    psec.appendChild(el("div","wt-empty","No progress photos uploaded yet."));
   }
 }
 

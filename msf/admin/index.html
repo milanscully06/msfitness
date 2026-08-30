@@ -14,7 +14,7 @@
   --bg:#0E0C0B;--surface:#181513;--surface-2:#211C19;
   --line:rgba(244,238,228,0.09);--line-2:rgba(244,238,228,0.16);
   --ink:#F4EEE4;--ink-2:rgba(244,238,228,0.56);--ink-3:rgba(244,238,228,0.34);
-  --sage:#9DB49A;--bad:#C97A6D;--radius:18px;
+  --sage:#9DB49A;--bad:#C97A6D;--warn:#CBA67D;--radius:18px;
   --display:'Bricolage Grotesque',sans-serif;
   --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
 }
@@ -38,12 +38,28 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .client-list-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .15s,transform .12s}
 .client-list-item:active{transform:scale(.995)}
 .cli-left{display:flex;align-items:center;gap:11px;min-width:0}
-.av{width:42px;height:42px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2);flex-shrink:0}
+.av-wrap{position:relative;flex-shrink:0}
+.av{width:42px;height:42px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2)}
+.status-dot{position:absolute;bottom:-1px;right:-1px;width:13px;height:13px;border-radius:50%;border:2px solid var(--surface);background:var(--ink-3)}
+.status-dot.good{background:var(--sage)}
+.status-dot.amber{background:var(--warn)}
+.status-dot.red{background:var(--bad)}
 .cli-name{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
 .cli-goal{font-size:12px;color:var(--ink-3);margin-top:2px}
-.cli-link{font-size:11.5px;color:var(--sage);font-weight:600;margin-top:3px}
+.cli-activity{font-size:11.5px;font-weight:600;color:var(--ink-3);margin-top:4px}
+.cli-activity .flag{color:var(--bad)}
+.cli-activity .flag.amber{color:var(--warn)}
 .chevron{font-size:20px;color:var(--ink-3);flex-shrink:0}
 .folder-tabs{display:flex;gap:8px;margin-bottom:14px}
+.roster-search{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 14px;outline:none;margin-bottom:12px}
+.roster-search:focus{border-color:var(--sage)}
+.roster-search::placeholder{color:var(--ink-3)}
+.more-wrap{position:relative}
+.more-trigger{font-size:16px !important;line-height:1;padding:8px 12px !important}
+.more-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:6px;min-width:140px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.more-menu.open{display:flex;flex-direction:column;gap:2px}
+.more-item{background:none;border:none;color:var(--ink-2);font-family:var(--body);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:8px;text-align:left;cursor:pointer;white-space:nowrap}
+.more-item:hover{background:var(--surface-2);color:var(--ink)}
 /* ===== client profile (merged app, stage 1) ===== */
 #profile{display:none;position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto}
 #profile.show{display:block}
@@ -171,8 +187,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
-.folder-move-btn{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;white-space:nowrap}
-.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink)}
+.folder-move-btn{background:transparent;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-3);font-family:var(--body);font-size:10.5px;font-weight:600;padding:5px 8px;cursor:pointer;white-space:nowrap;opacity:.7}
+.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink);opacity:1}
 
 .empty{text-align:center;padding:3.5rem 1.5rem;color:var(--ink-2)}
 .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
@@ -350,15 +366,21 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
     <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
     <div style="display:flex;align-items:center;gap:8px">
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="leads-btn">Leads</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="hab-btn">Habits</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="rec-btn">Recipes</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="res-btn">Resources</button>
+      <div class="more-wrap">
+        <button class="btn-outline more-trigger" id="more-trigger" style="padding:8px 12px;font-size:13px">⋯</button>
+        <div class="more-menu" id="more-menu">
+          <button class="more-item" id="leads-btn">Leads</button>
+          <button class="more-item" id="hab-btn">Habits</button>
+          <button class="more-item" id="rec-btn">Recipes</button>
+          <button class="more-item" id="res-btn">Resources</button>
+        </div>
+      </div>
       <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
     </div>
   </div>
   <div class="success-bar" id="succ"></div>
   <div class="error-bar" id="err"></div>
+  <input type="text" class="roster-search" id="roster-search" placeholder="Search clients...">
   <div class="folder-tabs" id="folder-tabs"></div>
   <div id="clist"><div class="loader">Loading clients...</div></div>
 </div>
@@ -1197,12 +1219,50 @@ document.getElementById("asl").oninput = function(){
 };
 
 // ── LOAD CLIENTS ──
-var allClients = [], clientFolder = "active";
+var allClients = [], clientFolder = "active", rosterSearch = "";
+var lastGymBySlug = {}, lastFoodBySlug = {};
 
 async function loadClients() {
   var res = await sb.from("clients").select("*").order("created_at");
   allClients = res.data || [];
+
+  // bulk-fetch recent activity (last 30 days) for every client in one shot each,
+  // instead of one query per client — keeps the roster load to 3 queries total.
+  var since = new Date(); since.setDate(since.getDate()-30);
+  var sinceISO = since.toISOString();
+  var sinceDateStr = sinceISO.slice(0,10);
+  var rGym = await sb.from("lift_logs").select("client,logged_at").gte("logged_at",sinceISO);
+  var rFood = await sb.from("nutrition_logs").select("client_slug,logged_date").gte("logged_date",sinceDateStr);
+
+  lastGymBySlug = {}; lastFoodBySlug = {};
+  (rGym.data||[]).forEach(function(r){
+    var d = new Date(r.logged_at);
+    if (!lastGymBySlug[r.client] || d > lastGymBySlug[r.client]) lastGymBySlug[r.client] = d;
+  });
+  (rFood.data||[]).forEach(function(r){
+    if (!lastFoodBySlug[r.client_slug] || r.logged_date > lastFoodBySlug[r.client_slug]) lastFoodBySlug[r.client_slug] = r.logged_date;
+  });
+
   renderClients();
+}
+
+// status: 'red' = no recent training AND no recent food logging (needs attention)
+// 'amber' = one of the two has gone quiet · 'good' = both recent · 'new' = signed up
+// in the last 7 days with nothing logged yet (not a problem, just hasn't started)
+function clientActivity(c) {
+  var gymDate = lastGymBySlug[c.slug] || null;
+  var foodDateStr = lastFoodBySlug[c.slug] || null;
+  // clamp to 0 — comparing a logged_date (no time component) against "now" can
+  // otherwise go slightly negative for something logged earlier today
+  var gymDays = gymDate ? Math.max(0,Math.floor((Date.now()-gymDate.getTime())/86400000)) : null;
+  var foodDays = foodDateStr ? Math.max(0,Math.floor((Date.now()-new Date(foodDateStr+"T12:00:00").getTime())/86400000)) : null;
+  var gymStale = gymDays===null || gymDays>7;
+  var foodStale = foodDays===null || foodDays>3;
+  var createdDaysAgo = c.created_at ? Math.floor((Date.now()-new Date(c.created_at).getTime())/86400000) : 999;
+  var isNew = createdDaysAgo<7 && gymDays===null && foodDays===null;
+  var status = isNew ? "new" : (gymStale && foodStale ? "red" : ((gymStale||foodStale) ? "amber" : "good"));
+  var rank = {red:0, amber:1, good:2, new:3}[status];
+  return {gymDays:gymDays, foodDays:foodDays, gymStale:gymStale, foodStale:foodStale, status:status, rank:rank};
 }
 
 function renderClients() {
@@ -1220,22 +1280,55 @@ function renderClients() {
 
   clist.innerHTML = "";
   var show = clientFolder==="active"?actives:inactives;
+  var q = rosterSearch.trim().toLowerCase();
+  if (q) show = show.filter(function(c){ return (c.name||"").toLowerCase().indexOf(q)>-1; });
+
   if (!show.length) {
     var d = el("div","empty");
-    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">No '+clientFolder+' clients.</div>';
+    var msg = q ? ("No clients matching \""+rosterSearch+"\".") : ("No "+clientFolder+" clients.");
+    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">'+msg+'</div>';
     clist.appendChild(d); return;
   }
-  show.forEach(function(c) {
+
+  // active clients needing attention float to the top; inactive/search stay as-is
+  var withAct = show.map(function(c){ return {c:c, act:clientActivity(c)}; });
+  if (clientFolder==="active" && !q) {
+    withAct.sort(function(a,b){
+      if (a.act.rank!==b.act.rank) return a.act.rank-b.act.rank;
+      var ag=a.act.gymDays==null?999:a.act.gymDays, bg=b.act.gymDays==null?999:b.act.gymDays;
+      if (ag!==bg) return bg-ag;
+      return (a.c.name||"").localeCompare(b.c.name||"");
+    });
+  }
+
+  withAct.forEach(function(row) {
+    var c = row.c, act = row.act;
     var init = c.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var item = el("div","client-list-item");
     item.onclick = (function(slug){ return function(){ openProfile(slug); }; })(c.slug);
     var left = el("div","cli-left");
+    var avWrap = el("div","av-wrap");
     var av = el("div","av",init); av.style.cssText="width:36px;height:36px;font-size:12px";
+    avWrap.appendChild(av);
+    if (c.active!==false) avWrap.appendChild(el("div","status-dot "+act.status));
     var info = el("div");
     info.appendChild(el("div","cli-name",c.name));
     info.appendChild(el("div","cli-goal",c.goal||"No goal"));
-    info.appendChild(el("div","cli-link","/client/"+c.slug));
-    left.appendChild(av); left.appendChild(info);
+    if (c.active!==false) {
+      var actLine = el("div","cli-activity");
+      if (act.status==="new") {
+        actLine.textContent = "New client — no activity logged yet";
+      } else {
+        var gymTxt = act.gymDays==null ? "no session in 30+d" : (act.gymDays<=0?"trained today":"trained "+act.gymDays+"d ago");
+        var foodTxt = act.foodDays==null ? "no food log in 30+d" : (act.foodDays<=0?"food today":"food "+act.foodDays+"d ago");
+        var gymSpan = el("span",act.gymStale?("flag"+(act.gymDays!=null?" amber":"")):"",gymTxt);
+        var sep = document.createTextNode(" · ");
+        var foodSpan = el("span",act.foodStale?("flag"+(act.foodDays!=null?" amber":"")):"",foodTxt);
+        actLine.appendChild(gymSpan); actLine.appendChild(sep); actLine.appendChild(foodSpan);
+      }
+      info.appendChild(actLine);
+    }
+    left.appendChild(avWrap); left.appendChild(info);
     item.appendChild(left);
     var right = el("div","cli-right");
     var isActive = c.active!==false;
@@ -1247,6 +1340,24 @@ function renderClients() {
     clist.appendChild(item);
   });
 }
+
+(function(){
+  var s = document.getElementById("roster-search");
+  if (s) s.oninput = function(){ rosterSearch = this.value; renderClients(); };
+})();
+
+(function(){
+  var trig = document.getElementById("more-trigger");
+  var menu = document.getElementById("more-menu");
+  if (!trig || !menu) return;
+  trig.onclick = function(ev){ ev.stopPropagation(); menu.classList.toggle("open"); };
+  menu.querySelectorAll(".more-item").forEach(function(btn){
+    btn.addEventListener("click", function(){ menu.classList.remove("open"); });
+  });
+  document.addEventListener("click", function(ev){
+    if (menu.classList.contains("open") && !menu.contains(ev.target) && ev.target!==trig) menu.classList.remove("open");
+  });
+})();
 
 async function toggleActive(slug, makeActive, ev) {
   if (ev) ev.stopPropagation();

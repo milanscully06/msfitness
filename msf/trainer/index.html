@@ -261,6 +261,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .lead-status-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
 .lead-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 13px;cursor:pointer;text-transform:capitalize}
 .lead-chip.on{background:#C8622E;border-color:#C8622E;color:var(--bg)}
+.swap-log{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;border-left:3px solid var(--sage)}
+.swap-log-line{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.4}
+.swap-log-sub{font-size:11.5px;color:var(--ink-3);margin-top:4px}
 .lib-add-btn{border-color:var(--sage) !important;color:var(--sage) !important}
 .mealib-count{font-size:11px;color:var(--ink-3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .mealib-item{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,background .12s}
@@ -1453,8 +1456,23 @@ async function pfCoaching(b,c){
   b.appendChild(el("div","loader","Loading\u2026"));
   var rcr=await sb.from("change_requests").select("*").eq("client_slug",c.slug).eq("status","open").order("created_at",{ascending:false});
   var rcn=await sb.from("coach_notes").select("*").eq("client_slug",c.slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
-  var creqs=rcr.data||[], cnotes=rcn.data||[];
+  var rsw=await sb.from("meal_swaps").select("*").eq("client_slug",c.slug).order("created_at",{ascending:false});
+  var creqs=rcr.data||[], cnotes=rcn.data||[], swaps=rsw.data||[];
   b.innerHTML="";
+
+  if(swaps.length){
+    b.appendChild(el("div","pf-sub","Recent meal swaps"));
+    var sbox=el("div","req-box");
+    swaps.slice(0,12).forEach(function(sw){
+      var item=el("div","swap-log");
+      var da=daysAgo(new Date(sw.created_at).getTime());
+      item.appendChild(el("div","swap-log-line",(dayFull(sw.day_of_week)||"")+" \u00b7 swapped \u201C"+(sw.from_name||"?")+"\u201D \u2192 \u201C"+(sw.to_name||"?")+"\u201D"));
+      var dcal=(sw.to_calories||0)-(sw.from_calories||0), dpro=(sw.to_protein||0)-(sw.from_protein||0);
+      item.appendChild(el("div","swap-log-sub",(sw.to_calories||0)+" kcal ("+(dcal>=0?"+":"")+dcal+") \u00b7 "+(sw.to_protein||0)+"g P ("+(dpro>=0?"+":"")+dpro+") \u00b7 "+(da===0?"today":(da===1?"yesterday":da+"d ago"))));
+      sbox.appendChild(item);
+    });
+    b.appendChild(sbox);
+  }
 
   if(creqs.length){
     b.appendChild(el("div","pf-sub","Open requests"));

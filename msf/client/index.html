@@ -119,11 +119,17 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .rp-step-t{font-size:13.5px;color:var(--ink-2);line-height:1.55}
 .rp-req{width:100%;background:var(--sage);color:var(--bg);border:none;border-radius:12px;font-family:var(--body);font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin:22px 0 8px}
 .rp-req.active{background:none;border:1px solid var(--sage);color:var(--sage)}
+.rp-steps-btn{width:100%;background:none;border:1px solid var(--sage);color:var(--sage);border-radius:12px;font-family:var(--body);font-size:14px;font-weight:700;padding:13px;cursor:pointer;margin:20px 0 0;display:flex;align-items:center;justify-content:center;gap:8px}
+.rp-steps-btn .chev{display:inline-block;transition:transform .2s ease;font-size:11px}
+.rp-steps-btn.open .chev{transform:rotate(180deg)}
+.rp-protein-tag{display:inline-block;background:rgba(200,98,46,.14);color:var(--sage);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:3px 9px;margin-bottom:2px}
 .rp-search-wrap{margin:2px 0 10px}
 .rp-search{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;padding:13px 14px;outline:none}
 .rp-search:focus{border-color:var(--sage)}
 .rp-search::placeholder{color:var(--ink-3)}
 .rp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.rp-chips-2{margin-bottom:16px}
+.rp-chips-2 .rp-chip{opacity:.88;font-size:11.5px}
 .rp-chip{background:var(--surface);border:1px solid var(--line-2);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer}
 .rp-chip.on{background:var(--sage);border-color:var(--sage);color:var(--bg)}
 .rp-none{font-size:13px;color:var(--ink-3);text-align:center;padding:22px 10px}
@@ -1606,7 +1612,8 @@ async function openShopList(){
 function closeShopList(){document.getElementById("shop-list").classList.remove("show");}
 
 // ===== RECIPE LIBRARY =====
-var allRecipes=[], recipeReqs={}, ideaReqs={}, recipeQuery="", recipeCat="All";
+var allRecipes=[], recipeReqs={}, ideaReqs={}, recipeQuery="", recipeCat="All", recipeProtein="All";
+var PROTEIN_TYPES=["All","Chicken","Beef","Turkey","Pork","Seafood","Egg","Vegetarian"];
 
 async function openRecipes(){
   var ov=document.getElementById("recipe-panel");
@@ -1648,6 +1655,14 @@ function drawRecipeList(){
   });
   body.appendChild(chips);
 
+  var pchips=el("div","rp-chips rp-chips-2");
+  PROTEIN_TYPES.forEach(function(p){
+    var ch=el("button","rp-chip"+(recipeProtein===p?" on":""),p);
+    ch.onclick=function(){recipeProtein=p;drawRecipeList();setTimeout(function(){var q=document.getElementById("rp-q");if(q)q.value=recipeQuery;},0);};
+    pchips.appendChild(ch);
+  });
+  body.appendChild(pchips);
+
   var res=el("div","");res.id="rp-results";
   body.appendChild(res);
   drawRecipeResults();
@@ -1660,6 +1675,7 @@ function drawRecipeResults(){
   var q=(recipeQuery||"").trim().toLowerCase();
   var matches=allRecipes.filter(function(r){
     if(recipeCat!=="All" && (r.category||"Other")!==recipeCat)return false;
+    if(recipeProtein!=="All" && (r.protein_type||"Other")!==recipeProtein)return false;
     if(!q)return true;
     return (r.title||"").toLowerCase().indexOf(q)!==-1
         || (r.category||"").toLowerCase().indexOf(q)!==-1
@@ -1710,6 +1726,7 @@ function recipeCard(r){
   if(r.photo_url){var im=el("img","rp-img");im.src=r.photo_url;im.loading="lazy";card.appendChild(im);}
   else{card.appendChild(el("div","rp-img rp-img-empty","\uD83C\uDF7D"));}
   var mid=el("div","rp-mid");
+  if(r.protein_type)mid.appendChild(el("div","rp-protein-tag",r.protein_type));
   mid.appendChild(el("div","rp-name",r.title));
   mid.appendChild(el("div","rp-macros",(r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
   if(recipeReqs[r.title])mid.appendChild(el("div","rp-flag","\u2713 Requested"));
@@ -1740,6 +1757,7 @@ function openRecipe(r){
   body.appendChild(back);
 
   if(r.photo_url){var im=el("img","rp-hero");im.src=r.photo_url;body.appendChild(im);}
+  if(r.protein_type)body.appendChild(el("div","rp-protein-tag",r.protein_type));
 
   var mr=el("div","rp-macro-row");
   [["Calories",(r.calories||0)],["Protein",(r.protein||0)+"g"],["Carbs",(r.carbs||0)+"g"],["Fat",(r.fats||0)+"g"]].forEach(function(m){
@@ -1761,7 +1779,9 @@ function openRecipe(r){
   }
 
   if(r.instructions){
-    body.appendChild(el("div","sec-label","Method"));
+    var stepsWrap=el("div","");
+    stepsWrap.style.display="none";
+    stepsWrap.appendChild(el("div","sec-label","Method"));
     var sl=el("div","rp-list");
     var n=0;
     r.instructions.split("\n").forEach(function(line){
@@ -1772,7 +1792,21 @@ function openRecipe(r){
       step.appendChild(el("div","rp-step-t",line.trim()));
       sl.appendChild(step);
     });
-    body.appendChild(sl);
+    stepsWrap.appendChild(sl);
+
+    var stepsBtn=el("button","rp-steps-btn");
+    var stepsBtnLabel=el("span","","Show cooking instructions");
+    var stepsBtnChev=el("span","chev","‹");
+    stepsBtn.appendChild(stepsBtnLabel);
+    stepsBtn.appendChild(stepsBtnChev);
+    stepsBtn.onclick=function(){
+      var open=stepsWrap.style.display!=="none";
+      stepsWrap.style.display=open?"none":"";
+      stepsBtn.classList.toggle("open",!open);
+      stepsBtnLabel.textContent=open?"Show cooking instructions":"Hide cooking instructions";
+    };
+    body.appendChild(stepsBtn);
+    body.appendChild(stepsWrap);
   }
 
   var reqd=!!recipeReqs[r.title];

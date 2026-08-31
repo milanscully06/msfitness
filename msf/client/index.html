@@ -151,8 +151,13 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 
 .ex-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin-bottom:11px}
 .ex-card.ss{border-left:2px solid var(--sage)}
-.ex-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.ex-head{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ex-head-l{display:flex;align-items:center;gap:9px;min-width:0}
 .ex-name{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.ex-summary{font-size:12px;color:var(--ink-3);margin-top:3px}
+.ex-chev{display:inline-block;color:var(--ink-3);font-size:12px;transition:transform .2s ease;flex-shrink:0}
+.ex-chev.open{transform:rotate(-90deg)}
+.ex-body{margin-top:14px}
 .ex-note-c{font-size:12.5px;color:var(--sage);line-height:1.5;margin:2px 0 12px;padding-left:11px;border-left:2px solid rgba(200,98,46,.4);white-space:pre-wrap}
 .badge-ss{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);
   border:1px solid rgba(200,98,46,.32);padding:3px 8px;border-radius:99px;flex-shrink:0}
@@ -1020,22 +1025,41 @@ function renderLog(){
     sec.exercises.forEach(function(ex){
       if(ex._base==null)ex._base=ex.sets.length;
       var card=el("div","ex-card"+(ex.ss?" ss":""));
+
       var head=el("div","ex-head");
-      head.appendChild(el("span","ex-name",ex.name));
-      if(ex.ss){head.appendChild(el("span","badge-ss","Superset"));}
+      var headL=el("div","ex-head-l");
+      var nameCol=el("div","");
+      nameCol.appendChild(el("div","ex-name",ex.name));
+      var firstTag=(ex.sets[0]&&ex.sets[0].tag||"").trim();
+      nameCol.appendChild(el("div","ex-summary", ex.sets.length+(ex.sets.length===1?" set":" sets")+(firstTag?" · "+firstTag+" reps":"")));
+      headL.appendChild(nameCol);
+      if(ex.ss){headL.appendChild(el("span","badge-ss","Superset"));}
+      head.appendChild(headL);
+      var chev=el("span","ex-chev","›");chev.id="chev_"+ex.id;
+      head.appendChild(chev);
       card.appendChild(head);
-      if(ex.note){var en=el("div","ex-note-c");en.textContent=ex.note;card.appendChild(en);}
+
+      var body=el("div","ex-body");body.id="exbody_"+ex.id;body.style.display="none";
+      if(ex.note){var en=el("div","ex-note-c");en.textContent=ex.note;body.appendChild(en);}
 
       var setsWrap=el("div","");setsWrap.id="sets_"+ex.id;
       ex.sets.forEach(function(s,i){ setsWrap.appendChild(makeSetRow(ex,i)); });
-      card.appendChild(setsWrap);
+      body.appendChild(setsWrap);
 
       var addBtn=el("button","add-set-btn","+ Add set");
       addBtn.onclick=(function(exId){return function(){addSet(exId);};})(ex.id);
-      card.appendChild(addBtn);
+      body.appendChild(addBtn);
 
       var alert=el("div","alert-bar");alert.id="al_"+ex.id;
-      card.appendChild(alert);
+      body.appendChild(alert);
+      card.appendChild(body);
+
+      head.onclick=function(){
+        var open=body.style.display!=="none";
+        body.style.display=open?"none":"";
+        chev.classList.toggle("open",!open);
+      };
+
       vlog.appendChild(card);
     });
   });
@@ -1064,6 +1088,7 @@ async function loadCache(){
       var ri=document.getElementById(r.ex_id+"_r"+r.set_index);
       if(wi&&r.weight)wi.value=r.weight;
       if(ri&&r.reps)ri.value=r.reps;
+      if(r.weight||r.reps)expandEx(r.ex_id);
     });
     PROG[curDay].sections.forEach(function(sec){sec.exercises.forEach(function(ex){chk(ex.id);});});
     return;
@@ -1091,6 +1116,14 @@ async function loadCache(){
 }
 
 function findEx(exId){var f=null;PROG[curDay].sections.forEach(function(s){s.exercises.forEach(function(e){if(e.id===exId)f=e;});});return f;}
+
+function expandEx(exId){
+  var body=document.getElementById("exbody_"+exId);
+  if(!body)return;
+  body.style.display="";
+  var chev=document.getElementById("chev_"+exId);
+  if(chev)chev.classList.add("open");
+}
 
 function makeSetRow(ex,i){
   var row=el("div","set-row");

@@ -14,7 +14,7 @@
   --bg:#0E0C0B;--surface:#181513;--surface-2:#211C19;
   --line:rgba(244,238,228,0.09);--line-2:rgba(244,238,228,0.16);
   --ink:#F4EEE4;--ink-2:rgba(244,238,228,0.56);--ink-3:rgba(244,238,228,0.34);
-  --sage:#9DB49A;--bad:#C97A6D;--radius:18px;
+  --sage:#9DB49A;--bad:#C97A6D;--warn:#CBA67D;--radius:18px;
   --display:'Bricolage Grotesque',sans-serif;
   --body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
 }
@@ -38,12 +38,28 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .client-list-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:border-color .15s,transform .12s}
 .client-list-item:active{transform:scale(.995)}
 .cli-left{display:flex;align-items:center;gap:11px;min-width:0}
-.av{width:42px;height:42px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2);flex-shrink:0}
+.av-wrap{position:relative;flex-shrink:0}
+.av{width:42px;height:42px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink-2)}
+.status-dot{position:absolute;bottom:-1px;right:-1px;width:13px;height:13px;border-radius:50%;border:2px solid var(--surface);background:var(--ink-3)}
+.status-dot.good{background:var(--sage)}
+.status-dot.amber{background:var(--warn)}
+.status-dot.red{background:var(--bad)}
 .cli-name{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em}
 .cli-goal{font-size:12px;color:var(--ink-3);margin-top:2px}
-.cli-link{font-size:11.5px;color:var(--sage);font-weight:600;margin-top:3px}
+.cli-activity{font-size:11.5px;font-weight:600;color:var(--ink-3);margin-top:4px}
+.cli-activity .flag{color:var(--bad)}
+.cli-activity .flag.amber{color:var(--warn)}
 .chevron{font-size:20px;color:var(--ink-3);flex-shrink:0}
 .folder-tabs{display:flex;gap:8px;margin-bottom:14px}
+.roster-search{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 14px;outline:none;margin-bottom:12px}
+.roster-search:focus{border-color:var(--sage)}
+.roster-search::placeholder{color:var(--ink-3)}
+.more-wrap{position:relative}
+.more-trigger{font-size:16px !important;line-height:1;padding:8px 12px !important}
+.more-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:6px;min-width:140px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.more-menu.open{display:flex;flex-direction:column;gap:2px}
+.more-item{background:none;border:none;color:var(--ink-2);font-family:var(--body);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:8px;text-align:left;cursor:pointer;white-space:nowrap}
+.more-item:hover{background:var(--surface-2);color:var(--ink)}
 /* ===== client profile (merged app, stage 1) ===== */
 #profile{display:none;position:fixed;inset:0;background:var(--bg);z-index:60;overflow-y:auto}
 #profile.show{display:block}
@@ -99,6 +115,9 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .pf-nut-sec{margin-bottom:22px}
 .pf-sub{font-size:13px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
 .pf-hint2{font-size:11px;color:var(--ink-3);margin-bottom:12px;line-height:1.5}
+.swap-log{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;border-left:3px solid var(--sage)}
+.swap-log-line{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.4}
+.swap-log-sub{font-size:11.5px;color:var(--ink-3);margin-top:4px}
 .chart-box2{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
 .wt-chart{width:100%;height:auto;display:block}
 .wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
@@ -171,8 +190,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
-.folder-move-btn{background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);font-family:var(--body);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer;white-space:nowrap}
-.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink)}
+.folder-move-btn{background:transparent;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-3);font-family:var(--body);font-size:10.5px;font-weight:600;padding:5px 8px;cursor:pointer;white-space:nowrap;opacity:.7}
+.folder-move-btn:hover{border-color:var(--ink-3);color:var(--ink);opacity:1}
 
 .empty{text-align:center;padding:3.5rem 1.5rem;color:var(--ink-2)}
 .empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
@@ -224,6 +243,16 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .set-add{background:none;border:1px dashed var(--line-2);border-radius:8px;color:var(--ink-2);font-size:12px;font-weight:600;padding:0 12px;cursor:pointer}
 .set-add:hover{border-color:var(--sage);color:var(--sage)}
 .ex-note{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:12px;padding:8px 9px;outline:none;resize:vertical;min-height:34px;margin-bottom:5px;line-height:1.4}
+.ex-meta-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.ex-badge{font-size:10.5px;font-weight:700;color:var(--ink-2);background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:3px 9px}
+.ex-badge.ss{color:#C8622E;border-color:rgba(200,98,46,.4)}
+.ex-more-toggle{background:none;border:none;color:var(--sage);font-family:var(--body);font-size:11.5px;font-weight:700;cursor:pointer;padding:3px 0}
+.ex-more{display:none}
+.ex-more.open{display:block;margin-top:8px}
+.reorder-col{display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding-top:2px}
+.reorder-btn{width:24px;height:22px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.reorder-btn:disabled{opacity:.25;cursor:default}
+.reorder-btn:not(:disabled):hover{border-color:var(--sage);color:var(--sage)}
 .ex-note:focus{border-color:var(--sage)}
 .ex-note::placeholder{color:var(--ink-3)}
 
@@ -261,9 +290,6 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .lead-status-row{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
 .lead-chip{background:var(--surface-2);border:1px solid var(--line);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:11.5px;font-weight:600;padding:6px 13px;cursor:pointer;text-transform:capitalize}
 .lead-chip.on{background:#C8622E;border-color:#C8622E;color:var(--bg)}
-.swap-log{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px;border-left:3px solid var(--sage)}
-.swap-log-line{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.4}
-.swap-log-sub{font-size:11.5px;color:var(--ink-3);margin-top:4px}
 .lib-add-btn{border-color:var(--sage) !important;color:var(--sage) !important}
 .mealib-count{font-size:11px;color:var(--ink-3);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
 .mealib-item{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:12px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,background .12s}
@@ -353,15 +379,21 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
     <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
     <div style="display:flex;align-items:center;gap:8px">
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="leads-btn">Leads</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="hab-btn">Habits</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="rec-btn">Recipes</button>
-      <button class="btn-outline" style="padding:8px 14px;font-size:13px" id="res-btn">Resources</button>
+      <div class="more-wrap">
+        <button class="btn-outline more-trigger" id="more-trigger" style="padding:8px 12px;font-size:13px">⋯</button>
+        <div class="more-menu" id="more-menu">
+          <button class="more-item" id="leads-btn">Leads</button>
+          <button class="more-item" id="hab-btn">Habits</button>
+          <button class="more-item" id="rec-btn">Recipes</button>
+          <button class="more-item" id="res-btn">Resources</button>
+        </div>
+      </div>
       <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
     </div>
   </div>
   <div class="success-bar" id="succ"></div>
   <div class="error-bar" id="err"></div>
+  <input type="text" class="roster-search" id="roster-search" placeholder="Search clients...">
   <div class="folder-tabs" id="folder-tabs"></div>
   <div id="clist"><div class="loader">Loading clients...</div></div>
 </div>
@@ -1200,12 +1232,50 @@ document.getElementById("asl").oninput = function(){
 };
 
 // ── LOAD CLIENTS ──
-var allClients = [], clientFolder = "active";
+var allClients = [], clientFolder = "active", rosterSearch = "";
+var lastGymBySlug = {}, lastFoodBySlug = {};
 
 async function loadClients() {
   var res = await sb.from("clients").select("*").order("created_at");
   allClients = res.data || [];
+
+  // bulk-fetch recent activity (last 30 days) for every client in one shot each,
+  // instead of one query per client — keeps the roster load to 3 queries total.
+  var since = new Date(); since.setDate(since.getDate()-30);
+  var sinceISO = since.toISOString();
+  var sinceDateStr = sinceISO.slice(0,10);
+  var rGym = await sb.from("lift_logs").select("client,logged_at").gte("logged_at",sinceISO);
+  var rFood = await sb.from("nutrition_logs").select("client_slug,logged_date").gte("logged_date",sinceDateStr);
+
+  lastGymBySlug = {}; lastFoodBySlug = {};
+  (rGym.data||[]).forEach(function(r){
+    var d = new Date(r.logged_at);
+    if (!lastGymBySlug[r.client] || d > lastGymBySlug[r.client]) lastGymBySlug[r.client] = d;
+  });
+  (rFood.data||[]).forEach(function(r){
+    if (!lastFoodBySlug[r.client_slug] || r.logged_date > lastFoodBySlug[r.client_slug]) lastFoodBySlug[r.client_slug] = r.logged_date;
+  });
+
   renderClients();
+}
+
+// status: 'red' = no recent training AND no recent food logging (needs attention)
+// 'amber' = one of the two has gone quiet · 'good' = both recent · 'new' = signed up
+// in the last 7 days with nothing logged yet (not a problem, just hasn't started)
+function clientActivity(c) {
+  var gymDate = lastGymBySlug[c.slug] || null;
+  var foodDateStr = lastFoodBySlug[c.slug] || null;
+  // clamp to 0 — comparing a logged_date (no time component) against "now" can
+  // otherwise go slightly negative for something logged earlier today
+  var gymDays = gymDate ? Math.max(0,Math.floor((Date.now()-gymDate.getTime())/86400000)) : null;
+  var foodDays = foodDateStr ? Math.max(0,Math.floor((Date.now()-new Date(foodDateStr+"T12:00:00").getTime())/86400000)) : null;
+  var gymStale = gymDays===null || gymDays>7;
+  var foodStale = foodDays===null || foodDays>3;
+  var createdDaysAgo = c.created_at ? Math.floor((Date.now()-new Date(c.created_at).getTime())/86400000) : 999;
+  var isNew = createdDaysAgo<7 && gymDays===null && foodDays===null;
+  var status = isNew ? "new" : (gymStale && foodStale ? "red" : ((gymStale||foodStale) ? "amber" : "good"));
+  var rank = {red:0, amber:1, good:2, new:3}[status];
+  return {gymDays:gymDays, foodDays:foodDays, gymStale:gymStale, foodStale:foodStale, status:status, rank:rank};
 }
 
 function renderClients() {
@@ -1223,22 +1293,55 @@ function renderClients() {
 
   clist.innerHTML = "";
   var show = clientFolder==="active"?actives:inactives;
+  var q = rosterSearch.trim().toLowerCase();
+  if (q) show = show.filter(function(c){ return (c.name||"").toLowerCase().indexOf(q)>-1; });
+
   if (!show.length) {
     var d = el("div","empty");
-    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">No '+clientFolder+' clients.</div>';
+    var msg = q ? ("No clients matching \""+rosterSearch+"\".") : ("No "+clientFolder+" clients.");
+    d.innerHTML = '<div class="empty-txt" style="padding:28px 10px;text-align:center;color:var(--ink-3)">'+msg+'</div>';
     clist.appendChild(d); return;
   }
-  show.forEach(function(c) {
+
+  // active clients needing attention float to the top; inactive/search stay as-is
+  var withAct = show.map(function(c){ return {c:c, act:clientActivity(c)}; });
+  if (clientFolder==="active" && !q) {
+    withAct.sort(function(a,b){
+      if (a.act.rank!==b.act.rank) return a.act.rank-b.act.rank;
+      var ag=a.act.gymDays==null?999:a.act.gymDays, bg=b.act.gymDays==null?999:b.act.gymDays;
+      if (ag!==bg) return bg-ag;
+      return (a.c.name||"").localeCompare(b.c.name||"");
+    });
+  }
+
+  withAct.forEach(function(row) {
+    var c = row.c, act = row.act;
     var init = c.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var item = el("div","client-list-item");
     item.onclick = (function(slug){ return function(){ openProfile(slug); }; })(c.slug);
     var left = el("div","cli-left");
+    var avWrap = el("div","av-wrap");
     var av = el("div","av",init); av.style.cssText="width:36px;height:36px;font-size:12px";
+    avWrap.appendChild(av);
+    if (c.active!==false) avWrap.appendChild(el("div","status-dot "+act.status));
     var info = el("div");
     info.appendChild(el("div","cli-name",c.name));
     info.appendChild(el("div","cli-goal",c.goal||"No goal"));
-    info.appendChild(el("div","cli-link","/client/"+c.slug));
-    left.appendChild(av); left.appendChild(info);
+    if (c.active!==false) {
+      var actLine = el("div","cli-activity");
+      if (act.status==="new") {
+        actLine.textContent = "New client — no activity logged yet";
+      } else {
+        var gymTxt = act.gymDays==null ? "no session in 30+d" : (act.gymDays<=0?"trained today":"trained "+act.gymDays+"d ago");
+        var foodTxt = act.foodDays==null ? "no food log in 30+d" : (act.foodDays<=0?"food today":"food "+act.foodDays+"d ago");
+        var gymSpan = el("span",act.gymStale?("flag"+(act.gymDays!=null?" amber":"")):"",gymTxt);
+        var sep = document.createTextNode(" · ");
+        var foodSpan = el("span",act.foodStale?("flag"+(act.foodDays!=null?" amber":"")):"",foodTxt);
+        actLine.appendChild(gymSpan); actLine.appendChild(sep); actLine.appendChild(foodSpan);
+      }
+      info.appendChild(actLine);
+    }
+    left.appendChild(avWrap); left.appendChild(info);
     item.appendChild(left);
     var right = el("div","cli-right");
     var isActive = c.active!==false;
@@ -1250,6 +1353,24 @@ function renderClients() {
     clist.appendChild(item);
   });
 }
+
+(function(){
+  var s = document.getElementById("roster-search");
+  if (s) s.oninput = function(){ rosterSearch = this.value; renderClients(); };
+})();
+
+(function(){
+  var trig = document.getElementById("more-trigger");
+  var menu = document.getElementById("more-menu");
+  if (!trig || !menu) return;
+  trig.onclick = function(ev){ ev.stopPropagation(); menu.classList.toggle("open"); };
+  menu.querySelectorAll(".more-item").forEach(function(btn){
+    btn.addEventListener("click", function(){ menu.classList.remove("open"); });
+  });
+  document.addEventListener("click", function(ev){
+    if (menu.classList.contains("open") && !menu.contains(ev.target) && ev.target!==trig) menu.classList.remove("open");
+  });
+})();
 
 async function toggleActive(slug, makeActive, ev) {
   if (ev) ev.stopPropagation();
@@ -1466,9 +1587,9 @@ async function pfCoaching(b,c){
     swaps.slice(0,12).forEach(function(sw){
       var item=el("div","swap-log");
       var da=daysAgo(new Date(sw.created_at).getTime());
-      item.appendChild(el("div","swap-log-line",(dayFull(sw.day_of_week)||"")+" \u00b7 swapped \u201C"+(sw.from_name||"?")+"\u201D \u2192 \u201C"+(sw.to_name||"?")+"\u201D"));
+      item.appendChild(el("div","swap-log-line",(dayFull(sw.day_of_week)||"")+" · swapped “"+(sw.from_name||"?")+"” → “"+(sw.to_name||"?")+"”"));
       var dcal=(sw.to_calories||0)-(sw.from_calories||0), dpro=(sw.to_protein||0)-(sw.from_protein||0);
-      item.appendChild(el("div","swap-log-sub",(sw.to_calories||0)+" kcal ("+(dcal>=0?"+":"")+dcal+") \u00b7 "+(sw.to_protein||0)+"g P ("+(dpro>=0?"+":"")+dpro+") \u00b7 "+(da===0?"today":(da===1?"yesterday":da+"d ago"))));
+      item.appendChild(el("div","swap-log-sub",(sw.to_calories||0)+" kcal ("+(dcal>=0?"+":"")+dcal+") · "+(sw.to_protein||0)+"g P ("+(dpro>=0?"+":"")+dpro+") · "+(da===0?"today":(da===1?"yesterday":da+"d ago"))));
       sbox.appendChild(item);
     });
     b.appendChild(sbox);
@@ -1562,9 +1683,10 @@ async function pfProgress(b,c){
   var body=rb.data||[], photos=rp.data||[];
   b.innerHTML="";
 
+  var wt=weightTrend(body);
+
   var bar=el("div","pf-savebar");
   bar.appendChild(el("div","pf-savebar-l","Progress"));
-  var wt=weightTrend(body);
   if(wt && wt.pts.length>=2){
     var lost=wt.first-wt.last;
     if(lost>0.05){
@@ -1577,35 +1699,77 @@ async function pfProgress(b,c){
   }
   b.appendChild(bar);
 
+  // -- stat tiles: current / change / last log / rate, all at a glance --
+  var statsSec=el("div","pf-nut-sec");
+  var grid=el("div","pf-ov-grid");
+  function statCell(l,v,stale){var x=el("div","pf-ov-cell");x.appendChild(el("div","pf-ov-l",l));var vv=el("div","pf-ov-v",v);if(stale)vv.style.color="var(--bad)";x.appendChild(vv);grid.appendChild(x);}
+  if(wt){
+    var lastDate=new Date(wt.pts[wt.pts.length-1].logged_date+"T12:00:00");
+    var lastDays=Math.max(0,Math.floor((Date.now()-lastDate.getTime())/86400000));
+    var lastStale=lastDays>14;
+    statCell("Current",wt.last.toFixed(1)+"kg");
+    var arrow=wt.delta<0?"\u25bc":(wt.delta>0?"\u25b2":"\u2014");
+    statCell("Change (all-time)",arrow+" "+Math.abs(wt.delta).toFixed(1)+"kg");
+    statCell("Last weigh-in",lastDays===0?"today":(lastDays===1?"yesterday":lastDays+"d ago"),lastStale);
+    var firstDate=new Date(wt.pts[0].logged_date+"T12:00:00");
+    var spanDays=(lastDate-firstDate)/86400000;
+    if(wt.pts.length>=2&&spanDays>=7){
+      var rate=wt.delta/(spanDays/7);
+      statCell("Rate",(rate<0?"":"+")+rate.toFixed(2)+"kg/wk");
+    }else{
+      statCell("Rate","\u2014");
+    }
+  }else{
+    statCell("Current","\u2014");statCell("Change (all-time)","\u2014");statCell("Last weigh-in","No logs yet");statCell("Rate","\u2014");
+  }
+  statsSec.appendChild(grid);
+  b.appendChild(statsSec);
+
+  // -- chart --
   var csec=el("div","pf-nut-sec");
-  csec.appendChild(el("div","pf-sub","Weight"));
+  csec.appendChild(el("div","pf-sub","Weight trend"));
   var cbox=el("div","chart-box2");
   cbox.innerHTML=weightChartSVG(wt?wt.pts:[]);
-  if(wt){ var dd=el("div","");dd.style.cssText="font-size:12px;color:var(--ink-3);margin-top:8px";dd.textContent="From "+wt.first.toFixed(1)+"kg to "+wt.last.toFixed(1)+"kg  ("+(wt.delta>=0?"+":"")+wt.delta.toFixed(1)+"kg)";cbox.appendChild(dd);}
+  if(wt){
+    var since=el("div","");since.style.cssText="font-size:11px;color:var(--ink-3);margin-top:8px";
+    since.textContent="Since "+new Date(wt.pts[0].logged_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+" \u00b7 "+wt.pts.length+" weigh-in"+(wt.pts.length===1?"":"s")+" logged";
+    cbox.appendChild(since);
+  }
   csec.appendChild(cbox);
   b.appendChild(csec);
 
+  // -- weigh-in editor: collapsed by default so a long history doesn't dominate the tab --
   var wsec=el("div","pf-nut-sec");
   wsec.appendChild(el("div","pf-sub","Weigh-ins"));
-  wsec.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
+  var manageBox=el("div","");manageBox.style.display="none";manageBox.style.marginTop="10px";
+  var toggle=el("button","add-btn","Add or correct a weigh-in \u203a");
+  toggle.onclick=function(){
+    var open=manageBox.style.display!=="none";
+    manageBox.style.display=open?"none":"block";
+    toggle.textContent=open?"Add or correct a weigh-in \u203a":"Hide weigh-in editor \u2304";
+  };
+  wsec.appendChild(toggle);
+  manageBox.appendChild(el("div","pf-hint2","Add a missing start weight or correct an entry. This edits real history \u2014 the client sees these numbers."));
   var addrow=el("div","wi-add-row");
   var di=el("input","form-input");di.type="date";di.id="pf-wi-date";di.style.cssText="flex:1;min-width:130px";di.value=new Date().toISOString().split("T")[0];
   var ki=el("input","form-input");ki.type="number";ki.step="0.1";ki.id="pf-wi-kg";ki.placeholder="kg";ki.style.width="100px";
   var ab=el("button","btn-outline","Add / update");ab.style.whiteSpace="nowrap";
   ab.onclick=function(){ addWeighIn(); };
   addrow.appendChild(di);addrow.appendChild(ki);addrow.appendChild(ab);
-  wsec.appendChild(addrow);
+  manageBox.appendChild(addrow);
   var wlist=el("div","");wlist.id="pf-weighins";wlist.style.marginTop="12px";
-  wsec.appendChild(wlist);
+  manageBox.appendChild(wlist);
+  wsec.appendChild(manageBox);
   b.appendChild(wsec);
   weighInCont="pf-weighins"; wiDateId="pf-wi-date"; wiKgId="pf-wi-kg";
   loadWeighIns(c.slug);
 
+  // -- photos: always show the section so it's clear this exists, even when empty --
+  var psec=el("div","pf-nut-sec");
+  psec.appendChild(el("div","pf-sub","Progress photos"));
+  b.appendChild(psec);
   if(photos.length){
-    var psec=el("div","pf-nut-sec");
-    psec.appendChild(el("div","pf-sub","Progress photos"));
     var pg=el("div","pgrid"); psec.appendChild(pg);
-    b.appendChild(psec);
     var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
     var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
     photos.forEach(function(p){
@@ -1615,6 +1779,8 @@ async function pfProgress(b,c){
       tile.onclick=(function(u){return function(){ if(u)openLB(u); };})(url);
       pg.appendChild(tile);
     });
+  }else{
+    psec.appendChild(el("div","wt-empty","No progress photos uploaded yet."));
   }
 }
 
@@ -2131,18 +2297,49 @@ function renderDays(mode) {
         draw();
       })();
       er.appendChild(setsBox);
+      // note + superset are tucked behind a toggle unless already set \u2014 most
+      // exercises use neither, and showing an empty textarea + switch on every
+      // single row was most of what made this screen feel cluttered
       var noteI=el("textarea","ex-note"); noteI.placeholder="Note for this exercise (drop set, form cue, tempo\u2026)"; noteI.value=ex.note||"";
-      noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;};})(di,si,ei,mode);
-      er.appendChild(noteI);
+      noteI.oninput=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].note=this.value;refreshExMeta();};})(di,si,ei,mode);
       var tr=el("div",""); tr.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:4px 0";
-      tr.appendChild(el("span","",ex.ss?"Superset \u2713":"Superset"));
+      var trLbl=el("span","",ex.ss?"Superset \u2713":"Superset"); tr.appendChild(trLbl);
       var tb=el("button","toggle"+(ex.ss?" on":""));
-      tb.onclick=(function(i,j,k,m){return function(){var ex2=(m==="add"?addDays:editDays)[i].sections[j].exercises[k];ex2.ss=!ex2.ss;this.classList.toggle("on",ex2.ss);};})(di,si,ei,mode);
-      tr.appendChild(tb); er.appendChild(tr);
+      tb.onclick=(function(i,j,k,m){return function(){var ex2=(m==="add"?addDays:editDays)[i].sections[j].exercises[k];ex2.ss=!ex2.ss;this.classList.toggle("on",ex2.ss);trLbl.textContent=ex2.ss?"Superset \u2713":"Superset";refreshExMeta();};})(di,si,ei,mode);
+      tr.appendChild(tb);
+
+      var moreBox=el("div","ex-more");
+      moreBox.appendChild(noteI); moreBox.appendChild(tr);
+      var metaRow=el("div","ex-meta-row");
+      var moreToggle=el("button","ex-more-toggle","+ Note / superset");
+      moreToggle.onclick=function(){
+        var open=moreBox.classList.contains("open");
+        moreBox.classList.toggle("open",!open);
+        moreToggle.textContent=open?"+ Note / superset":"Hide details \u2304";
+      };
+      function refreshExMeta(){
+        metaRow.querySelectorAll(".ex-badge").forEach(function(n){n.remove();});
+        if(ex.note&&ex.note.trim())metaRow.insertBefore(el("span","ex-badge","\ud83d\udcdd Note"),moreToggle);
+        if(ex.ss)metaRow.insertBefore(el("span","ex-badge ss","Superset"),moreToggle);
+      }
+      metaRow.appendChild(moreToggle);
+      refreshExMeta();
+      var hasExtra=!!(ex.note&&ex.note.trim())||ex.ss;
+      if(hasExtra){moreBox.classList.add("open");moreToggle.textContent="Hide details \u2304";}
+      er.appendChild(metaRow);
+      er.appendChild(moreBox);
+
+      var reorderCol=el("div","reorder-col");
+      var upBtn=el("button","reorder-btn","\u25b4"); if(ei===0)upBtn.disabled=true;
+      upBtn.onclick=(function(i,j,k,m){return function(){ var arr=(m==="add"?addDays:editDays)[i].sections[j].exercises; if(k>0){ var t=arr[k-1]; arr[k-1]=arr[k]; arr[k]=t; renderDays(m); } };})(di,si,ei,mode);
+      var dnBtn=el("button","reorder-btn","\u25be"); if(ei===sec.exercises.length-1)dnBtn.disabled=true;
+      dnBtn.onclick=(function(i,j,k,m){return function(){ var arr=(m==="add"?addDays:editDays)[i].sections[j].exercises; if(k<arr.length-1){ var t=arr[k+1]; arr[k+1]=arr[k]; arr[k]=t; renderDays(m); } };})(di,si,ei,mode);
+      reorderCol.appendChild(upBtn); reorderCol.appendChild(dnBtn);
+
       var ed=el("button","del-btn","\u2715"); ed.style.alignSelf="flex-start";
       ed.onclick=(function(i,j,k,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.splice(k,1);renderDays(m);};})(di,si,ei,mode);
-      var erow=el("div",""); erow.style.cssText="display:flex;gap:8px;align-items:flex-start";
-      erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
+      var erow=el("div",""); erow.style.cssText="display:flex;gap:6px;align-items:flex-start";
+      erow.appendChild(reorderCol); erow.appendChild(er); erow.appendChild(ed); sb2.appendChild(erow);
     });
     var ae=el("button","add-btn","+ Add exercise");
     ae.onclick=(function(i,j,m){return function(){(m==="add"?addDays:editDays)[i].sections[j].exercises.push({name:"",ss:false,note:"",sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderDays(m);};})(di,si,mode);

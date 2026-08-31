@@ -297,6 +297,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .mealib-name{font-size:14px;font-weight:700;color:var(--ink)}
 .mealib-ing{font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.45}
 .mealib-macros{font-size:12px;color:var(--sage);font-weight:600;margin-top:6px}
+.mealib-tabs{display:flex;gap:6px;margin:12px 0 8px}
+.mealib-tab{flex:1;background:var(--surface);border:1px solid var(--line-2);border-radius:10px;color:var(--ink-3);font-family:var(--body);font-size:13px;font-weight:700;padding:9px;cursor:pointer}
+.mealib-tab.on{background:var(--sage);border-color:var(--sage);color:var(--bg)}
+.mealib-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.mealib-chips-2 .mealib-chip{font-size:11px;opacity:.9}
+.mealib-chip{background:var(--surface);border:1px solid var(--line-2);border-radius:99px;color:var(--ink-3);font-family:var(--body);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer}
+.mealib-chip.on{background:var(--sage);border-color:var(--sage);color:var(--bg)}
+.mealib-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--sage);background:rgba(157,180,154,.15);border-radius:6px;padding:2px 6px;margin-right:6px}
 .builder-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px;padding-bottom:2px}
 .builder-tabs::-webkit-scrollbar{display:none}
 .builder-tab{flex:0 0 auto;display:flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--ink-3);font-family:var(--body);font-size:13px;font-weight:600;padding:8px 12px;cursor:pointer;white-space:nowrap}
@@ -471,8 +479,14 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div class="modal-overlay" id="modal-mealib">
 <div class="modal-box">
   <div class="modal-title">Meal library</div>
-  <div class="modal-sub">Meals from all your clients' plans. Tap one to drop it into the day \u2014 then adjust portions and macros for this client.</div>
-  <input class="form-input" id="mealib-search" placeholder="Search meals or ingredients\u2026" style="margin-bottom:12px">
+  <div class="mealib-tabs">
+    <button class="mealib-tab on" id="mealib-tab-mine">My meals</button>
+    <button class="mealib-tab" id="mealib-tab-recipes">Recipes</button>
+  </div>
+  <div class="modal-sub" id="mealib-sub">Meals from all your clients' plans. Tap one to drop it into the day \u2014 then adjust portions and macros for this client.</div>
+  <input class="form-input" id="mealib-search" placeholder="Search meals or ingredients\u2026" style="margin-bottom:10px">
+  <div class="mealib-chips" id="mealib-cat-chips" style="display:none"></div>
+  <div class="mealib-chips mealib-chips-2" id="mealib-protein-chips" style="display:none"></div>
   <div id="mealib-list"><div class="loader">Loading\u2026</div></div>
   <div class="modal-actions" style="margin-top:16px"><button class="btn-outline" style="width:100%" id="mealib-close">Close</button></div>
 </div>
@@ -712,17 +726,67 @@ document.getElementById("rc-file").onchange = function(){ if(this.files&&this.fi
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
 document.getElementById("res-btn").onclick = openResources;
 
-// ===== MEAL LIBRARY (pick meals from other clients' plans) =====
-var mealibTarget=null, mealibMode=null, mealibCache=null;
+// ===== MEAL LIBRARY (pick meals from other clients' plans, or from the recipe library) =====
+var mealibTarget=null, mealibMode=null, mealibCacheMine=null, mealibCacheRecipes=null;
+var mealibTab="mine", mealibCat="All", mealibProtein="All";
+var MEALIB_CATS=["All","Breakfast","Lunch","Dinner","Snack","Dessert"];
+var MEALIB_PROTEINS=["All","Chicken","Beef","Turkey","Pork","Seafood","Egg","Vegetarian"];
+
 document.getElementById("mealib-close").onclick=function(){ closeModal("modal-mealib"); };
 document.getElementById("mealib-search").oninput=function(){ renderMealLib(this.value.trim().toLowerCase()); };
+document.getElementById("mealib-tab-mine").onclick=function(){ switchMealibTab("mine"); };
+document.getElementById("mealib-tab-recipes").onclick=function(){ switchMealibTab("recipes"); };
+
 function openMealLib(dayKey, mode){
-  mealibTarget=dayKey; mealibMode=mode; mealibCache=null;
+  mealibTarget=dayKey; mealibMode=mode;
+  mealibTab="mine"; mealibCat="All"; mealibProtein="All";
   document.getElementById("mealib-search").value="";
+  updateMealibTabUI();
   openModal("modal-mealib");
-  loadMealLib();
+  loadMealLibMine();
 }
-async function loadMealLib(){
+
+function switchMealibTab(tab){
+  mealibTab=tab;
+  updateMealibTabUI();
+  document.getElementById("mealib-search").value="";
+  if(tab==="recipes"){
+    if(mealibCacheRecipes)renderMealLib("");
+    else loadMealLibRecipes();
+  } else {
+    if(mealibCacheMine)renderMealLib("");
+    else loadMealLibMine();
+  }
+}
+
+function updateMealibTabUI(){
+  document.getElementById("mealib-tab-mine").classList.toggle("on",mealibTab==="mine");
+  document.getElementById("mealib-tab-recipes").classList.toggle("on",mealibTab==="recipes");
+  document.getElementById("mealib-sub").textContent = mealibTab==="recipes"
+    ? "Your recipe library. Tap one to drop it into the day \u2014 then adjust portions and macros for this client."
+    : "Meals from all your clients' plans. Tap one to drop it into the day \u2014 then adjust portions and macros for this client.";
+  var showChips = mealibTab==="recipes";
+  document.getElementById("mealib-cat-chips").style.display = showChips?"flex":"none";
+  document.getElementById("mealib-protein-chips").style.display = showChips?"flex":"none";
+  if(showChips)drawMealibChips();
+}
+
+function drawMealibChips(){
+  var catBox=document.getElementById("mealib-cat-chips"); catBox.innerHTML="";
+  MEALIB_CATS.forEach(function(c){
+    var ch=el("button","mealib-chip"+(mealibCat===c?" on":""),c);
+    ch.onclick=function(){ mealibCat=c; drawMealibChips(); renderMealLib(document.getElementById("mealib-search").value.trim().toLowerCase()); };
+    catBox.appendChild(ch);
+  });
+  var proBox=document.getElementById("mealib-protein-chips"); proBox.innerHTML="";
+  MEALIB_PROTEINS.forEach(function(p){
+    var ch=el("button","mealib-chip"+(mealibProtein===p?" on":""),p);
+    ch.onclick=function(){ mealibProtein=p; drawMealibChips(); renderMealLib(document.getElementById("mealib-search").value.trim().toLowerCase()); };
+    proBox.appendChild(ch);
+  });
+}
+
+async function loadMealLibMine(){
   var box=document.getElementById("mealib-list");
   box.innerHTML='<div class="loader">Loading\u2026</div>';
   var r=await sb.from("meal_templates").select("meal_name,ingredients,calories,protein,carbs,fats");
@@ -735,12 +799,27 @@ async function loadMealLib(){
     lib.push(m);
   });
   lib.sort(function(a,b){ var an=(a.meal_name||"").toLowerCase(), bn=(b.meal_name||"").toLowerCase(); if(an<bn)return -1; if(an>bn)return 1; return (a.calories||0)-(b.calories||0); });
-  mealibCache=lib;
+  mealibCacheMine=lib;
   renderMealLib("");
 }
+
+async function loadMealLibRecipes(){
+  var box=document.getElementById("mealib-list");
+  box.innerHTML='<div class="loader">Loading\u2026</div>';
+  var r=await sb.from("recipes").select("*").order("category").order("title");
+  if(r.error){ box.innerHTML='<div style="color:var(--bad);font-size:13px">Couldn\'t load recipes: '+r.error.message+'</div>'; return; }
+  mealibCacheRecipes=r.data||[];
+  renderMealLib("");
+}
+
 function renderMealLib(q){
+  if(mealibTab==="recipes")renderMealLibRecipes(q);
+  else renderMealLibMine(q);
+}
+
+function renderMealLibMine(q){
   var box=document.getElementById("mealib-list"); box.innerHTML="";
-  var lib=mealibCache||[];
+  var lib=mealibCacheMine||[];
   var filtered=q?lib.filter(function(m){ return ((m.meal_name||"")+" "+(m.ingredients||"")).toLowerCase().indexOf(q)!==-1; }):lib;
   if(!filtered.length){ box.innerHTML='<div style="color:var(--ink-3);font-size:13px;padding:10px 0">'+(lib.length?"No meals match that search.":"No meals saved in any plan yet.")+'</div>'; return; }
   box.appendChild(el("div","mealib-count", filtered.length+" meal"+(filtered.length===1?"":"s")+(q?" found":" in your plans")));
@@ -753,10 +832,36 @@ function renderMealLib(q){
     box.appendChild(card);
   });
 }
+
+function renderMealLibRecipes(q){
+  var box=document.getElementById("mealib-list"); box.innerHTML="";
+  var lib=mealibCacheRecipes||[];
+  var filtered=lib.filter(function(r){
+    if(mealibCat!=="All" && (r.category||"Other")!==mealibCat)return false;
+    if(mealibProtein!=="All" && (r.protein_type||"Other")!==mealibProtein)return false;
+    if(!q)return true;
+    return ((r.title||"")+" "+(r.ingredients||"")).toLowerCase().indexOf(q)!==-1;
+  });
+  if(!filtered.length){ box.innerHTML='<div style="color:var(--ink-3);font-size:13px;padding:10px 0">'+(lib.length?"Nothing matches those filters.":"No recipes in your library yet.")+'</div>'; return; }
+  box.appendChild(el("div","mealib-count", filtered.length+" recipe"+(filtered.length===1?"":"s")));
+  filtered.forEach(function(r){
+    var card=el("div","mealib-item");
+    var nameRow=el("div","mealib-name");
+    if(r.category)nameRow.appendChild(el("span","mealib-tag",r.category));
+    if(r.protein_type)nameRow.appendChild(el("span","mealib-tag",r.protein_type));
+    nameRow.appendChild(document.createTextNode(r.title||"(untitled recipe)"));
+    card.appendChild(nameRow);
+    if(r.ingredients){ card.appendChild(el("div","mealib-ing", r.ingredients.split("\n").map(function(s){return s.trim();}).filter(Boolean).slice(0,3).join(" \u00b7 "))); }
+    card.appendChild(el("div","mealib-macros", (r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
+    card.onclick=function(){ addFromLib(r); };
+    box.appendChild(card);
+  });
+}
+
 function addFromLib(m){
   var M=mealibMode==="add"?addMealDays:editMealDays;
   if(!M[mealibTarget])M[mealibTarget]=[];
-  M[mealibTarget].push({name:m.meal_name||"",ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+  M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
   closeModal("modal-mealib");
   renderMealDays(mealibMode);
 }

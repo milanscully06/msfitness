@@ -221,10 +221,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .day-block-title{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em;margin-bottom:10px;color:var(--ink)}
 .sec-block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .ex-row-admin{flex:1;min-width:0;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px}
-.ex-name-input{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);outline:none;padding:11px 11px;margin-bottom:7px}
+.ex-name-input{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:14px;font-weight:600;color:var(--ink);outline:none;padding:11px 11px}
 .ex-name-input:focus{border-color:var(--sage)}
 .ex-name-input::placeholder{color:var(--ink-3);font-weight:500}
-.ex-pick-wrap{position:relative}
+.ex-pick-wrap{position:relative;display:flex;gap:6px;align-items:stretch;margin-bottom:7px}
+.ex-pick-wrap .ex-name-input{flex:1;min-width:0}
+.ex-lib-btn{flex:0 0 auto;width:38px;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:15px;cursor:pointer;color:var(--ink-2)}
+.ex-lib-btn:hover{border-color:var(--sage);color:var(--sage)}
 .ex-pick{position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;margin-top:3px;max-height:240px;overflow-y:auto;box-shadow:0 12px 32px rgba(0,0,0,.55)}
 .ex-pick-item{padding:10px 12px;font-size:13px;color:var(--ink-2);cursor:pointer}
 .ex-pick-item+.ex-pick-item{border-top:1px solid var(--line)}
@@ -249,6 +252,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .ex-more-toggle{background:none;border:none;color:var(--sage);font-family:var(--body);font-size:11.5px;font-weight:700;cursor:pointer;padding:3px 0}
 .ex-more{display:none}
 .ex-more.open{display:block;margin-top:8px}
+.ex-hist{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-bottom:7px}
+.ex-hist-main{flex:1;min-width:0}
+.ex-hist-top{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.ex-hist-val{font-size:13px;font-weight:700;color:var(--ink)}
+.ex-hist-delta{font-size:11.5px;font-weight:700}
+.ex-hist-meta{font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.ex-hist-spark{flex:0 0 auto}
 .reorder-col{display:flex;flex-direction:column;gap:3px;flex-shrink:0;padding-top:2px}
 .reorder-btn{width:24px;height:22px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--ink-2);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
 .reorder-btn:disabled{opacity:.25;cursor:default}
@@ -483,12 +493,24 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <button class="mealib-tab on" id="mealib-tab-mine">My meals</button>
     <button class="mealib-tab" id="mealib-tab-recipes">Recipes</button>
   </div>
-  <div class="modal-sub" id="mealib-sub">Meals from all your clients' plans. Tap one to drop it into the day \u2014 then adjust portions and macros for this client.</div>
-  <input class="form-input" id="mealib-search" placeholder="Search meals or ingredients\u2026" style="margin-bottom:10px">
+  <div class="modal-sub" id="mealib-sub">Meals from all your clients' plans. Tap one to drop it into the day — then adjust portions and macros for this client.</div>
+  <input class="form-input" id="mealib-search" placeholder="Search meals or ingredients…" style="margin-bottom:10px">
   <div class="mealib-chips" id="mealib-cat-chips" style="display:none"></div>
   <div class="mealib-chips mealib-chips-2" id="mealib-protein-chips" style="display:none"></div>
-  <div id="mealib-list"><div class="loader">Loading\u2026</div></div>
+  <div id="mealib-list"><div class="loader">Loading…</div></div>
   <div class="modal-actions" style="margin-top:16px"><button class="btn-outline" style="width:100%" id="mealib-close">Close</button></div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-exlib">
+<div class="modal-box">
+  <div class="modal-title">Exercise library</div>
+  <div class="modal-sub">Browse by muscle group and movement, or search by name. Tap one to drop it into this slot.</div>
+  <input class="form-input" id="exlib-search" placeholder="Search exercises…" style="margin-bottom:10px">
+  <div class="mealib-chips" id="exlib-cat-chips"></div>
+  <div class="mealib-chips mealib-chips-2" id="exlib-move-chips"></div>
+  <div id="exlib-list"><div class="loader">Loading…</div></div>
+  <div class="modal-actions" style="margin-top:16px"><button class="btn-outline" style="width:100%" id="exlib-close">Close</button></div>
 </div>
 </div>
 
@@ -681,7 +703,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
   <div class="nut-section">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Weigh-ins</div>
-    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Add a missing starting weight, or correct an entry. This edits their real history \u2014 the client sees these numbers.</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Add a missing starting weight, or correct an entry. This edits their real history — the client sees these numbers.</div>
     <div class="wi-add-row">
       <input class="form-input" type="date" id="wi-date" style="flex:1;min-width:130px">
       <input class="form-input" type="number" step="0.1" id="wi-kg" placeholder="kg" style="width:100px">
@@ -864,6 +886,107 @@ function addFromLib(m){
   M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
   closeModal("modal-mealib");
   renderMealDays(mealibMode);
+}
+
+// ===== EXERCISE LIBRARY (browse by category/movement, backed by the `exercises` table) =====
+var EX_LIB_CACHE=null;          // array of {id,name,category,movement} once loaded
+var EX_LIB_NAMES=[];            // flat name list, kept in sync, used by the fast type-ahead
+var exlibPick=null;             // callback(name) for whichever row opened the modal
+var exlibCat="All", exlibMove="All";
+var EXLIB_CATS=["All","Chest","Back","Shoulders","Legs","Arms","Core","Conditioning"];
+var EXLIB_MOVES=["All","Push","Pull","Squat","Hinge","Isolation","Core","Carry","Cardio"];
+
+async function loadExerciseLibrary(){
+  var r=await sb.from("exercises").select("*").order("category").order("name");
+  EX_LIB_CACHE=r.data||[];
+  EX_LIB_NAMES=EX_LIB_CACHE.map(function(x){return x.name;});
+}
+loadExerciseLibrary();
+
+document.getElementById("exlib-close").onclick=function(){ closeModal("modal-exlib"); };
+document.getElementById("exlib-search").oninput=function(){ renderExLib(this.value.trim().toLowerCase()); };
+
+function openExLib(pick, currentValue){
+  exlibPick=pick;
+  exlibCat="All"; exlibMove="All";
+  document.getElementById("exlib-search").value=currentValue||"";
+  drawExlibChips();
+  openModal("modal-exlib");
+  if(EX_LIB_CACHE) renderExLib((currentValue||"").trim().toLowerCase());
+  else loadExerciseLibrary().then(function(){ renderExLib((currentValue||"").trim().toLowerCase()); });
+}
+
+function drawExlibChips(){
+  var catBox=document.getElementById("exlib-cat-chips"); catBox.innerHTML="";
+  EXLIB_CATS.forEach(function(c){
+    var ch=el("button","mealib-chip"+(exlibCat===c?" on":""),c);
+    ch.onclick=function(){ exlibCat=c; drawExlibChips(); renderExLib(document.getElementById("exlib-search").value.trim().toLowerCase()); };
+    catBox.appendChild(ch);
+  });
+  var moveBox=document.getElementById("exlib-move-chips"); moveBox.innerHTML="";
+  EXLIB_MOVES.forEach(function(m){
+    var ch=el("button","mealib-chip"+(exlibMove===m?" on":""),m);
+    ch.onclick=function(){ exlibMove=m; drawExlibChips(); renderExLib(document.getElementById("exlib-search").value.trim().toLowerCase()); };
+    moveBox.appendChild(ch);
+  });
+}
+
+function renderExLib(q){
+  var box=document.getElementById("exlib-list"); box.innerHTML="";
+  var lib=EX_LIB_CACHE||[];
+  var filtered=lib.filter(function(x){
+    if(exlibCat!=="All" && x.category!==exlibCat)return false;
+    if(exlibMove!=="All" && x.movement!==exlibMove)return false;
+    if(!q)return true;
+    return (x.name||"").toLowerCase().indexOf(q)!==-1;
+  });
+  box.appendChild(el("div","mealib-count", filtered.length+" exercise"+(filtered.length===1?"":"s")));
+  if(!filtered.length && !q){
+    box.appendChild(el("div","",  "Nothing matches those filters."));
+    box.lastChild.style.cssText="color:var(--ink-3);font-size:13px;padding:10px 0";
+  }
+  filtered.forEach(function(x){
+    var card=el("div","mealib-item");
+    var nameRow=el("div","mealib-name");
+    nameRow.appendChild(el("span","mealib-tag",x.category));
+    nameRow.appendChild(el("span","mealib-tag",x.movement));
+    nameRow.appendChild(document.createTextNode(x.name));
+    card.appendChild(nameRow);
+    card.onclick=function(){ if(exlibPick)exlibPick(x.name); closeModal("modal-exlib"); };
+    box.appendChild(card);
+  });
+  var exact=lib.some(function(x){return x.name.toLowerCase()===q;});
+  if(q && !exact){
+    // save with the casing the coach actually typed, not the lowercased `q` used for
+    // matching -- otherwise every new exercise gets saved as "all lowercase"
+    var typedName=(document.getElementById("exlib-search").value||"").trim();
+    var addRow=el("div","mealib-item");
+    addRow.style.cssText="border-style:dashed;color:var(--sage);font-weight:700;text-align:center";
+    addRow.textContent="+ Add “"+typedName+"” as a new library exercise";
+    addRow.onclick=function(){ addNewLibExercise(typedName); };
+    box.appendChild(addRow);
+  }
+}
+
+async function addNewLibExercise(typedName){
+  var cat=prompt("Muscle group for “"+typedName+"”?\n\nChest, Back, Shoulders, Legs, Arms, Core, or Conditioning","Chest");
+  if(cat==null)return;
+  cat=cat.trim();
+  var move=prompt("Movement pattern for “"+typedName+"”?\n\nPush, Pull, Squat, Hinge, Isolation, Core, Carry, or Cardio","Push");
+  if(move==null)return;
+  move=move.trim();
+  if(!cat||!move){ alert("Need both a muscle group and a movement to save it to the library."); return; }
+  var r=await sb.from("exercises").insert({name:typedName,category:cat,movement:move}).select();
+  if(r.error){
+    // most likely a name collision (unique constraint) -- just use the typed name either way
+    if(exlibPick)exlibPick(typedName);
+    closeModal("modal-exlib");
+    return;
+  }
+  var row=r.data[0];
+  EX_LIB_CACHE.push(row); EX_LIB_NAMES.push(row.name);
+  if(exlibPick)exlibPick(row.name);
+  closeModal("modal-exlib");
 }
 
 // ===== LEADS =====
@@ -1960,6 +2083,8 @@ async function pfProgram(b,c){  editSlug=c.slug;
   b.appendChild(el("div","loader","Loading program\u2026"));
   var r=await sb.from("programs").select("*").eq("client_slug",c.slug).order("exercise_order");
   var rc=await sb.from("conditioning_plan").select("*").eq("client_slug",c.slug).order("item_order");
+  var rl=await sb.from("lift_logs").select("ex_name,weight,reps,logged_at").eq("client",c.slug);
+  editLiftHistoryByName=buildLiftHistoryIndex(rl.data||[]);
   editDays=buildEditDays(r.data||[]);
   editCondDays=emptyCondDays();
   (rc.data||[]).forEach(function(it){
@@ -2000,6 +2125,101 @@ async function pfProgram(b,c){  editSlug=c.slug;
   gphost.appendChild(el("div","loader","Loading\u2026"));
   b.appendChild(gpsec);
   loadGymProgress(c.slug, gphost);
+}
+
+// ===== per-exercise history shown inline in the Program builder =====
+// Keyed by exercise name (not ex_id, which is regenerated per day/program) so a
+// client's history for "Bench Press" follows them across every day it's ever been
+// programmed on. Populated once per client when Program builder opens (pfProgram).
+var editLiftHistoryByName={};
+
+function buildLiftHistoryIndex(rows){
+  var byName={};
+  (rows||[]).forEach(function(r){
+    var key=(r.ex_name||"").trim().toLowerCase();
+    if(!key)return;
+    if(!byName[key])byName[key]={};
+    var dk=new Date(r.logged_at).toDateString();
+    if(!byName[key][dk])byName[key][dk]={date:new Date(r.logged_at),sets:[]};
+    byName[key][dk].sets.push({w:r.weight,reps:r.reps});
+  });
+  var out={};
+  Object.keys(byName).forEach(function(key){
+    var sessions=Object.keys(byName[key]).map(function(dk){return byName[key][dk];});
+    sessions.sort(function(a,b){return b.date-a.date;});
+    out[key]=sessions;
+  });
+  return out;
+}
+
+function exTopSet(session){
+  var best=null;
+  session.sets.forEach(function(x){ if(x.w!=null&&(!best||x.w>best.w))best=x; });
+  return best||session.sets[0];
+}
+
+// small "trend" sparkline per the stat-tile convention: history in the muted ink,
+// only the most recent segment + end-point in the accent colour.
+function exSparkSvg(points, dates){
+  var w=64,h=22,pad=3;
+  if(points.length<2) return "";
+  var min=Math.min.apply(null,points), max=Math.max.apply(null,points);
+  var range=(max-min)||1;
+  var stepX=(w-pad*2)/(points.length-1);
+  var coords=points.map(function(v,i){ return [pad+i*stepX, h-pad-((v-min)/range)*(h-pad*2)]; });
+  var oldPts=coords.slice(0,-1).map(function(c){return c[0]+","+c[1];}).join(" ");
+  var last=coords[coords.length-1], prev=coords[coords.length-2];
+  var dots=coords.map(function(c,i){
+    var r=(i===coords.length-1)?3:1.6;
+    var fill=(i===coords.length-1)?"var(--sage)":"var(--ink-3)";
+    var title=dates?("<title>"+dates[i]+": "+points[i]+"kg</title>"):"";
+    return '<circle cx="'+c[0]+'" cy="'+c[1]+'" r="'+r+'" fill="'+fill+'">'+title+'</circle>';
+  }).join("");
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'
+    +'<polyline points="'+oldPts+'" fill="none" stroke="var(--ink-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<line x1="'+prev[0]+'" y1="'+prev[1]+'" x2="'+last[0]+'" y2="'+last[1]+'" stroke="var(--sage)" stroke-width="2" stroke-linecap="round"/>'
+    +dots+'</svg>';
+}
+
+// renders (or clears) the compact "how they've progressed on this exercise" tile
+// shown under an exercise's name in Program builder, so a coach can see it right
+// where they're deciding whether to keep, swap, or remove the exercise.
+function renderExHistBox(host, mode, exName){
+  host.innerHTML="";
+  if(mode!=="edit") return; // no history to show for a brand-new client
+  var key=(exName||"").trim().toLowerCase();
+  var sessions=key?editLiftHistoryByName[key]:null;
+  if(!sessions||!sessions.length) return;
+
+  var latest=sessions[0], latestTop=exTopSet(latest);
+  var prevTop=sessions[1]?exTopSet(sessions[1]):null;
+  var delta=(latestTop.w!=null&&prevTop&&prevTop.w!=null)?(latestTop.w-prevTop.w):null;
+
+  var tile=el("div","ex-hist");
+  var main=el("div","ex-hist-main");
+  var top=el("div","ex-hist-top");
+  top.appendChild(el("span","ex-hist-val", latestTop.w!=null?(latestTop.w+"kg × "+(latestTop.reps!=null?latestTop.reps:"—")):((latestTop.reps!=null?latestTop.reps:"—")+" reps")));
+  var d=el("span","ex-hist-delta");
+  if(delta==null){ d.textContent=""; }
+  else if(delta>0){ d.textContent="+"+delta+"kg"; d.style.color="var(--good,#5FA46C)"; }
+  else if(delta<0){ d.textContent=delta+"kg"; d.style.color="var(--bad)"; }
+  else { d.textContent="="; d.style.color="var(--ink-3)"; }
+  if(d.textContent)top.appendChild(d);
+  main.appendChild(top);
+  var da=Math.floor((new Date().setHours(0,0,0,0)-new Date(latest.date).setHours(0,0,0,0))/86400000);
+  var agoTxt=da<=0?"today":(da===1?"yesterday":da+" days ago");
+  main.appendChild(el("div","ex-hist-meta", sessions.length+" session"+(sessions.length===1?"":"s")+" logged · last "+agoTxt));
+  tile.appendChild(main);
+
+  var weighted=sessions.filter(function(s){return exTopSet(s).w!=null;});
+  if(weighted.length>=2){
+    var recent=weighted.slice(0,8).reverse();
+    var pts=recent.map(function(s){return exTopSet(s).w;});
+    var dts=recent.map(function(s){return new Date(s.date).toLocaleDateString("en-AU",{day:"numeric",month:"short"});});
+    var spark=el("div","ex-hist-spark"); spark.innerHTML=exSparkSvg(pts,dts);
+    tile.appendChild(spark);
+  }
+  host.appendChild(tile);
 }
 
 function liftTable(lift){
@@ -2236,31 +2456,18 @@ function addDay(mode) {
   renderDays(mode);
 }
 
-// ===== EXERCISE LIBRARY (autocomplete) =====
-var EX_LIB=[
-// Chest
-"Barbell bench press","Incline barbell bench press","Decline barbell bench press","Dumbbell bench press","Incline dumbbell press","Decline dumbbell press","Machine chest press","Smith machine bench press","Dumbbell fly","Incline dumbbell fly","Cable fly","Low-to-high cable fly","Pec deck","Push-up","Incline push-up","Chest dip","Landmine press","Svend press",
-// Back
-"Deadlift","Conventional deadlift","Trap-bar deadlift","Romanian deadlift","Stiff-leg deadlift","Sumo deadlift","Rack pull","Bent-over barbell row","Pendlay row","Dumbbell row","Chest-supported row","T-bar row","Seated cable row","Wide-grip lat pulldown","Close-grip lat pulldown","Lat pulldown","Pull-up","Weighted pull-up","Chin-up","Assisted pull-up","Straight-arm pulldown","Cable face pull","Dumbbell pullover","Meadows row","Inverted row",
-// Shoulders
-"Overhead press","Seated barbell press","Seated dumbbell shoulder press","Dumbbell shoulder press","Seated DB shoulder press","Arnold press","Push press","Machine shoulder press","Dumbbell lateral raise","Cable lateral raise","Machine lateral raise","Front raise","Dumbbell rear delt fly","Reverse pec deck","Cable rear delt fly","Upright row","Barbell shrug","Dumbbell shrug","Landmine shoulder press",
-// Legs
-"Barbell back squat","Front squat","Box squat","Goblet squat","Dumbbell goblet squat","Hack squat","Leg press","Bulgarian split squat","Walking lunges","Reverse lunge","Forward lunge","Step-up","Leg extension","Lying leg curl","Seated leg curl","Nordic hamstring curl","Hip thrust","Barbell hip thrust","Single-leg hip thrust","Glute bridge","Kettlebell sumo deadlift","Cable kickback","Standing calf raise","Seated calf raise","Leg press calf raise","Adductor machine","Abductor machine","Lateral band walk","Sissy squat",
-// Arms
-"Barbell curl","EZ-bar curl","Dumbbell curl","Incline dumbbell curl","Hammer curl","Preacher curl","Cable curl","Concentration curl","Spider curl","Tricep rope pushdown","Tricep cable pushdown","Straight-bar pushdown","Overhead tricep extension","Cable overhead extension","Skull crushers","Close-grip bench press","Bench dip","Tricep kickback",
-// Core
-"Plank","Side plank","Dead bug","Bird dog","Pallof press","Hanging knee raise","Hanging leg raise","Cable crunch","Ab wheel rollout","Hollow body hold","Russian twist","Bicycle crunch","Mountain climbers","Leg raise","Toes-to-bar","Sit-up",
-// Conditioning
-"Treadmill incline walk","Incline treadmill","Rowing machine","Assault bike","Stationary bike","Stair climber","Jump rope","Sled push","Sled drag","Farmer's carry","Battle ropes","Box jump","Kettlebell swing"
-];
-
+// ===== EXERCISE LIBRARY (fast type-ahead) =====
+// Suggestions now come from the `exercises` table (EX_LIB_NAMES, loaded once at
+// startup by loadExerciseLibrary() near the Exercise Library modal code below) so
+// the list stays in sync with whatever's been added there, instead of a hardcoded
+// array baked into the page.
 function attachExPicker(input,setName){
   var wrap=input.parentNode; var dd=null;
   function close(){ if(dd){dd.remove();dd=null;} }
   function open(){
     close();
     var q=input.value.trim().toLowerCase();
-    var matches=q?EX_LIB.filter(function(e){return e.toLowerCase().indexOf(q)!==-1;}):EX_LIB.slice();
+    var matches=q?EX_LIB_NAMES.filter(function(e){return e.toLowerCase().indexOf(q)!==-1;}):EX_LIB_NAMES.slice();
     if(q){matches.sort(function(a,b){return (a.toLowerCase().indexOf(q)===0?0:1)-(b.toLowerCase().indexOf(q)===0?0:1);});}
     matches=matches.slice(0,50);
     if(!matches.length)return;
@@ -2371,14 +2578,21 @@ function renderDays(mode) {
     sh.appendChild(sn); sh.appendChild(sd); sb2.appendChild(sh);
     sec.exercises.forEach(function(ex, ei) {
       var er = el("div","ex-row-admin");
+      var histBox=el("div","");
       var pickWrap=el("div","ex-pick-wrap");
       var en2 = el("input","ex-name-input");
       en2.placeholder="Search or type exercise\u2026"; en2.value=ex.name; en2.setAttribute("autocomplete","off");
       var setName=(function(i,j,k,m){return function(val){(m==="add"?addDays:editDays)[i].sections[j].exercises[k].name=val;};})(di,si,ei,mode);
-      en2.oninput=function(){setName(this.value);};
-      attachExPicker(en2,setName);
-      pickWrap.appendChild(en2);
+      function refreshHist(){ renderExHistBox(histBox, mode, ex.name); }
+      en2.oninput=function(){setName(this.value);refreshHist();};
+      attachExPicker(en2,function(val){setName(val);refreshHist();});
+      var libBtn=el("button","ex-lib-btn","\ud83d\udcda");
+      libBtn.type="button"; libBtn.title="Browse exercise library";
+      libBtn.onclick=function(){ openExLib(function(name){ en2.value=name; setName(name); refreshHist(); }, en2.value); };
+      pickWrap.appendChild(en2); pickWrap.appendChild(libBtn);
       er.appendChild(pickWrap);
+      er.appendChild(histBox);
+      refreshHist();
       var setsBox=el("div","sets-box");
       (function(){
         function draw(){

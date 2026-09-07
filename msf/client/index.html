@@ -398,6 +398,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-pill-easy.on{background:rgba(200,98,46,.18);border-color:var(--sage);color:var(--sage)}
 .cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
 .cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
+.cond-pill-isometric.on{background:rgba(157,180,154,.18);border-color:var(--carb);color:var(--carb)}
 .cond-in{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 12px;outline:none;width:100%}
 .cond-in:focus{border-color:var(--sage)}
 .cond-row{display:flex;gap:10px}
@@ -407,6 +408,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-card.cond-easy{border-left-color:var(--sage)}
 .cond-card.cond-hard{border-left-color:var(--bad)}
 .cond-card.cond-other{border-left-color:var(--ink-3)}
+.cond-card.cond-isometric{border-left-color:var(--carb)}
 .cond-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .cond-title{font-size:15px;font-weight:700;color:var(--ink)}
 .cond-date{font-size:12px;color:var(--ink-3);font-weight:600;white-space:nowrap}
@@ -415,6 +417,7 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .cond-badge.cond-easy{background:rgba(200,98,46,.15);color:var(--sage)}
 .cond-badge.cond-hard{background:rgba(201,122,109,.15);color:var(--bad)}
 .cond-badge.cond-other{background:var(--surface-2);color:var(--ink-2)}
+.cond-badge.cond-isometric{background:rgba(157,180,154,.15);color:var(--carb)}
 .cond-notes{font-size:12px;color:var(--ink-2);margin-top:7px;line-height:1.5}
 .cond-del{background:none;border:none;color:var(--ink-3);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1}
 #cond-sched:not(:empty){margin-bottom:22px}
@@ -428,8 +431,14 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .sched-item.cond-easy{background:rgba(200,98,46,.1);border-color:rgba(200,98,46,.3)}
 .sched-item.cond-hard{background:rgba(201,122,109,.1);border-color:rgba(201,122,109,.3)}
 .sched-item.cond-other{background:var(--surface-2)}
+.sched-item.cond-isometric{background:rgba(157,180,154,.1);border-color:rgba(157,180,154,.3)}
 .sched-item-title{font-size:13px;font-weight:700;color:var(--ink)}
+.sched-item-target{font-size:11px;font-weight:700;color:var(--ink);margin-top:4px}
 .sched-item-detail{font-size:11px;color:var(--ink-2);margin-top:3px;line-height:1.45;white-space:pre-line}
+.cond-unit-sel{flex:0 0 84px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 8px;outline:none}
+.cond-quick-btn{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--sage);border-radius:12px;padding:11px 14px;margin-bottom:8px;font-family:var(--body);cursor:pointer}
+.cond-quick-title{font-size:13px;font-weight:700;color:var(--ink)}
+.cond-quick-sub{font-size:11px;color:var(--ink-2);margin-top:3px}
 </style>
 </head>
 <body>
@@ -606,8 +615,88 @@ function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cl
 function goTab(tab){var b=document.getElementById("tbtn-"+tab);if(b)setTab(b,tab);}
 
 // ===== CONDITIONING =====
-var condLogs=[], condKind="easy";
-var COND_LABEL={easy:"Easy aerobic",hard:"Hard conditioning",other:"Other"};
+var condLogs=[], condKind="easy", condPlanAll=[], condSelectedPlanItemId=null, condLogUnit="min";
+var COND_LABEL={easy:"Easy aerobic",hard:"Hard conditioning",isometric:"Isometric hold",other:"Other"};
+var COND_UNIT_LABEL={min:"min",km:"km",steps:"steps",sec:"sec"};
+
+// Builds a compact structured summary line from a plan item's target fields, e.g.
+// "5 × 1 km" or "20–30 min · Zone 2, HR 120-130" or just "RPE 8" if only intensity is set.
+// Returns "" if the item has no structured target at all (a class, Pilates, etc — detail text still covers those).
+function fmtCondNum(v){
+  if(v==null||v==="")return null;
+  var n=parseFloat(v);
+  return isNaN(n)?null:n;
+}
+function condTargetLine(it){
+  var parts=[];
+  var lo=fmtCondNum(it.target_low), hi=fmtCondNum(it.target_high);
+  if(it.unit&&(lo!=null||hi!=null)){
+    var ul=COND_UNIT_LABEL[it.unit]||it.unit;
+    var amt;
+    if(lo!=null&&hi!=null&&hi!==lo)amt=lo+"–"+hi+" "+ul;
+    else amt=(lo!=null?lo:hi)+" "+ul;
+    if(it.rounds)amt=it.rounds+" × "+amt;
+    parts.push(amt);
+  }else if(it.rounds){
+    parts.push(it.rounds+" rounds");
+  }
+  if(it.intensity)parts.push(it.intensity);
+  return parts.join(" · ");
+}
+
+function setCondPill(kind){
+  condKind=kind;
+  var all=document.querySelectorAll(".cond-pill");
+  for(var i=0;i<all.length;i++)all[i].classList.toggle("on",all[i].classList.contains("cond-pill-"+kind));
+  if(kind==="isometric"){
+    condLogUnit="sec";
+    var u=document.getElementById("cond-unit");
+    if(u){u.value="sec";updateCondAmountPlaceholder();}
+  }
+}
+
+function updateCondAmountPlaceholder(){
+  var a=document.getElementById("cond-dur");
+  if(!a)return;
+  var u=(document.getElementById("cond-unit")||{}).value||condLogUnit||"min";
+  a.placeholder=u==="km"?"Distance (km)":(u==="steps"?"Steps":(u==="sec"?"Hold (sec)":"Duration (min)"));
+}
+
+function renderCondQuickLog(items){
+  var host=document.getElementById("cond-quick");
+  if(!host)return;
+  host.innerHTML="";
+  if(!items||!items.length){return;}
+  host.appendChild(el("div","sec-label","Today\u2019s plan \u2014 tap to log"));
+  items.forEach(function(it){
+    var b=el("button","cond-quick-btn");
+    b.type="button";
+    b.appendChild(el("div","cond-quick-title",it.title));
+    var tline=condTargetLine(it);
+    if(tline)b.appendChild(el("div","cond-quick-sub",tline));
+    b.onclick=function(){applyCondQuickLog(it);};
+    host.appendChild(b);
+  });
+}
+
+function applyCondQuickLog(it){
+  setCondPill(it.kind||"easy");
+  var t=document.getElementById("cond-title");
+  if(t)t.value=it.title||"";
+  condSelectedPlanItemId=it.id;
+  condLogUnit=it.unit||"min";
+  var u=document.getElementById("cond-unit");
+  if(u)u.value=condLogUnit;
+  updateCondAmountPlaceholder();
+  var a=document.getElementById("cond-dur");
+  if(a){
+    var lo=fmtCondNum(it.target_low);
+    if(!a.value&&lo!=null)a.value=lo;
+    a.focus();
+  }
+  var card=document.getElementById("cond-form-card");
+  if(card)card.scrollIntoView({behavior:"smooth",block:"start"});
+}
 
 function renderConditioning(){
   var v=document.getElementById("view-conditioning");
@@ -618,23 +707,34 @@ function renderConditioning(){
   var sched=el("div","");sched.id="cond-sched";
   v.appendChild(sched);
 
-  var card=el("div","cond-form");
+  var quick=el("div","");quick.id="cond-quick";quick.style.marginBottom="4px";
+  v.appendChild(quick);
+
+  var card=el("div","cond-form");card.id="cond-form-card";
   var pills=el("div","cond-pills");
-  [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+  [["easy","Easy aerobic"],["hard","Hard conditioning"],["isometric","Isometric hold"],["other","Other"]].forEach(function(p){
     var pill=el("button","cond-pill cond-pill-"+p[0]+(condKind===p[0]?" on":""),p[1]);
-    pill.onclick=(function(k){return function(){condKind=k;var all=document.querySelectorAll(".cond-pill");for(var i=0;i<all.length;i++)all[i].classList.remove("on");this.classList.add("on");};})(p[0]);
+    pill.onclick=(function(k){return function(){setCondPill(k);};})(p[0]);
     pills.appendChild(pill);
   });
   card.appendChild(pills);
 
   var ti=el("input");ti.id="cond-title";ti.type="text";ti.placeholder="Session — e.g. Threshold bike";ti.className="cond-in";ti.setAttribute("autocomplete","off");
+  ti.oninput=function(){condSelectedPlanItemId=null;};
   card.appendChild(ti);
 
   var row=el("div","cond-row");
-  var dur=el("input");dur.id="cond-dur";dur.type="number";dur.placeholder="Duration (min)";dur.className="cond-in";dur.min="0";
-  var rpe=el("input");rpe.id="cond-rpe";rpe.type="number";rpe.placeholder="RPE (1-10)";rpe.className="cond-in";rpe.min="1";rpe.max="10";
-  row.appendChild(dur);row.appendChild(rpe);
+  var dur=el("input");dur.id="cond-dur";dur.type="number";dur.step="any";dur.className="cond-in";dur.min="0";
+  var unitSel=el("select");unitSel.id="cond-unit";unitSel.className="cond-unit-sel";
+  [["min","min"],["km","km"],["steps","steps"],["sec","sec"]].forEach(function(u){var o=document.createElement("option");o.value=u[0];o.textContent=u[1];unitSel.appendChild(o);});
+  unitSel.value=condLogUnit;
+  unitSel.onchange=function(){condLogUnit=this.value;updateCondAmountPlaceholder();};
+  row.appendChild(dur);row.appendChild(unitSel);
   card.appendChild(row);
+  updateCondAmountPlaceholder();
+
+  var rpe=el("input");rpe.id="cond-rpe";rpe.type="number";rpe.placeholder="RPE (1-10)";rpe.className="cond-in";rpe.min="1";rpe.max="10";
+  card.appendChild(rpe);
 
   var dt=el("input");dt.id="cond-date";dt.type="date";dt.className="cond-in";dt.value=todayStr();
   card.appendChild(dt);
@@ -658,12 +758,14 @@ async function loadCondSched(){
   if(!sc)return;
   var r=await sb.from("conditioning_plan").select("*").eq("client_slug",CLIENT).order("item_order");
   var plan=r.data||[];
+  condPlanAll=plan;
+  var todayK=DAY_KEYS[new Date().getDay()];
+  renderCondQuickLog(plan.filter(function(it){return it.day_of_week===todayK;}));
   sc.innerHTML="";
   if(!plan.length)return;
   sc.appendChild(el("div","sec-label","This week"));
   var byDay={};
   plan.forEach(function(it){var d=it.day_of_week;if(!byDay[d])byDay[d]=[];byDay[d].push(it);});
-  var todayK=DAY_KEYS[new Date().getDay()];
   [["mon","Mon"],["tue","Tue"],["wed","Wed"],["thu","Thu"],["fri","Fri"],["sat","Sat"],["sun","Sun"]].forEach(function(dd){
     var items=byDay[dd[0]]||[];
     var row=el("div","sched-row"+(dd[0]===todayK?" today":""));
@@ -673,6 +775,8 @@ async function loadCondSched(){
     else items.forEach(function(it){
       var chip=el("div","sched-item cond-"+(it.kind||"easy"));
       chip.appendChild(el("div","sched-item-title",it.title));
+      var tline=condTargetLine(it);
+      if(tline)chip.appendChild(el("div","sched-item-target",tline));
       if(it.detail)chip.appendChild(el("div","sched-item-detail",it.detail));
       cell.appendChild(chip);
     });
@@ -700,7 +804,8 @@ function drawCondList(){
     var left=el("div","");
     left.appendChild(el("div","cond-title",c.title));
     var meta=[];
-    if(c.duration_min)meta.push(c.duration_min+" min");
+    var cAmt=fmtCondNum(c.amount)!=null?fmtCondNum(c.amount):c.duration_min;
+    if(cAmt!=null)meta.push(cAmt+" "+(COND_UNIT_LABEL[c.unit]||c.unit||"min"));
     if(c.rpe)meta.push("RPE "+c.rpe);
     if(meta.length)left.appendChild(el("div","cond-meta",meta.join(" \u00b7 ")));
     top.appendChild(left);
@@ -721,17 +826,20 @@ async function logCond(){
   var t=document.getElementById("cond-title");
   var title=(t.value||"").trim();
   if(!title){t.focus();return;}
-  var dur=parseInt(document.getElementById("cond-dur").value)||null;
+  var amtRaw=parseFloat(document.getElementById("cond-dur").value);
+  var amount=isNaN(amtRaw)?null:amtRaw;
+  var unit=(document.getElementById("cond-unit")||{}).value||"min";
   var rpe=parseInt(document.getElementById("cond-rpe").value)||null;
   var date=document.getElementById("cond-date").value||todayStr();
   var notes=(document.getElementById("cond-notes").value||"").trim()||null;
-  var row={client_slug:CLIENT,logged_date:date,kind:condKind,title:title,duration_min:dur,rpe:rpe,notes:notes};
+  var row={client_slug:CLIENT,logged_date:date,kind:condKind,title:title,amount:amount,unit:unit,duration_min:(unit==="min"&&amount!=null)?Math.round(amount):null,rpe:rpe,notes:notes,plan_item_id:condSelectedPlanItemId||null};
   var ins=await sb.from("conditioning_logs").insert(row).select().single();
   if(ins.error){alert("Couldn't save — try again.");return;}
   document.getElementById("cond-title").value="";
   document.getElementById("cond-dur").value="";
   document.getElementById("cond-rpe").value="";
   document.getElementById("cond-notes").value="";
+  condSelectedPlanItemId=null;
   loadCond();
 }
 
@@ -842,7 +950,8 @@ async function renderToday(){
     feed.appendChild(statusCard({state:"done",tone:"good",title:"Conditioning",sub:"Completed today",onClick:function(){goTab("conditioning");}}));
   }else if(condPlanToday.length){
     var firstItem=condPlanToday[0];
-    var condSub=condPlanToday.length>1?(condPlanToday.length+" sessions scheduled \u00b7 tap to log"):((firstItem.detail?firstItem.detail.split("\n")[0]+" \u00b7 ":"")+"tap to log");
+    var fLine=condTargetLine(firstItem)||(firstItem.detail?firstItem.detail.split("\n")[0]:"");
+    var condSub=condPlanToday.length>1?(condPlanToday.length+" sessions scheduled \u00b7 tap to log"):((fLine?fLine+" \u00b7 ":"")+"tap to log");
     feed.appendChild(statusCard({state:"pending",tone:"brand",title:firstItem.title||"Conditioning",sub:condSub,onClick:function(){goTab("conditioning");}}));
   }else{
     feed.appendChild(statusCard({state:"na",title:"Conditioning",sub:"Nothing scheduled today",onClick:function(){goTab("conditioning");}}));

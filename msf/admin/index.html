@@ -330,6 +330,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .builder-tab.bt-add:hover{border-color:var(--sage)}
 .cond-detail-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin:10px 0 5px}
 .cond-detail-ta{width:100%;resize:vertical;min-height:44px;line-height:1.5;font-family:inherit;overflow:hidden;white-space:pre-wrap}
+.cond-target-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px}
+.cond-target-row .cond-in{margin-bottom:0}
+.cond-rounds-in{width:56px;flex:0 0 56px}
+.cond-target-in{flex:1;min-width:70px}
+.cond-unit-sel{flex:0 0 92px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 6px;outline:none}
+.cond-target-dash{color:var(--ink-3);font-size:12px}
+.cond-target-hint{font-size:10px;color:var(--ink-3);margin:-2px 0 8px}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -383,6 +390,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .cond-pill-easy.on{background:rgba(157,180,154,.18);border-color:var(--sage);color:var(--sage)}
 .cond-pill-hard.on{background:rgba(201,122,109,.18);border-color:var(--bad);color:var(--bad)}
 .cond-pill-other.on{background:var(--surface-2);border-color:var(--ink-3);color:var(--ink)}
+.cond-pill-isometric.on{background:rgba(203,166,125,.18);border-color:var(--warn);color:var(--warn)}
 .cond-in{width:100%;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 10px;outline:none;margin-bottom:6px}
 .cond-in:focus{border-color:var(--sage)}
 
@@ -2089,7 +2097,7 @@ async function pfProgram(b,c){  editSlug=c.slug;
   editCondDays=emptyCondDays();
   (rc.data||[]).forEach(function(it){
     var d=it.day_of_week||"mon"; if(!editCondDays[d])editCondDays[d]=[];
-    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
   });
   editDaysCont="pf-prog-days";
   b.innerHTML="";
@@ -2718,7 +2726,7 @@ function renderCondDays(mode){
   items.forEach(function(it,ii){
     var mb=el("div","meal-block");
     var pills=el("div","cond-pills");
-    [["easy","Easy aerobic"],["hard","Hard conditioning"],["other","Other"]].forEach(function(p){
+    [["easy","Easy aerobic"],["hard","Hard conditioning"],["isometric","Isometric hold"],["other","Other"]].forEach(function(p){
       var pill=el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
       pill.onclick=(function(k,dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].kind=k; renderCondDays(m); };})(p[0],day.k,ii,mode);
       pills.appendChild(pill);
@@ -2729,7 +2737,31 @@ function renderCondDays(mode){
     ti.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].title=this.value; };})(day.k,ii,mode);
     mb.appendChild(ti);
 
-    var dl=el("div","cond-detail-lbl","Protocol / detail \u2014 one line per block");
+    // -- structured target: optional, for sessions with a clean numeric shape (duration/distance/steps).
+    // Left blank for anything that doesn't fit one (a class, Pilates, "class-led") -- detail below still covers those. --
+    var trow=el("div","cond-target-row");
+    var rIn=el("input");rIn.type="number";rIn.min="1";rIn.placeholder="\u00d7";rIn.title="Rounds (optional) \u2014 e.g. 5 for \u201c5\u00d71km\u201d";rIn.className="cond-in cond-rounds-in";rIn.value=(it.rounds!=null&&it.rounds!=="")?it.rounds:"";
+    var loIn=el("input");loIn.type="number";loIn.step="any";loIn.placeholder="Target";loIn.className="cond-in cond-target-in";loIn.value=(it.target_low!=null&&it.target_low!=="")?it.target_low:"";
+    var dash=el("span","cond-target-dash","\u2013");
+    var hiIn=el("input");hiIn.type="number";hiIn.step="any";hiIn.placeholder="to (optional)";hiIn.className="cond-in cond-target-in";hiIn.value=(it.target_high!=null&&it.target_high!=="")?it.target_high:"";
+    var uSel=el("select");uSel.className="cond-unit-sel";
+    [["","No target"],["min","minutes"],["km","km"],["steps","steps"],["sec","seconds"]].forEach(function(o){var op=document.createElement("option");op.value=o[0];op.textContent=o[1];uSel.appendChild(op);});
+    uSel.value=it.unit||"";
+    function syncTargetEnabled(){ var on=!!uSel.value; loIn.disabled=!on; hiIn.disabled=!on; loIn.style.opacity=hiIn.style.opacity=on?1:.5; }
+    syncTargetEnabled();
+    rIn.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].rounds=this.value; };})(day.k,ii,mode);
+    loIn.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].target_low=this.value; };})(day.k,ii,mode);
+    hiIn.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].target_high=this.value; };})(day.k,ii,mode);
+    uSel.onchange=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].unit=this.value; syncTargetEnabled(); };})(day.k,ii,mode);
+    trow.appendChild(rIn);trow.appendChild(loIn);trow.appendChild(dash);trow.appendChild(hiIn);trow.appendChild(uSel);
+    mb.appendChild(trow);
+    mb.appendChild(el("div","cond-target-hint","Rounds \u00d7 target, e.g. 5 \u00d7 1 km, or 20\u201330 min"));
+
+    var inIn=el("input");inIn.className="cond-in";inIn.placeholder="Target intensity \u2014 e.g. Zone 2 / HR 120-130, RPE 8, incline 12";inIn.value=it.intensity||"";
+    inIn.oninput=(function(dk,i,m){return function(){ (m==="add"?addCondDays:editCondDays)[dk][i].intensity=this.value; };})(day.k,ii,mode);
+    mb.appendChild(inIn);
+
+    var dl=el("div","cond-detail-lbl","Notes / full breakdown (optional) \u2014 circuit stations, warm-up, cues");
     mb.appendChild(dl);
     var de=el("textarea");de.className="cond-in cond-detail-ta";
     de.placeholder="e.g.\nWarm-up: 10 min easy spin\n5 \u00d7 3 min @ threshold, 2 min easy between\nCool-down: 5 min";
@@ -2746,7 +2778,7 @@ function renderCondDays(mode){
   });
 
   var ab=el("button","add-btn","+ Add conditioning");
-  ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:""}); renderCondDays(m); };})(day.k,mode);
+  ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:"",unit:"",target_low:"",target_high:"",intensity:"",rounds:""}); renderCondDays(m); };})(day.k,mode);
   block.appendChild(ab);
   container.appendChild(block);
 }
@@ -2757,7 +2789,16 @@ async function saveCond(slug, condDays){
   DAYS.forEach(function(day){
     (condDays[day.k]||[]).forEach(function(it,i){
       if(!it.title)return;
-      rows.push({client_slug:slug,day_of_week:day.k,item_order:i,kind:it.kind||"easy",title:it.title,detail:it.detail||null});
+      var hasUnit=!!it.unit;
+      var num=function(v){ if(v===""||v==null)return null; var n=Number(v); return isNaN(n)?null:n; };
+      rows.push({
+        client_slug:slug,day_of_week:day.k,item_order:i,kind:it.kind||"easy",title:it.title,detail:it.detail||null,
+        unit:hasUnit?it.unit:null,
+        target_low:hasUnit?num(it.target_low):null,
+        target_high:hasUnit?num(it.target_high):null,
+        intensity:it.intensity||null,
+        rounds:num(it.rounds)
+      });
     });
   });
   if(rows.length) await sb.from("conditioning_plan").insert(rows);
@@ -2975,7 +3016,7 @@ async function cloneFrom(slug) {
   (r5.data||[]).forEach(function(it){
     var d = it.day_of_week||"mon";
     if(!addCondDays[d]) addCondDays[d]=[];
-    addCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+    addCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
   });
 
   if (r3.data) {
@@ -3038,7 +3079,7 @@ async function openEdit(slug) {
   (r5.data||[]).forEach(function(it){
     var d = it.day_of_week||"mon";
     if(!editCondDays[d])editCondDays[d]=[];
-    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||""});
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
   });
   editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; habitCont="edit-habits"; habitInputId="ehab-new"; weighInCont="edit-weighins"; wiDateId="wi-date"; wiKgId="wi-kg";
   renderDays("edit");

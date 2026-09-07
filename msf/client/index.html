@@ -499,6 +499,16 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
     </div>
   </div>
 
+  <div class="sl-overlay" id="meal-detail-panel">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title" id="md-title">Meal</div>
+        <button class="sl-x" onclick="closeMealDetail()">✕</button>
+      </div>
+      <div class="sl-body" id="md-body"></div>
+    </div>
+  </div>
+
   <div class="sl-overlay" id="shop-list">
     <div class="sl-panel">
       <div class="sl-head">
@@ -1971,6 +1981,61 @@ async function reqRecipe(r){
 
 function closeRecipes(){document.getElementById("recipe-panel").classList.remove("show");}
 
+// ===== Meal detail panel (tap a meal on the Nutrition tab to see title, ingredients & method) =====
+function openMealDetail(meal){
+  var body=document.getElementById("md-body");
+  document.getElementById("md-title").textContent=meal.meal_name||"Meal";
+  body.innerHTML="";
+
+  var mr=el("div","rp-macro-row");
+  [["Calories",(meal.calories||0)],["Protein",(meal.protein||0)+"g"],["Carbs",(meal.carbs||0)+"g"],["Fat",(meal.fats||0)+"g"]].forEach(function(m){
+    var b=el("div","rp-macro");
+    b.appendChild(el("div","rp-macro-v",String(m[1])));
+    b.appendChild(el("div","rp-macro-l",m[0]));
+    mr.appendChild(b);
+  });
+  body.appendChild(mr);
+
+  if(meal.ingredients){
+    body.appendChild(el("div","sec-label","Ingredients"));
+    var il=el("div","rp-list");
+    meal.ingredients.split("\n").forEach(function(line){
+      if(line.trim())il.appendChild(el("div","rp-ing",line.trim()));
+    });
+    body.appendChild(il);
+  }
+
+  body.appendChild(el("div","sec-label","Method"));
+  if(meal.instructions&&meal.instructions.trim()){
+    var sl=el("div","rp-list");
+    var n=0;
+    meal.instructions.split("\n").forEach(function(line){
+      if(!line.trim())return;
+      n++;
+      var step=el("div","rp-step");
+      step.appendChild(el("div","rp-step-n",String(n)));
+      step.appendChild(el("div","rp-step-t",line.trim()));
+      sl.appendChild(step);
+    });
+    body.appendChild(sl);
+  } else {
+    body.appendChild(el("div","empty-txt","No instructions added for this meal yet — ask your coach, or tap Swap below to pick a meal that has them."));
+  }
+
+  var btnRow=el("div","meal-btn-row");btnRow.style.marginTop="18px";
+  var swapBtn=el("button","req-btn","⇄ Swap this meal");
+  swapBtn.onclick=function(ev){closeMealDetail();openSwap(meal,ev);};
+  btnRow.appendChild(swapBtn);
+  var reqd=!!mealReqs[meal.meal_name];
+  var reqBtn=el("button","req-btn"+(reqd?" active":""), reqd?"✓ Change requested":"Request change");
+  reqBtn.onclick=function(ev){reqMealChange(meal,ev);reqBtn.textContent=(!!mealReqs[meal.meal_name])?"✓ Change requested":"Request change";reqBtn.classList.toggle("active",!!mealReqs[meal.meal_name]);};
+  btnRow.appendChild(reqBtn);
+  body.appendChild(btnRow);
+
+  document.getElementById("meal-detail-panel").classList.add("show");
+}
+function closeMealDetail(){document.getElementById("meal-detail-panel").classList.remove("show");}
+
 async function loadNutDay(){
   var dayKey=getDayKey(nutDate);
 
@@ -2071,25 +2136,15 @@ function renderNutUI(){
       var ticked=!!nutLogs[meal.id];
       var card=el("div","meal-card"+(ticked?" ticked":""));
       card.dataset.mealId=meal.id;
-      card.onclick=function(){toggleMeal(meal);};
+      card.onclick=function(){openMealDetail(meal);};
 
       var tick=el("div","meal-tick",ticked?"\u2713":"");
+      tick.onclick=function(ev){ev.stopPropagation();toggleMeal(meal);};
       var info=el("div","meal-info");
       info.appendChild(el("div","meal-name",meal.meal_name));
 
-      // Show ingredients
-      if(meal.ingredients){
-        var lines=meal.ingredients.split("\n");
-        var ingDiv=el("div","");
-        ingDiv.style.cssText="font-size:12px;color:rgba(244,238,228,.5);margin-top:4px;line-height:1.6";
-        lines.forEach(function(line){
-          if(line.trim())ingDiv.appendChild(el("div","",line.trim()));
-        });
-        info.appendChild(ingDiv);
-      }
-
-      // Macros
-      var macroLine=el("div","meal-macros",meal.calories+"kcal  \u2022  P:"+meal.protein+"g  C:"+meal.carbs+"g  F:"+meal.fats+"g");
+      // Macros + tap hint
+      var macroLine=el("div","meal-macros",meal.calories+"kcal  \u2022  P:"+meal.protein+"g  C:"+meal.carbs+"g  F:"+meal.fats+"g  \u2022  tap for recipe");
       macroLine.style.marginTop="6px";
       info.appendChild(macroLine);
 
@@ -2123,7 +2178,7 @@ async function toggleMeal(meal){
 }
 
 async function reqMealChange(meal,ev){
-  ev.stopPropagation();
+  if(ev)ev.stopPropagation();
   var dayKey=getDayKey(nutDate);
   var existing=mealReqs[meal.meal_name];
   if(existing){
@@ -2151,10 +2206,10 @@ function closeSwap(){ document.getElementById("swap-ov").classList.remove("show"
 async function loadSwapPool(){
   if(swapPool)return;
   var pool=[];
-  var rr=await sb.from("recipes").select("title,ingredients,calories,protein,carbs,fats");
-  (rr.data||[]).forEach(function(r){ pool.push({name:r.title,ingredients:r.ingredients||"",calories:r.calories||0,protein:r.protein||0,carbs:r.carbs||0,fats:r.fats||0}); });
-  var rm=await sb.from("meal_templates").select("meal_name,ingredients,calories,protein,carbs,fats");
-  (rm.data||[]).forEach(function(m){ pool.push({name:m.meal_name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0}); });
+  var rr=await sb.from("recipes").select("title,ingredients,instructions,calories,protein,carbs,fats");
+  (rr.data||[]).forEach(function(r){ pool.push({name:r.title,ingredients:r.ingredients||"",instructions:(r.instructions||"").replace(" Nutritional Values",""),calories:r.calories||0,protein:r.protein||0,carbs:r.carbs||0,fats:r.fats||0}); });
+  var rm=await sb.from("meal_templates").select("meal_name,ingredients,instructions,calories,protein,carbs,fats");
+  (rm.data||[]).forEach(function(m){ pool.push({name:m.meal_name,ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0}); });
   var seen={}, ded=[];
   pool.forEach(function(p){ if(!(p.name)||(p.calories||0)<=0)return; var k=((p.name||"")+"|"+(p.ingredients||"")).toLowerCase().replace(/\s+/g," ").trim(); if(seen[k])return; seen[k]=1; ded.push(p); });
   swapPool=ded;
@@ -2187,7 +2242,7 @@ function renderSwapMatches(){
 async function doSwap(chosen){
   var m=swapMeal;
   var up=await sb.from("meal_templates").update({
-    meal_name:chosen.name, ingredients:chosen.ingredients, calories:chosen.calories, protein:chosen.protein, carbs:chosen.carbs, fats:chosen.fats
+    meal_name:chosen.name, ingredients:chosen.ingredients, instructions:chosen.instructions||"", calories:chosen.calories, protein:chosen.protein, carbs:chosen.carbs, fats:chosen.fats
   }).eq("id",m.id);
   if(up.error){ alert("Couldn't swap that meal — please try again."); return; }
   await sb.from("meal_swaps").insert({

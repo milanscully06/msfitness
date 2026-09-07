@@ -321,6 +321,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .builder-tab.on{background:#C8622E;border-color:#C8622E;color:#fff}
 .bt-dot{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--sage);color:var(--bg);font-size:10px;font-weight:700}
 .builder-tab.on .bt-dot{background:rgba(0,0,0,.22);color:#fff}
+.modal-jumpnav{position:sticky;top:-22px;z-index:5;background:var(--surface);margin:0 -18px 14px;padding:10px 18px 10px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line-2)}
+.modal-jumpnav::-webkit-scrollbar{display:none}
+.modal-jumpnav button{flex:0 0 auto;background:var(--bg-2,#1a1a1a);border:1px solid var(--line);border-radius:10px;color:var(--ink-2);font-family:var(--body);font-size:12px;font-weight:600;padding:7px 11px;cursor:pointer;white-space:nowrap}
+@media(min-width:900px){.modal-jumpnav{top:-26px;margin:0 -26px 14px;padding:10px 26px 10px}}
 .meal-total-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--surface-2);border:1px solid var(--line2,#3a2e24);border-radius:12px;padding:13px 12px;margin-bottom:16px}
 .mt-cell{text-align:center}
 .mt-l{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
@@ -602,6 +606,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div class="modal-box">
   <div class="modal-title">Add new client</div>
   <div class="modal-sub">Fill in their details and build their program</div>
+  <div class="modal-jumpnav">
+    <button type="button" data-jump="add-sec-training">Training</button>
+    <button type="button" data-jump="add-sec-nutrition">Nutrition</button>
+    <button type="button" data-jump="add-sec-cond">Conditioning</button>
+  </div>
   <div class="clone-box">
     <label class="form-label">Start from an existing client</label>
     <select class="form-input" id="clone-src"><option value="">Blank — build from scratch</option></select>
@@ -627,6 +636,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <input class="form-input" id="asl" placeholder="e.g. jake">
     <div style="font-size:11px;color:var(--ink-2);margin-top:4px">Link: /client/<span id="sp">slug</span></div>
   </div>
+  <div id="add-sec-training">
   <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
   <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
   <div id="add-days"></div>
@@ -635,7 +645,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <button class="add-btn" id="add-blk-btn">📚 Insert block</button>
     <button class="add-btn" id="add-wk-btn">📅 Insert week</button>
   </div>
-  <div class="nut-section">
+  </div>
+  <div class="nut-section" id="add-sec-nutrition">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
     <div class="nut-row">
@@ -652,7 +663,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div id="add-meal-days"></div>
   </div>
-  <div class="nut-section">
+  <div class="nut-section" id="add-sec-cond">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
     <div id="add-cond-days"></div>
   </div>
@@ -666,6 +677,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div class="modal-box">
   <div class="modal-title" id="edit-title">Edit client</div>
   <div class="modal-sub">Update details or modify their program</div>
+  <div class="modal-jumpnav">
+    <button type="button" data-jump="edit-sec-training">Training</button>
+    <button type="button" data-jump="edit-sec-nutrition">Nutrition</button>
+    <button type="button" data-jump="edit-sec-cond">Conditioning</button>
+    <button type="button" data-jump="edit-sec-habits">Habits</button>
+    <button type="button" data-jump="edit-sec-weighin">Weigh-ins</button>
+  </div>
   <div class="form-group"><label class="form-label">Full name</label><input class="form-input" id="en"></div>
   <div class="form-group"><label class="form-label">Goal</label><input class="form-input" id="eg"></div>
   <div class="pkg-row">
@@ -690,6 +708,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <input class="form-input" id="e-slug" placeholder="e.g. jake">
     <div style="font-size:11px;color:var(--bad);margin-top:5px;line-height:1.5">Changing this sets their link to /client/<span id="e-sp">slug</span> and moves all their programs, meals, weight, food logs, photos &amp; lift history across. Their old link stops working.</div>
   </div>
+  <div id="edit-sec-training">
   <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
   <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
   <div id="edit-days"></div>
@@ -698,7 +717,8 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     <button class="add-btn" id="edit-blk-btn">📚 Insert block</button>
     <button class="add-btn" id="edit-wk-btn">📅 Insert week</button>
   </div>
-  <div class="nut-section">
+  </div>
+  <div class="nut-section" id="edit-sec-nutrition">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
     <div class="nut-row">
@@ -715,11 +735,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div id="edit-meal-days"></div>
   </div>
-  <div class="nut-section">
+  <div class="nut-section" id="edit-sec-cond">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Conditioning schedule</div>
     <div id="edit-cond-days"></div>
   </div>
-  <div class="nut-section">
+  <div class="nut-section" id="edit-sec-habits">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Habits for this client</div>
     <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Untick a shared habit to hide it from this client, or add one just for them.</div>
     <div id="edit-habits"></div>
@@ -728,7 +748,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
       <button class="btn-outline" id="ehab-add-btn" style="white-space:nowrap">Add</button>
     </div>
   </div>
-  <div class="nut-section">
+  <div class="nut-section" id="edit-sec-weighin">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px">Weigh-ins</div>
     <div style="font-size:11px;color:var(--ink-3);margin-bottom:12px">Add a missing starting weight, or correct an entry. This edits their real history — the client sees these numbers.</div>
     <div class="wi-add-row">
@@ -799,6 +819,12 @@ document.getElementById("res-btn").onclick = openResources;
 document.getElementById("tmpl-btn").onclick = openTemplates;
 document.getElementById("tmpl-close-btn").onclick = function(){closeModal("modal-templates");};
 document.getElementById("tmpl-pick-close-btn").onclick = function(){closeModal("modal-tmpl-pick");};
+document.addEventListener("click", function(e){
+  var t = e.target.closest ? e.target.closest("[data-jump]") : null;
+  if(!t) return;
+  var target = document.getElementById(t.getAttribute("data-jump"));
+  if(target) target.scrollIntoView({behavior:"smooth", block:"start"});
+});
 
 // ===== MEAL LIBRARY (pick meals from other clients' plans, or from the recipe library) =====
 var mealibTarget=null, mealibMode=null, mealibCacheMine=null, mealibCacheRecipes=null;
@@ -863,7 +889,7 @@ function drawMealibChips(){
 async function loadMealLibMine(){
   var box=document.getElementById("mealib-list");
   box.innerHTML='<div class="loader">Loading\u2026</div>';
-  var r=await sb.from("meal_templates").select("meal_name,ingredients,calories,protein,carbs,fats");
+  var r=await sb.from("meal_templates").select("meal_name,ingredients,instructions,calories,protein,carbs,fats");
   if(r.error){ box.innerHTML='<div style="color:var(--bad);font-size:13px">Couldn\'t load meals: '+r.error.message+'</div>'; return; }
   var seen={}, lib=[];
   (r.data||[]).forEach(function(m){
@@ -902,9 +928,23 @@ function renderMealLibMine(q){
     card.appendChild(el("div","mealib-name", m.meal_name||"(unnamed meal)"));
     if(m.ingredients){ card.appendChild(el("div","mealib-ing", m.ingredients.split("\n").map(function(s){return s.trim();}).filter(Boolean).slice(0,3).join(" \u00b7 "))); }
     card.appendChild(el("div","mealib-macros", (m.calories||0)+" kcal \u00b7 "+(m.protein||0)+"P "+(m.carbs||0)+"C "+(m.fats||0)+"F"));
+    if(m.instructions)card.appendChild(mealibInstrToggle(m.instructions));
     card.onclick=function(){ addFromLib(m); };
     box.appendChild(card);
   });
+}
+
+// small inline "View instructions" toggle used on library cards \u2014 stops the click
+// from bubbling up to the card's own onclick (which would add the meal to the plan).
+function mealibInstrToggle(instructions){
+  var wrap=el("div","");
+  var body=el("div","");body.style.cssText="display:none;font-size:12px;color:var(--ink-3);margin-top:6px;line-height:1.6;white-space:pre-line";
+  body.textContent=instructions;
+  var btn=el("button","btn-outline","\ud83d\udcd6 View instructions");
+  btn.style.cssText="padding:5px 9px;font-size:11px;margin-top:6px";
+  btn.onclick=function(ev){ ev.stopPropagation(); var open=body.style.display!=="none"; body.style.display=open?"none":""; btn.textContent=open?"\ud83d\udcd6 View instructions":"\ud83d\udcd6 Hide instructions"; };
+  wrap.appendChild(btn);wrap.appendChild(body);
+  return wrap;
 }
 
 function renderMealLibRecipes(q){
@@ -927,6 +967,7 @@ function renderMealLibRecipes(q){
     card.appendChild(nameRow);
     if(r.ingredients){ card.appendChild(el("div","mealib-ing", r.ingredients.split("\n").map(function(s){return s.trim();}).filter(Boolean).slice(0,3).join(" \u00b7 "))); }
     card.appendChild(el("div","mealib-macros", (r.calories||0)+" kcal \u00b7 "+(r.protein||0)+"P "+(r.carbs||0)+"C "+(r.fats||0)+"F"));
+    if(r.instructions)card.appendChild(mealibInstrToggle(r.instructions));
     card.onclick=function(){ addFromLib(r); };
     box.appendChild(card);
   });
@@ -935,7 +976,7 @@ function renderMealLibRecipes(q){
 function addFromLib(m){
   var M=mealibMode==="add"?addMealDays:editMealDays;
   if(!M[mealibTarget])M[mealibTarget]=[];
-  M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+  M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
   closeModal("modal-mealib");
   renderMealDays(mealibMode);
 }
@@ -1673,7 +1714,7 @@ var condActiveDay="mon";
 var habitCont="edit-habits", habitInputId="ehab-new";
 var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
 var profileSlug=null, profileTabName="overview";
-var PF_TABS=[["overview","Overview"],["program","Program"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
+var PF_TABS=[["overview","Overview"],["program","Program"],["conditioning","Conditioning"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
 
 function openProfile(slug){
   var c=allClients.find(function(x){return x.slug===slug;});
@@ -1709,6 +1750,7 @@ function renderPfTab(){
   if(!c)return;
   if(profileTabName==="overview"){ pfOverview(b,c); return; }
   if(profileTabName==="program"){ pfProgram(b,c); return; }
+  if(profileTabName==="conditioning"){ pfConditioning(b,c); return; }
   if(profileTabName==="nutrition"){ pfNutrition(b,c); return; }
   if(profileTabName==="habits"){ pfHabits(b,c); return; }
   if(profileTabName==="progress"){ pfProgress(b,c); return; }
@@ -1838,7 +1880,7 @@ async function placeRecipe(targetMeal,mode){
     ? ("Replace "+dayName+" \u00b7 "+(targetMeal.meal_name||"meal")+" with \""+rec.title+"\"?\n\nTheir current meal will be overwritten.")
     : ("Add \""+rec.title+"\" as an extra meal on "+dayName+"?\n\nThis adds "+(rec.calories||0)+" kcal to that day.");
   if(!confirm(msg))return;
-  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0 };
+  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", instructions:rec.instructions||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0 };
   if(mode==="replace"){
     var u=await sb.from("meal_templates").update(payload).eq("id",targetMeal.id);
     if(u.error){alert("Couldn't update that meal: "+u.error.message);return;}
@@ -2145,15 +2187,9 @@ async function saveNutritionOnly(slug,btn){
 async function pfProgram(b,c){  editSlug=c.slug;
   b.appendChild(el("div","loader","Loading program\u2026"));
   var r=await sb.from("programs").select("*").eq("client_slug",c.slug).order("exercise_order");
-  var rc=await sb.from("conditioning_plan").select("*").eq("client_slug",c.slug).order("item_order");
   var rl=await sb.from("lift_logs").select("ex_name,weight,reps,logged_at").eq("client",c.slug);
   editLiftHistoryByName=buildLiftHistoryIndex(rl.data||[]);
   editDays=buildEditDays(r.data||[]);
-  editCondDays=emptyCondDays();
-  (rc.data||[]).forEach(function(it){
-    var d=it.day_of_week||"mon"; if(!editCondDays[d])editCondDays[d]=[];
-    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
-  });
   editDaysCont="pf-prog-days";
   b.innerHTML="";
 
@@ -2183,12 +2219,6 @@ async function pfProgram(b,c){  editSlug=c.slug;
   insWkBtn.onclick=function(){ openTmplPicker("week","edit"); };
   progBtnRow.appendChild(insWkBtn);
   gsec.appendChild(progBtnRow);
-
-  var csec=el("div","pf-nut-sec");csec.style.marginTop="26px";
-  csec.appendChild(el("div","pf-sub","Conditioning schedule"));
-  var chost=el("div","");chost.id="pf-cond-days"; csec.appendChild(chost);
-  b.appendChild(csec);
-  editCondCont="pf-cond-days"; renderCondDays("edit");
 
   var gpsec=el("div","pf-nut-sec");gpsec.style.marginTop="26px";
   gpsec.appendChild(el("div","pf-sub","Gym progress \u2014 what they've logged"));
@@ -2351,8 +2381,40 @@ async function saveProgramOnly(slug,btn){
     var pr=await sb.from("programs").insert(rows);
     if(pr.error){ alert("Save failed: "+pr.error.message); if(btn){btn.textContent=old;btn.disabled=false;} return; }
   }
+  if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
+}
+
+// Conditioning now lives in its own profile tab (was previously nested inside
+// Program, which meant scrolling past the whole gym-day builder to reach it).
+async function pfConditioning(b,c){  editSlug=c.slug;
+  b.appendChild(el("div","loader","Loading conditioning\u2026"));
+  var rc=await sb.from("conditioning_plan").select("*").eq("client_slug",c.slug).order("item_order");
+  editCondDays=emptyCondDays();
+  (rc.data||[]).forEach(function(it){
+    var d=it.day_of_week||"mon"; if(!editCondDays[d])editCondDays[d]=[];
+    editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
+  });
+  b.innerHTML="";
+
+  var bar=el("div","pf-savebar");
+  bar.appendChild(el("div","pf-savebar-l","Conditioning"));
+  var save=el("button","btn-green pf-save-btn","Save conditioning");
+  save.onclick=function(){ saveCondOnly(c.slug,save); };
+  bar.appendChild(save);
+  b.appendChild(bar);
+
+  var csec=el("div","pf-nut-sec");
+  csec.appendChild(el("div","pf-sub","Conditioning schedule"));
+  var chost=el("div","");chost.id="pf-cond-days"; csec.appendChild(chost);
+  b.appendChild(csec);
+  editCondCont="pf-cond-days"; renderCondDays("edit");
+}
+
+async function saveCondOnly(slug,btn){
+  var old=btn?btn.textContent:"";
+  if(btn){btn.textContent="Saving\u2026";btn.disabled=true;}
   try{ await saveCond(slug,editCondDays); }
-  catch(e){ alert("Program saved, but conditioning failed: "+(e&&e.message?e.message:e)); if(btn){btn.textContent=old;btn.disabled=false;} return; }
+  catch(e){ alert("Save failed: "+(e&&e.message?e.message:e)); if(btn){btn.textContent=old;btn.disabled=false;} return; }
   if(btn){btn.textContent="Saved \u2713";setTimeout(function(){btn.textContent=old;btn.disabled=false;},1400);}
 }
 
@@ -2948,6 +3010,20 @@ function renderMealDays(mode) {
     ta.placeholder="e.g. 120g oats, 250g Greek yoghurt (one per line)"; ta.value=meal.ingredients||"";
     ta.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].ingredients=this.value;};})(day.k,mi,mode);
     mb.appendChild(ta);
+
+    // Instructions: collapsed by default so the builder doesn't get noisy — click to view/add.
+    var instrWrap=el("div","");instrWrap.style.display="none";instrWrap.style.marginBottom="8px";
+    var instrTa=el("textarea","form-input");instrTa.style.cssText="min-height:80px;resize:vertical;font-family:inherit";
+    instrTa.placeholder="e.g.\nBrown the mince in a pan.\nStir through the sauce and simmer 5 min.\nServe over rice.";
+    instrTa.value=meal.instructions||"";
+    instrTa.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].instructions=this.value;};})(day.k,mi,mode);
+    instrWrap.appendChild(instrTa);
+    var instrBtn=el("button","add-btn", meal.instructions?"📖 View/edit instructions":"📖 Add instructions");
+    instrBtn.style.marginBottom="8px";
+    instrBtn.onclick=function(){ var open=instrWrap.style.display!=="none"; instrWrap.style.display=open?"none":""; instrBtn.textContent=open?(instrTa.value?"📖 View/edit instructions":"📖 Add instructions"):"📖 Hide instructions"; };
+    mb.appendChild(instrBtn);
+    mb.appendChild(instrWrap);
+
     var ml=el("div","nut-label","Macros"); ml.style.marginBottom="4px"; mb.appendChild(ml);
     var mg=el("div","macro-grid");
     [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
@@ -2975,7 +3051,7 @@ function renderMealDays(mode) {
   });
 
   var ab=el("button","add-btn","+ Add meal");
-  ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
+  ab.onclick=(function(d2,m){return function(){var meals2=m==="add"?addMealDays:editMealDays;if(!meals2[d2])meals2[d2]=[];meals2[d2].push({name:"",ingredients:"",instructions:"",calories:0,protein:0,carbs:0,fats:0});renderMealDays(m);};})(day.k,mode);
   block.appendChild(ab);
   var libB=el("button","add-btn lib-add-btn","\uFF0B From library");
   libB.onclick=(function(d2,m){return function(){ openMealLib(d2,m); };})(day.k,mode);
@@ -3199,7 +3275,7 @@ async function saveNutrition(slug, prefix, mealDays) {
     var dayMeals=mealDays[day.k]||[];
     dayMeals.forEach(function(m,i){
       if(!m.name)return;
-      rows.push({client_slug:slug,day_of_week:day.k,option_num:1,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+      rows.push({client_slug:slug,day_of_week:day.k,option_num:1,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
     });
   });
   if(rows.length) await sb.from("meal_templates").insert(rows);
@@ -3328,7 +3404,7 @@ async function loadMealDayTemplates(){
   var rm=await sb.from("meal_day_template_meals").select("*").order("meal_order");
   var byT={};
   (rm.data||[]).forEach(function(x){
-    (byT[x.template_id]=byT[x.template_id]||[]).push({name:x.meal_name||"",ingredients:x.ingredients||"",calories:x.calories||0,protein:x.protein||0,carbs:x.carbs||0,fats:x.fats||0});
+    (byT[x.template_id]=byT[x.template_id]||[]).push({name:x.meal_name||"",ingredients:x.ingredients||"",instructions:x.instructions||"",calories:x.calories||0,protein:x.protein||0,carbs:x.carbs||0,fats:x.fats||0});
   });
   mealDayTemplates=(rt.data||[]).map(function(t){return {id:t.id,name:t.name||"",calories:t.calories,protein:t.protein,carbs:t.carbs,fats:t.fats,meals:byT[t.id]||[]};});
 }
@@ -3669,6 +3745,17 @@ function renderMealTemplateEditor(body){
     ta.placeholder="e.g. 120g oats, 250g Greek yoghurt";ta.value=meal.ingredients||"";
     ta.oninput=function(){meal.ingredients=this.value;};
     mb.appendChild(ta);
+    var instrWrap=el("div","");instrWrap.style.display="none";instrWrap.style.marginBottom="8px";
+    var instrTa=el("textarea","form-input");instrTa.style.cssText="min-height:80px;resize:vertical;font-family:inherit";
+    instrTa.placeholder="e.g.\nBrown the mince in a pan.\nStir through the sauce and simmer 5 min.\nServe over rice.";
+    instrTa.value=meal.instructions||"";
+    instrTa.oninput=function(){meal.instructions=this.value;};
+    instrWrap.appendChild(instrTa);
+    var instrBtn=el("button","add-btn", meal.instructions?"📖 View/edit instructions":"📖 Add instructions");
+    instrBtn.style.marginBottom="8px";
+    instrBtn.onclick=function(){ var open=instrWrap.style.display!=="none"; instrWrap.style.display=open?"none":""; instrBtn.textContent=open?(instrTa.value?"📖 View/edit instructions":"📖 Add instructions"):"📖 Hide instructions"; };
+    mb.appendChild(instrBtn);
+    mb.appendChild(instrWrap);
     var ml=el("div","nut-label","Macros");ml.style.marginBottom="4px";mb.appendChild(ml);
     var mg2=el("div","macro-grid");
     [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
@@ -3685,7 +3772,7 @@ function renderMealTemplateEditor(body){
   });
   sec.appendChild(list);
   var addM=el("button","add-btn","+ Add meal");
-  addM.onclick=function(){t.meals.push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderTmplModal();};
+  addM.onclick=function(){t.meals.push({name:"",ingredients:"",instructions:"",calories:0,protein:0,carbs:0,fats:0});renderTmplModal();};
   sec.appendChild(addM);
 
   var actions=el("div","modal-actions");actions.style.cssText="display:flex;gap:8px;margin-top:16px";
@@ -3713,7 +3800,7 @@ async function saveMealDayTemplate(t){
     id=ins.data.id;
   }
   if(validMeals.length){
-    var rows=validMeals.map(function(m,i){return {template_id:id,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0};});
+    var rows=validMeals.map(function(m,i){return {template_id:id,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0};});
     await sb.from("meal_day_template_meals").insert(rows);
   }
   tmplMealEdit=null;

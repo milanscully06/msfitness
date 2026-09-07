@@ -2840,9 +2840,14 @@ function renderCondDays(mode){
     block.appendChild(mb);
   });
 
+  var btnRow=el("div","");btnRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap";
   var ab=el("button","add-btn","+ Add conditioning");
   ab.onclick=(function(dk,m){return function(){ var D=m==="add"?addCondDays:editCondDays; if(!D[dk])D[dk]=[]; D[dk].push({kind:"easy",title:"",detail:"",unit:"",target_low:"",target_high:"",intensity:"",rounds:""}); renderCondDays(m); };})(day.k,mode);
-  block.appendChild(ab);
+  btnRow.appendChild(ab);
+  var tb=el("button","add-btn","+ Insert from template");
+  tb.onclick=function(){ openTmplPicker("cond",mode); };
+  btnRow.appendChild(tb);
+  block.appendChild(btnRow);
   container.appendChild(block);
 }
 
@@ -3299,8 +3304,8 @@ async function delClient() {
 
 // ===================== TEMPLATES (day-blocks, week templates, meal-day templates) =====================
 var TMPL_TAB="program";
-var progTemplateBlocks=[], progWeekTemplates=[], mealDayTemplates=[];
-var tmplBlockEdit=null, tmplWeekEdit=null, tmplMealEdit=null;
+var progTemplateBlocks=[], progWeekTemplates=[], mealDayTemplates=[], condTemplates=[];
+var tmplBlockEdit=null, tmplWeekEdit=null, tmplMealEdit=null, tmplCondEdit=null;
 
 async function loadProgTemplates(){
   var rb=await sb.from("program_day_blocks").select("*").order("name");
@@ -3328,12 +3333,17 @@ async function loadMealDayTemplates(){
   mealDayTemplates=(rt.data||[]).map(function(t){return {id:t.id,name:t.name||"",calories:t.calories,protein:t.protein,carbs:t.carbs,fats:t.fats,meals:byT[t.id]||[]};});
 }
 
+async function loadCondTemplates(){
+  var rc=await sb.from("conditioning_templates").select("*").order("title");
+  condTemplates=(rc.data||[]).map(function(t){return {id:t.id,kind:t.kind||"isometric",title:t.title||"",detail:t.detail||"",unit:t.unit||"",target_low:t.target_low,target_high:t.target_high,intensity:t.intensity||"",rounds:t.rounds};});
+}
+
 async function openTemplates(){
   openModal("modal-templates");
   var body=document.getElementById("tmpl-body");
   body.innerHTML='<div class="loader">Loading…</div>';
-  tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;
-  await Promise.all([loadProgTemplates(),loadMealDayTemplates()]);
+  tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;tmplCondEdit=null;
+  await Promise.all([loadProgTemplates(),loadMealDayTemplates(),loadCondTemplates()]);
   renderTmplModal();
 }
 
@@ -3341,13 +3351,13 @@ function renderTmplModal(){
   var body=document.getElementById("tmpl-body");
   body.innerHTML="";
   var tabs=el("div","builder-tabs");
-  [["program","Program"],["meals","Meals"]].forEach(function(t){
+  [["program","Program"],["meals","Meals"],["cond","Conditioning"]].forEach(function(t){
     var b=el("button","builder-tab"+(TMPL_TAB===t[0]?" on":""),t[1]);
-    b.onclick=function(){TMPL_TAB=t[0];tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;renderTmplModal();};
+    b.onclick=function(){TMPL_TAB=t[0];tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;tmplCondEdit=null;renderTmplModal();};
     tabs.appendChild(b);
   });
   body.appendChild(tabs);
-  if(TMPL_TAB==="program")renderProgTmplTab(body); else renderMealTmplTab(body);
+  if(TMPL_TAB==="program")renderProgTmplTab(body); else if(TMPL_TAB==="meals")renderMealTmplTab(body); else renderCondTmplTab(body);
 }
 
 // ---- day-block + week-template (program) tab ----
@@ -3717,6 +3727,115 @@ async function deleteMealDayTemplate(id){
   renderTmplModal();
 }
 
+// ---- conditioning-session templates (e.g. isometric power/control days) ----
+function renderCondTmplTab(body){
+  if(tmplCondEdit){ renderCondTemplateEditor(body); return; }
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub","Conditioning session templates"));
+  sec.appendChild(el("div","pf-hint2","A single reusable conditioning session — e.g. an isometric power/control day. Insert one into any client’s conditioning schedule."));
+  if(!condTemplates.length)sec.appendChild(el("div","wt-empty","No conditioning templates yet."));
+  condTemplates.forEach(function(t){
+    var row=el("div","wi-row");
+    var l=el("div","");l.style.flex="1";
+    l.appendChild(el("div","",t.title||"(untitled)"));
+    var target=t.unit?( (t.rounds?t.rounds+"×":"") + t.target_low + (t.target_high&&t.target_high!==t.target_low?"–"+t.target_high:"") + " " + t.unit ):"";
+    var sub=[t.kind,target].filter(Boolean).join(" · ");
+    var subEl=el("div","",sub);subEl.style.cssText="font-size:11px;color:var(--ink-3);margin-top:2px";
+    l.appendChild(subEl);
+    row.appendChild(l);
+    var eb=el("button","btn-outline","Edit");eb.style.cssText="padding:6px 10px;font-size:12px";
+    eb.onclick=function(){tmplCondEdit=deep(t);renderTmplModal();};
+    row.appendChild(eb);
+    var db=el("button","del-btn","✕");
+    db.onclick=function(){ if(!confirm('Delete "'+(t.title||"")+'"?'))return; deleteCondTemplate(t.id); };
+    row.appendChild(db);
+    sec.appendChild(row);
+  });
+  var addT=el("button","add-btn","+ New conditioning template");
+  addT.onclick=function(){ tmplCondEdit={id:null,kind:"isometric",title:"",detail:"",unit:"",target_low:"",target_high:"",intensity:"",rounds:""}; renderTmplModal(); };
+  sec.appendChild(addT);
+  body.appendChild(sec);
+}
+
+function renderCondTemplateEditor(body){
+  var it=tmplCondEdit;
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub", it.id?"Edit conditioning template":"New conditioning template"));
+
+  var pills=el("div","cond-pills");
+  [["easy","Easy aerobic"],["hard","Hard conditioning"],["isometric","Isometric hold"],["other","Other"]].forEach(function(p){
+    var pill=el("button","cond-pill cond-pill-"+p[0]+((it.kind||"easy")===p[0]?" on":""),p[1]);
+    pill.onclick=function(){ it.kind=p[0]; renderTmplModal(); };
+    pills.appendChild(pill);
+  });
+  sec.appendChild(pills);
+
+  var ti=el("input");ti.className="cond-in";ti.placeholder="Session — e.g. Isometric Power & Control — Lower Body";ti.value=it.title||"";
+  ti.oninput=function(){ it.title=this.value; };
+  sec.appendChild(ti);
+
+  var trow=el("div","cond-target-row");
+  var rIn=el("input");rIn.type="number";rIn.min="1";rIn.placeholder="×";rIn.title="Rounds (optional)";rIn.className="cond-in cond-rounds-in";rIn.value=(it.rounds!=null&&it.rounds!=="")?it.rounds:"";
+  var loIn=el("input");loIn.type="number";loIn.step="any";loIn.placeholder="Target";loIn.className="cond-in cond-target-in";loIn.value=(it.target_low!=null&&it.target_low!=="")?it.target_low:"";
+  var dash=el("span","cond-target-dash","–");
+  var hiIn=el("input");hiIn.type="number";hiIn.step="any";hiIn.placeholder="to (optional)";hiIn.className="cond-in cond-target-in";hiIn.value=(it.target_high!=null&&it.target_high!=="")?it.target_high:"";
+  var uSel=el("select");uSel.className="cond-unit-sel";
+  [["","No target"],["min","minutes"],["km","km"],["steps","steps"],["sec","seconds"]].forEach(function(o){var op=document.createElement("option");op.value=o[0];op.textContent=o[1];uSel.appendChild(op);});
+  uSel.value=it.unit||"";
+  function syncTargetEnabled(){ var on=!!uSel.value; loIn.disabled=!on; hiIn.disabled=!on; loIn.style.opacity=hiIn.style.opacity=on?1:.5; }
+  syncTargetEnabled();
+  rIn.oninput=function(){ it.rounds=this.value; };
+  loIn.oninput=function(){ it.target_low=this.value; };
+  hiIn.oninput=function(){ it.target_high=this.value; };
+  uSel.onchange=function(){ it.unit=this.value; syncTargetEnabled(); };
+  trow.appendChild(rIn);trow.appendChild(loIn);trow.appendChild(dash);trow.appendChild(hiIn);trow.appendChild(uSel);
+  sec.appendChild(trow);
+  sec.appendChild(el("div","cond-target-hint","Rounds × target, e.g. 5 × 1 km, or 15–18 min for a whole session"));
+
+  var inIn=el("input");inIn.className="cond-in";inIn.placeholder="Target intensity — e.g. Max effort holds + RPE 8-9 control holds";inIn.value=it.intensity||"";
+  inIn.oninput=function(){ it.intensity=this.value; };
+  sec.appendChild(inIn);
+
+  sec.appendChild(el("div","cond-detail-lbl","Notes / full breakdown — exercises, holds, sets, cues"));
+  var de=el("textarea");de.className="cond-in cond-detail-ta";
+  de.placeholder="e.g.\nWarm-up: 5 min easy bike\nPOWER: Isometric Squat vs Pins — 5 x 5s max effort, 90s rest\nCONTROL: Spanish Squat Hold — 3 x 30-45s\nCool-down: 3 min walk";
+  de.style.minHeight="140px";
+  de.value=it.detail||"";
+  de.oninput=function(){ it.detail=this.value; };
+  sec.appendChild(de);
+
+  var actions=el("div","modal-actions");actions.style.cssText="display:flex;gap:8px;margin-top:16px";
+  var save=el("button","btn-green",it.id?"Save template":"Create template");save.style.flex="1";
+  save.onclick=function(){ saveCondTemplate(it); };
+  var cancel=el("button","btn-outline","Cancel");
+  cancel.onclick=function(){tmplCondEdit=null;renderTmplModal();};
+  actions.appendChild(save);actions.appendChild(cancel);
+  sec.appendChild(actions);
+  body.appendChild(sec);
+}
+
+async function saveCondTemplate(it){
+  var title=(it.title||"").trim();
+  if(!title){alert("Give the template a session title.");return;}
+  var num=function(v){ if(v===""||v==null)return null; var n=Number(v); return isNaN(n)?null:n; };
+  var row={kind:it.kind||"isometric", title:title, detail:it.detail||"", unit:it.unit||null, target_low:num(it.target_low), target_high:num(it.target_high), intensity:it.intensity||"", rounds:it.rounds?parseInt(it.rounds):null};
+  if(it.id){
+    await sb.from("conditioning_templates").update(row).eq("id",it.id);
+  }else{
+    var ins=await sb.from("conditioning_templates").insert(row).select().single();
+    if(ins.error){alert("Couldn't save: "+ins.error.message);return;}
+  }
+  tmplCondEdit=null;
+  await loadCondTemplates();
+  renderTmplModal();
+}
+
+async function deleteCondTemplate(id){
+  await sb.from("conditioning_templates").delete().eq("id",id);
+  await loadCondTemplates();
+  renderTmplModal();
+}
+
 // ---- inserting templates into a client's program/nutrition (add/edit modals + profile tabs) ----
 var tmplPickKind=null, tmplPickMode=null, tmplPickPrefix=null;
 
@@ -3725,7 +3844,7 @@ function openTmplPicker(kind, mode, prefix){
   var body=document.getElementById("tmpl-pick-body");
   body.innerHTML='<div class="loader">Loading…</div>';
   openModal("modal-tmpl-pick");
-  var loadP = kind==="meal" ? loadMealDayTemplates() : loadProgTemplates();
+  var loadP = kind==="meal" ? loadMealDayTemplates() : (kind==="cond" ? loadCondTemplates() : loadProgTemplates());
   loadP.then(renderTmplPicker);
 }
 
@@ -3749,6 +3868,15 @@ function renderTmplPicker(){
     render=function(w){
       var names=w.blockIds.map(function(id){var b=progTemplateBlocks.find(function(x){return x.id===id;});return b?b.name:"(missing)";});
       return {title:w.name||"(untitled)", sub:names.join(" → ")||"No days", onUse:function(){ insertWeekIntoProgram(tmplPickMode,w); closeModal("modal-tmpl-pick"); }};
+    };
+  }else if(tmplPickKind==="cond"){
+    title.textContent="Insert a conditioning session";
+    items=condTemplates;
+    empty="No conditioning templates yet — create one under Templates first.";
+    render=function(t){
+      var target=t.unit?( (t.rounds?t.rounds+"×":"") + t.target_low + (t.target_high&&t.target_high!==t.target_low?"–"+t.target_high:"") + " " + t.unit ):"";
+      var sub=[t.kind,target].filter(Boolean).join(" · ");
+      return {title:t.title||"(untitled)", sub:sub, onUse:function(){ insertCondTemplateInto(tmplPickMode,t); closeModal("modal-tmpl-pick"); }};
     };
   }else{
     title.textContent="Load a meal template";
@@ -3789,6 +3917,14 @@ function insertWeekIntoProgram(mode, week){
   });
   progActiveDay = d.length ? Math.min(startIdx, d.length-1) : 0;
   renderDays(mode);
+}
+
+function insertCondTemplateInto(mode, tmpl){
+  var D = mode==="add"?addCondDays:editCondDays;
+  var dk = condActiveDay||"mon";
+  if(!D[dk])D[dk]=[];
+  D[dk].push({kind:tmpl.kind||"isometric", title:tmpl.title||"", detail:tmpl.detail||"", unit:tmpl.unit||"", target_low:(tmpl.target_low!=null?tmpl.target_low:""), target_high:(tmpl.target_high!=null?tmpl.target_high:""), intensity:tmpl.intensity||"", rounds:(tmpl.rounds!=null?tmpl.rounds:"")});
+  renderCondDays(mode);
 }
 
 function insertMealTemplateInto(mode, prefix, tmpl){

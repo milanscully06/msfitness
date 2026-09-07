@@ -337,6 +337,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .cond-unit-sel{flex:0 0 92px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 6px;outline:none}
 .cond-target-dash{color:var(--ink-3);font-size:12px}
 .cond-target-hint{font-size:10px;color:var(--ink-3);margin:-2px 0 8px}
+.tmpl-pick-row{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px;font-family:var(--body);cursor:pointer}
+.tmpl-pick-row:hover{border-color:var(--sage)}
+.tmpl-pick-title{font-size:13px;font-weight:700;color:var(--ink)}
+.tmpl-pick-sub{font-size:11px;color:var(--ink-2);margin-top:3px}
 .wi-add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .wi-row{display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:6px}
 .wi-date{font-size:13px;color:var(--ink-2);font-weight:600;min-width:110px}
@@ -412,6 +416,7 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
           <button class="more-item" id="hab-btn">Habits</button>
           <button class="more-item" id="rec-btn">Recipes</button>
           <button class="more-item" id="res-btn">Resources</button>
+          <button class="more-item" id="tmpl-btn">Templates</button>
         </div>
       </div>
       <button class="btn-green" style="padding:8px 14px;font-size:13px" id="add-btn">+ Add client</button>
@@ -625,7 +630,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
   <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
   <div id="add-days"></div>
-  <button class="add-btn" id="add-day-btn">+ Add training day</button>
+  <div style="display:flex;gap:14px;flex-wrap:wrap">
+    <button class="add-btn" id="add-day-btn">+ Add training day</button>
+    <button class="add-btn" id="add-blk-btn">📚 Insert block</button>
+    <button class="add-btn" id="add-wk-btn">📅 Insert week</button>
+  </div>
   <div class="nut-section">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
@@ -637,7 +646,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
       <div><div class="nut-label">Carbs (g)</div><input class="nut-input" type="number" id="a-carb" placeholder="315"></div>
       <div><div class="nut-label">Fats (g)</div><input class="nut-input" type="number" id="a-fat" placeholder="80"></div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 8px;flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:600;color:var(--ink-2)">Meals by day</div>
+      <button class="add-btn" id="add-mealtmpl-btn" style="margin:0">📋 Load calorie template</button>
+    </div>
     <div id="add-meal-days"></div>
   </div>
   <div class="nut-section">
@@ -681,7 +693,11 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div style="height:1px;background:var(--line-2);margin:16px 0"></div>
   <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Training program</div>
   <div id="edit-days"></div>
-  <button class="add-btn" id="edit-day-btn">+ Add training day</button>
+  <div style="display:flex;gap:14px;flex-wrap:wrap">
+    <button class="add-btn" id="edit-day-btn">+ Add training day</button>
+    <button class="add-btn" id="edit-blk-btn">📚 Insert block</button>
+    <button class="add-btn" id="edit-wk-btn">📅 Insert week</button>
+  </div>
   <div class="nut-section">
     <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px">Nutrition plan</div>
     <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Daily targets</div>
@@ -693,7 +709,10 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
       <div><div class="nut-label">Carbs (g)</div><input class="nut-input" type="number" id="e-carb" placeholder="315"></div>
       <div><div class="nut-label">Fats (g)</div><input class="nut-input" type="number" id="e-fat" placeholder="80"></div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--ink-2);margin:12px 0 8px">Meals by day</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0 8px;flex-wrap:wrap">
+      <div style="font-size:13px;font-weight:600;color:var(--ink-2)">Meals by day</div>
+      <button class="add-btn" id="edit-mealtmpl-btn" style="margin:0">📋 Load calorie template</button>
+    </div>
     <div id="edit-meal-days"></div>
   </div>
   <div class="nut-section">
@@ -726,6 +745,28 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   </div>
 </div></div>
 
+<div class="modal-overlay" id="modal-templates">
+<div class="modal-box">
+  <div class="modal-title">Templates</div>
+  <div class="modal-sub">Reusable building blocks — insert into any client's program or nutrition plan</div>
+  <div id="tmpl-body"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="tmpl-close-btn">Done</button>
+  </div>
+</div>
+</div>
+
+<div class="modal-overlay" id="modal-tmpl-pick">
+<div class="modal-box">
+  <div class="modal-title" id="tmpl-pick-title">Insert template</div>
+  <div id="tmpl-pick-body"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:20px">
+    <button class="btn-outline" style="width:100%" id="tmpl-pick-close-btn">Cancel</button>
+  </div>
+</div>
+</div>
+
+
 <script>
 var sb = supabase.createClient("https://idlwqbgsnjoikoyhifbr.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbHdxYmdzbmpvaWtveWhpZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NjI5MDksImV4cCI6MjA5NzAzODkwOX0.K6axtuPPxVHn5CtZ5kplw20P5YtLd7kpAAkylhk-QNg");
 var editSlug = null;
@@ -755,6 +796,9 @@ document.getElementById("rc-save-btn").onclick = saveRec;
 document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
 document.getElementById("res-btn").onclick = openResources;
+document.getElementById("tmpl-btn").onclick = openTemplates;
+document.getElementById("tmpl-close-btn").onclick = function(){closeModal("modal-templates");};
+document.getElementById("tmpl-pick-close-btn").onclick = function(){closeModal("modal-tmpl-pick");};
 
 // ===== MEAL LIBRARY (pick meals from other clients' plans, or from the recipe library) =====
 var mealibTarget=null, mealibMode=null, mealibCacheMine=null, mealibCacheRecipes=null;
@@ -1462,6 +1506,12 @@ document.getElementById("save-edit-btn").onclick = saveEdit;
 document.getElementById("del-btn").onclick = delClient;
 document.getElementById("add-day-btn").onclick = function(){addDay("add");};
 document.getElementById("edit-day-btn").onclick = function(){addDay("edit");};
+document.getElementById("add-blk-btn").onclick = function(){openTmplPicker("block","add");};
+document.getElementById("add-wk-btn").onclick = function(){openTmplPicker("week","add");};
+document.getElementById("edit-blk-btn").onclick = function(){openTmplPicker("block","edit");};
+document.getElementById("edit-wk-btn").onclick = function(){openTmplPicker("week","edit");};
+document.getElementById("add-mealtmpl-btn").onclick = function(){openTmplPicker("meal","add","a");};
+document.getElementById("edit-mealtmpl-btn").onclick = function(){openTmplPicker("meal","edit",editNutPrefix||"e");};
 document.getElementById("asl").oninput = function(){
   this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g,"");
   document.getElementById("sp").textContent = this.value || "slug";
@@ -1616,7 +1666,7 @@ async function toggleActive(slug, makeActive, ev) {
 }
 
 // ===== CLIENT PROFILE (merged app — stage 1 shell) =====
-var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days";
+var editDaysCont="edit-days", editMealCont="edit-meal-days", editCondCont="edit-cond-days", editNutPrefix="e";
 var mealActiveDay="mon";
 var progActiveDay=0;
 var condActiveDay="mon";
@@ -2072,10 +2122,15 @@ async function pfNutrition(b,c){
   b.appendChild(tsec);
 
   var msec=el("div","pf-nut-sec");
-  msec.appendChild(el("div","pf-sub","Meals by day"));
+  var mhdr=el("div","");mhdr.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap";
+  mhdr.appendChild(el("div","pf-sub","Meals by day"));
+  var loadTmplBtn=el("button","btn-outline","📋 Load calorie template");loadTmplBtn.style.cssText="padding:6px 10px;font-size:12px";
+  loadTmplBtn.onclick=function(){ openTmplPicker("meal","edit","pf"); };
+  mhdr.appendChild(loadTmplBtn);
+  msec.appendChild(mhdr);
   var mhost=el("div","");mhost.id="pf-meal-days"; msec.appendChild(mhost);
   b.appendChild(msec);
-  editMealCont="pf-meal-days"; renderMealDays("edit");
+  editMealCont="pf-meal-days"; editNutPrefix="pf"; renderMealDays("edit");
 }
 
 async function saveNutritionOnly(slug,btn){
@@ -2117,9 +2172,17 @@ async function pfProgram(b,c){  editSlug=c.slug;
   b.appendChild(gsec);
   renderDays("edit");
 
+  var progBtnRow=el("div","");progBtnRow.style.cssText="display:flex;gap:14px;flex-wrap:wrap";
   var addDayBtn=el("button","add-btn","+ Add training day");
   addDayBtn.onclick=function(){ addDay("edit"); };
-  gsec.appendChild(addDayBtn);
+  progBtnRow.appendChild(addDayBtn);
+  var insBlkBtn=el("button","add-btn","\uD83D\uDCDA Insert block");
+  insBlkBtn.onclick=function(){ openTmplPicker("block","edit"); };
+  progBtnRow.appendChild(insBlkBtn);
+  var insWkBtn=el("button","add-btn","\uD83D\uDCC5 Insert week");
+  insWkBtn.onclick=function(){ openTmplPicker("week","edit"); };
+  progBtnRow.appendChild(insWkBtn);
+  gsec.appendChild(progBtnRow);
 
   var csec=el("div","pf-nut-sec");csec.style.marginTop="26px";
   csec.appendChild(el("div","pf-sub","Conditioning schedule"));
@@ -3081,7 +3144,7 @@ async function openEdit(slug) {
     if(!editCondDays[d])editCondDays[d]=[];
     editCondDays[d].push({kind:it.kind||"easy",title:it.title,detail:it.detail||"",unit:it.unit||"",target_low:it.target_low!=null?it.target_low:"",target_high:it.target_high!=null?it.target_high:"",intensity:it.intensity||"",rounds:it.rounds!=null?it.rounds:""});
   });
-  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; habitCont="edit-habits"; habitInputId="ehab-new"; weighInCont="edit-weighins"; wiDateId="wi-date"; wiKgId="wi-kg";
+  editDaysCont="edit-days"; editMealCont="edit-meal-days"; editCondCont="edit-cond-days"; editNutPrefix="e"; habitCont="edit-habits"; habitInputId="ehab-new"; weighInCont="edit-weighins"; wiDateId="wi-date"; wiKgId="wi-kg";
   renderDays("edit");
   renderMealDays("edit");
   renderCondDays("edit");
@@ -3232,6 +3295,510 @@ async function delClient() {
   closeModal("modal-edit");
   showSucc("Client deleted.");
   loadClients();
+}
+
+// ===================== TEMPLATES (day-blocks, week templates, meal-day templates) =====================
+var TMPL_TAB="program";
+var progTemplateBlocks=[], progWeekTemplates=[], mealDayTemplates=[];
+var tmplBlockEdit=null, tmplWeekEdit=null, tmplMealEdit=null;
+
+async function loadProgTemplates(){
+  var rb=await sb.from("program_day_blocks").select("*").order("name");
+  var re=await sb.from("program_day_block_exercises").select("*").order("exercise_order");
+  var byBlock={};
+  (re.data||[]).forEach(function(x){
+    (byBlock[x.block_id]=byBlock[x.block_id]||[]).push({name:x.ex_name||"",ss:!!x.is_superset,note:x.note||"",sets:(x.sets&&x.sets.length?x.sets:[{tag:"",top:0,bot:0}])});
+  });
+  progTemplateBlocks=(rb.data||[]).map(function(b){return {id:b.id,name:b.name||"",focus:b.focus||"",exercises:byBlock[b.id]||[]};});
+
+  var rw=await sb.from("program_week_templates").select("*").order("name");
+  var rd=await sb.from("program_week_template_days").select("*").order("day_order");
+  var byWeek={};
+  (rd.data||[]).forEach(function(x){ (byWeek[x.week_template_id]=byWeek[x.week_template_id]||[]).push(x.block_id); });
+  progWeekTemplates=(rw.data||[]).map(function(w){return {id:w.id,name:w.name||"",blockIds:byWeek[w.id]||[]};});
+}
+
+async function loadMealDayTemplates(){
+  var rt=await sb.from("meal_day_templates").select("*").order("name");
+  var rm=await sb.from("meal_day_template_meals").select("*").order("meal_order");
+  var byT={};
+  (rm.data||[]).forEach(function(x){
+    (byT[x.template_id]=byT[x.template_id]||[]).push({name:x.meal_name||"",ingredients:x.ingredients||"",calories:x.calories||0,protein:x.protein||0,carbs:x.carbs||0,fats:x.fats||0});
+  });
+  mealDayTemplates=(rt.data||[]).map(function(t){return {id:t.id,name:t.name||"",calories:t.calories,protein:t.protein,carbs:t.carbs,fats:t.fats,meals:byT[t.id]||[]};});
+}
+
+async function openTemplates(){
+  openModal("modal-templates");
+  var body=document.getElementById("tmpl-body");
+  body.innerHTML='<div class="loader">Loading…</div>';
+  tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;
+  await Promise.all([loadProgTemplates(),loadMealDayTemplates()]);
+  renderTmplModal();
+}
+
+function renderTmplModal(){
+  var body=document.getElementById("tmpl-body");
+  body.innerHTML="";
+  var tabs=el("div","builder-tabs");
+  [["program","Program"],["meals","Meals"]].forEach(function(t){
+    var b=el("button","builder-tab"+(TMPL_TAB===t[0]?" on":""),t[1]);
+    b.onclick=function(){TMPL_TAB=t[0];tmplBlockEdit=null;tmplWeekEdit=null;tmplMealEdit=null;renderTmplModal();};
+    tabs.appendChild(b);
+  });
+  body.appendChild(tabs);
+  if(TMPL_TAB==="program")renderProgTmplTab(body); else renderMealTmplTab(body);
+}
+
+// ---- day-block + week-template (program) tab ----
+function renderProgTmplTab(body){
+  if(tmplBlockEdit){ renderBlockEditor(body); return; }
+  if(tmplWeekEdit){ renderWeekEditor(body); return; }
+
+  var bsec=el("div","nut-section");
+  bsec.appendChild(el("div","pf-sub","Day blocks"));
+  bsec.appendChild(el("div","pf-hint2","A single day’s exercises — e.g. “Push Day A”. Insert one into any client’s program."));
+  if(!progTemplateBlocks.length)bsec.appendChild(el("div","wt-empty","No day blocks yet."));
+  progTemplateBlocks.forEach(function(blk){
+    var row=el("div","wi-row");
+    var l=el("div","");l.style.flex="1";
+    l.appendChild(el("div","",blk.name||"(untitled)"));
+    var sub=[blk.focus,blk.exercises.length+" exercise"+(blk.exercises.length===1?"":"s")].filter(Boolean).join(" · ");
+    var subEl=el("div","",sub);subEl.style.cssText="font-size:11px;color:var(--ink-3);margin-top:2px";
+    l.appendChild(subEl);
+    row.appendChild(l);
+    var eb=el("button","btn-outline","Edit");eb.style.cssText="padding:6px 10px;font-size:12px";
+    eb.onclick=function(){tmplBlockEdit=deep(blk);renderTmplModal();};
+    row.appendChild(eb);
+    var db=el("button","del-btn","✕");
+    db.onclick=function(){ if(!confirm('Delete day block "'+(blk.name||"")+'"? Any week templates using it will drop it.'))return; deleteBlock(blk.id); };
+    row.appendChild(db);
+    bsec.appendChild(row);
+  });
+  var addBlk=el("button","add-btn","+ New day block");
+  addBlk.onclick=function(){ tmplBlockEdit={id:null,name:"",focus:"",exercises:[]}; renderTmplModal(); };
+  bsec.appendChild(addBlk);
+  body.appendChild(bsec);
+
+  var wsec=el("div","nut-section");
+  wsec.appendChild(el("div","pf-sub","Week templates"));
+  wsec.appendChild(el("div","pf-hint2","A named split — an ordered bundle of day blocks. Insert the whole week into a client’s program at once."));
+  if(!progWeekTemplates.length)wsec.appendChild(el("div","wt-empty","No week templates yet."));
+  progWeekTemplates.forEach(function(wk){
+    var row=el("div","wi-row");
+    var l=el("div","");l.style.flex="1";
+    l.appendChild(el("div","",wk.name||"(untitled)"));
+    var names=wk.blockIds.map(function(id){var b=progTemplateBlocks.find(function(x){return x.id===id;});return b?b.name:"(missing)";});
+    var subEl=el("div","",names.join(" → ")||"No days yet");subEl.style.cssText="font-size:11px;color:var(--ink-3);margin-top:2px";
+    l.appendChild(subEl);
+    row.appendChild(l);
+    var eb=el("button","btn-outline","Edit");eb.style.cssText="padding:6px 10px;font-size:12px";
+    eb.onclick=function(){tmplWeekEdit=deep(wk);renderTmplModal();};
+    row.appendChild(eb);
+    var db=el("button","del-btn","✕");
+    db.onclick=function(){ if(!confirm('Delete week template "'+(wk.name||"")+'"?'))return; deleteWeekTemplate(wk.id); };
+    row.appendChild(db);
+    wsec.appendChild(row);
+  });
+  var addWk=el("button","add-btn","+ New week template");
+  addWk.onclick=function(){ tmplWeekEdit={id:null,name:"",blockIds:[]}; renderTmplModal(); };
+  wsec.appendChild(addWk);
+  body.appendChild(wsec);
+}
+
+function renderBlockEditor(body){
+  var blk=tmplBlockEdit;
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub", blk.id?"Edit day block":"New day block"));
+  var ni=el("input","form-input");ni.placeholder="Block name — e.g. Push Day A";ni.value=blk.name||"";ni.style.marginBottom="8px";
+  ni.oninput=function(){blk.name=this.value;};
+  sec.appendChild(ni);
+  var fi=el("input","form-input");fi.placeholder="Focus (e.g. Chest, shoulders, triceps)";fi.value=blk.focus||"";fi.style.marginBottom="12px";
+  fi.oninput=function(){blk.focus=this.value;};
+  sec.appendChild(fi);
+
+  var list=el("div","");
+  blk.exercises.forEach(function(ex,ei){
+    var er=el("div","ex-row-admin");
+    var pickWrap=el("div","ex-pick-wrap");
+    var en2=el("input","ex-name-input");en2.placeholder="Search or type exercise…";en2.value=ex.name;en2.setAttribute("autocomplete","off");
+    en2.oninput=function(){ex.name=this.value;};
+    attachExPicker(en2,function(val){ex.name=val;en2.value=val;});
+    var libBtn=el("button","ex-lib-btn","📚");libBtn.type="button";libBtn.title="Browse exercise library";
+    libBtn.onclick=function(){ openExLib(function(name){en2.value=name;ex.name=name;},en2.value); };
+    pickWrap.appendChild(en2);pickWrap.appendChild(libBtn);
+    er.appendChild(pickWrap);
+
+    var setsBox=el("div","sets-box");
+    (function(){
+      function draw(){
+        setsBox.innerHTML="";
+        ex.sets.forEach(function(sObj,idx){
+          var unit=el("div","set-unit");
+          var s=el("input","set-tag-input2");s.placeholder="Set "+(idx+1);s.value=sObj.tag||"";
+          s.oninput=function(){sObj.tag=this.value;var tb=parseReps(this.value);sObj.top=tb.top;sObj.bot=tb.bot;};
+          unit.appendChild(s);
+          if(ex.sets.length>1){var x=el("button","set-x","✕");x.onclick=function(){ex.sets.splice(idx,1);draw();};unit.appendChild(x);}
+          setsBox.appendChild(unit);
+        });
+        var addS=el("button","set-add","+ Set");
+        addS.onclick=function(){ex.sets.push({tag:"",top:0,bot:0});draw();};
+        setsBox.appendChild(addS);
+      }
+      draw();
+    })();
+    er.appendChild(setsBox);
+
+    var noteI=el("textarea","ex-note");noteI.placeholder="Note (drop set, cue, tempo…)";noteI.value=ex.note||"";
+    noteI.oninput=function(){ex.note=this.value;};
+    var tr=el("div","");tr.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:4px 0";
+    var trLbl=el("span","",ex.ss?"Superset ✓":"Superset");tr.appendChild(trLbl);
+    var tb=el("button","toggle"+(ex.ss?" on":""));
+    tb.onclick=function(){ex.ss=!ex.ss;this.classList.toggle("on",ex.ss);trLbl.textContent=ex.ss?"Superset ✓":"Superset";};
+    tr.appendChild(tb);
+    var moreBox=el("div","ex-more open");moreBox.appendChild(noteI);moreBox.appendChild(tr);
+    er.appendChild(moreBox);
+
+    var reorderCol=el("div","reorder-col");
+    var upBtn=el("button","reorder-btn","▴");if(ei===0)upBtn.disabled=true;
+    upBtn.onclick=function(){if(ei>0){var t=blk.exercises[ei-1];blk.exercises[ei-1]=blk.exercises[ei];blk.exercises[ei]=t;renderTmplModal();}};
+    var dnBtn=el("button","reorder-btn","▾");if(ei===blk.exercises.length-1)dnBtn.disabled=true;
+    dnBtn.onclick=function(){if(ei<blk.exercises.length-1){var t=blk.exercises[ei+1];blk.exercises[ei+1]=blk.exercises[ei];blk.exercises[ei]=t;renderTmplModal();}};
+    reorderCol.appendChild(upBtn);reorderCol.appendChild(dnBtn);
+
+    var ed=el("button","del-btn","✕");ed.style.alignSelf="flex-start";
+    ed.onclick=function(){blk.exercises.splice(ei,1);renderTmplModal();};
+    var erow=el("div","");erow.style.cssText="display:flex;gap:6px;align-items:flex-start";
+    erow.appendChild(reorderCol);erow.appendChild(er);erow.appendChild(ed);
+    list.appendChild(erow);
+  });
+  sec.appendChild(list);
+
+  var ae=el("button","add-btn","+ Add exercise");
+  ae.onclick=function(){blk.exercises.push({name:"",ss:false,note:"",sets:[{tag:"",top:0,bot:0},{tag:"",top:0,bot:0},{tag:"",top:0,bot:0}]});renderTmplModal();};
+  sec.appendChild(ae);
+
+  var actions=el("div","modal-actions");actions.style.cssText="display:flex;gap:8px;margin-top:16px";
+  var save=el("button","btn-green",blk.id?"Save block":"Create block");save.style.flex="1";
+  save.onclick=function(){ saveBlock(blk); };
+  var cancel=el("button","btn-outline","Cancel");
+  cancel.onclick=function(){tmplBlockEdit=null;renderTmplModal();};
+  actions.appendChild(save);actions.appendChild(cancel);
+  sec.appendChild(actions);
+  body.appendChild(sec);
+}
+
+function renderWeekEditor(body){
+  var wk=tmplWeekEdit;
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub", wk.id?"Edit week template":"New week template"));
+  var ni=el("input","form-input");ni.placeholder="Week name — e.g. 5-Day PPL+UL";ni.value=wk.name||"";ni.style.marginBottom="12px";
+  ni.oninput=function(){wk.name=this.value;};
+  sec.appendChild(ni);
+
+  var WEEKDAY_LABELS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var list=el("div","");
+  wk.blockIds.forEach(function(bid,i){
+    var b=progTemplateBlocks.find(function(x){return x.id===bid;});
+    var row=el("div","wi-row");
+    var l=el("div","");l.style.flex="1";
+    l.appendChild(el("div","",(WEEKDAY_LABELS[i]||("Day "+(i+1)))+" — "+(b?b.name:"(missing block)")));
+    row.appendChild(l);
+    var upBtn=el("button","reorder-btn","▴");if(i===0)upBtn.disabled=true;
+    upBtn.onclick=function(){if(i>0){var t=wk.blockIds[i-1];wk.blockIds[i-1]=wk.blockIds[i];wk.blockIds[i]=t;renderTmplModal();}};
+    var dnBtn=el("button","reorder-btn","▾");if(i===wk.blockIds.length-1)dnBtn.disabled=true;
+    dnBtn.onclick=function(){if(i<wk.blockIds.length-1){var t=wk.blockIds[i+1];wk.blockIds[i+1]=wk.blockIds[i];wk.blockIds[i]=t;renderTmplModal();}};
+    row.appendChild(upBtn);row.appendChild(dnBtn);
+    var rm=el("button","del-btn","✕");
+    rm.onclick=function(){wk.blockIds.splice(i,1);renderTmplModal();};
+    row.appendChild(rm);
+    list.appendChild(row);
+  });
+  sec.appendChild(list);
+
+  var addRow=el("div","wi-add-row");
+  var sel=el("select","form-input");sel.style.flex="1";
+  var ph=el("option","","+ Add a day block…");ph.value="";sel.appendChild(ph);
+  progTemplateBlocks.forEach(function(b){var o=el("option","",b.name||"(untitled)");o.value=b.id;sel.appendChild(o);});
+  var addBtn=el("button","btn-outline","Add");
+  addBtn.onclick=function(){ if(sel.value){wk.blockIds.push(sel.value);renderTmplModal();} };
+  addRow.appendChild(sel);addRow.appendChild(addBtn);
+  sec.appendChild(addRow);
+  if(!progTemplateBlocks.length)sec.appendChild(el("div","pf-hint2","Create a day block first, then bundle it into a week here."));
+
+  var actions=el("div","modal-actions");actions.style.cssText="display:flex;gap:8px;margin-top:16px";
+  var save=el("button","btn-green",wk.id?"Save week":"Create week");save.style.flex="1";
+  save.onclick=function(){ saveWeekTemplate(wk); };
+  var cancel=el("button","btn-outline","Cancel");
+  cancel.onclick=function(){tmplWeekEdit=null;renderTmplModal();};
+  actions.appendChild(save);actions.appendChild(cancel);
+  sec.appendChild(actions);
+  body.appendChild(sec);
+}
+
+async function saveBlock(blk){
+  var name=(blk.name||"").trim();
+  if(!name){alert("Give the block a name.");return;}
+  var validEx=blk.exercises.filter(function(e){return e.name&&e.name.trim();});
+  var id=blk.id;
+  if(id){
+    await sb.from("program_day_blocks").update({name:name,focus:blk.focus||null}).eq("id",id);
+    await sb.from("program_day_block_exercises").delete().eq("block_id",id);
+  }else{
+    var ins=await sb.from("program_day_blocks").insert({name:name,focus:blk.focus||null}).select().single();
+    if(ins.error){alert("Couldn't save: "+ins.error.message);return;}
+    id=ins.data.id;
+  }
+  if(validEx.length){
+    var rows=validEx.map(function(e,i){return {block_id:id,exercise_order:i,ex_name:e.name,is_superset:e.ss||false,note:e.note||null,sets:e.sets.map(function(s){return {tag:s.tag,top:s.top||8,bot:s.bot||6};})};});
+    await sb.from("program_day_block_exercises").insert(rows);
+  }
+  tmplBlockEdit=null;
+  await loadProgTemplates();
+  renderTmplModal();
+}
+
+async function deleteBlock(id){
+  await sb.from("program_day_blocks").delete().eq("id",id);
+  await loadProgTemplates();
+  renderTmplModal();
+}
+
+async function saveWeekTemplate(wk){
+  var name=(wk.name||"").trim();
+  if(!name){alert("Give the week template a name.");return;}
+  var id=wk.id;
+  if(id){
+    await sb.from("program_week_templates").update({name:name}).eq("id",id);
+    await sb.from("program_week_template_days").delete().eq("week_template_id",id);
+  }else{
+    var ins=await sb.from("program_week_templates").insert({name:name}).select().single();
+    if(ins.error){alert("Couldn't save: "+ins.error.message);return;}
+    id=ins.data.id;
+  }
+  if(wk.blockIds.length){
+    var rows=wk.blockIds.map(function(bid,i){return {week_template_id:id,day_order:i,block_id:bid};});
+    await sb.from("program_week_template_days").insert(rows);
+  }
+  tmplWeekEdit=null;
+  await loadProgTemplates();
+  renderTmplModal();
+}
+
+async function deleteWeekTemplate(id){
+  await sb.from("program_week_templates").delete().eq("id",id);
+  await loadProgTemplates();
+  renderTmplModal();
+}
+
+// ---- meal-day templates (meals) tab ----
+function renderMealTmplTab(body){
+  if(tmplMealEdit){ renderMealTemplateEditor(body); return; }
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub","Meal-day templates"));
+  sec.appendChild(el("div","pf-hint2","A full day of meals for a calorie bracket. Inserting one replaces all 7 days with these meals as a starting point."));
+  if(!mealDayTemplates.length)sec.appendChild(el("div","wt-empty","No meal templates yet."));
+  mealDayTemplates.forEach(function(t){
+    var row=el("div","wi-row");
+    var l=el("div","");l.style.flex="1";
+    l.appendChild(el("div","",t.name||"(untitled)"));
+    var macros=[t.calories?t.calories+" kcal":null,t.protein?t.protein+"p":null,t.carbs?t.carbs+"c":null,t.fats?t.fats+"f":null].filter(Boolean).join(" · ");
+    var sub=[macros,t.meals.length+" meal"+(t.meals.length===1?"":"s")].filter(Boolean).join(" · ");
+    var subEl=el("div","",sub);subEl.style.cssText="font-size:11px;color:var(--ink-3);margin-top:2px";
+    l.appendChild(subEl);
+    row.appendChild(l);
+    var eb=el("button","btn-outline","Edit");eb.style.cssText="padding:6px 10px;font-size:12px";
+    eb.onclick=function(){tmplMealEdit=deep(t);renderTmplModal();};
+    row.appendChild(eb);
+    var db=el("button","del-btn","✕");
+    db.onclick=function(){ if(!confirm('Delete "'+(t.name||"")+'"?'))return; deleteMealDayTemplate(t.id); };
+    row.appendChild(db);
+    sec.appendChild(row);
+  });
+  var addT=el("button","add-btn","+ New meal template");
+  addT.onclick=function(){ tmplMealEdit={id:null,name:"",calories:null,protein:null,carbs:null,fats:null,meals:[]}; renderTmplModal(); };
+  sec.appendChild(addT);
+  body.appendChild(sec);
+}
+
+function renderMealTemplateEditor(body){
+  var t=tmplMealEdit;
+  var sec=el("div","nut-section");
+  sec.appendChild(el("div","pf-sub", t.id?"Edit meal template":"New meal template"));
+  var ni=el("input","form-input");ni.placeholder="Name — e.g. 2400 kcal — 4 meals";ni.value=t.name||"";ni.style.marginBottom="10px";
+  ni.oninput=function(){t.name=this.value;};
+  sec.appendChild(ni);
+
+  sec.appendChild(el("div","nut-label","Target macros (shown when this template is picked)"));
+  var mg=el("div","macro-grid");mg.style.marginBottom="12px";
+  [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
+    var wrap=el("div");wrap.appendChild(el("div","macro-lbl",f[0]));
+    var inp=el("input","macro-inp");inp.type="number";inp.min="0";inp.value=t[f[1]]!=null?t[f[1]]:"";
+    inp.oninput=function(){var v=parseInt(this.value);t[f[1]]=isNaN(v)?null:v;};
+    wrap.appendChild(inp);mg.appendChild(wrap);
+  });
+  sec.appendChild(mg);
+  var sumBtn=el("button","btn-outline","Sum from meals below");sumBtn.style.marginBottom="14px";
+  sumBtn.onclick=function(){
+    var tot={calories:0,protein:0,carbs:0,fats:0};
+    t.meals.forEach(function(m){tot.calories+=m.calories||0;tot.protein+=m.protein||0;tot.carbs+=m.carbs||0;tot.fats+=m.fats||0;});
+    t.calories=tot.calories;t.protein=tot.protein;t.carbs=tot.carbs;t.fats=tot.fats;
+    renderTmplModal();
+  };
+  sec.appendChild(sumBtn);
+
+  sec.appendChild(el("div","pf-sub","Meals"));
+  var list=el("div","");
+  t.meals.forEach(function(meal,mi){
+    var mb=el("div","meal-block");
+    var mn=el("input","form-input");mn.placeholder="Meal name (e.g. Breakfast)";mn.value=meal.name||"";mn.style.marginBottom="8px";
+    mn.oninput=function(){meal.name=this.value;};
+    mb.appendChild(mn);
+    var il=el("div","nut-label","Ingredients (one per line)");il.style.marginBottom="4px";mb.appendChild(il);
+    var ta=el("textarea","form-input");ta.style.cssText="min-height:70px;resize:vertical;font-family:inherit;margin-bottom:8px";
+    ta.placeholder="e.g. 120g oats, 250g Greek yoghurt";ta.value=meal.ingredients||"";
+    ta.oninput=function(){meal.ingredients=this.value;};
+    mb.appendChild(ta);
+    var ml=el("div","nut-label","Macros");ml.style.marginBottom="4px";mb.appendChild(ml);
+    var mg2=el("div","macro-grid");
+    [["Cal","calories"],["Pro","protein"],["Carb","carbs"],["Fat","fats"]].forEach(function(f){
+      var wrap=el("div");wrap.appendChild(el("div","macro-lbl",f[0]));
+      var inp=el("input","macro-inp");inp.type="number";inp.min="0";inp.value=meal[f[1]]||0;
+      inp.oninput=function(){meal[f[1]]=parseInt(this.value)||0;};
+      wrap.appendChild(inp);mg2.appendChild(wrap);
+    });
+    mb.appendChild(mg2);
+    var rm=el("button","add-btn","Remove meal");rm.style.color="var(--bad)";rm.style.marginTop="8px";
+    rm.onclick=function(){t.meals.splice(mi,1);renderTmplModal();};
+    mb.appendChild(rm);
+    list.appendChild(mb);
+  });
+  sec.appendChild(list);
+  var addM=el("button","add-btn","+ Add meal");
+  addM.onclick=function(){t.meals.push({name:"",ingredients:"",calories:0,protein:0,carbs:0,fats:0});renderTmplModal();};
+  sec.appendChild(addM);
+
+  var actions=el("div","modal-actions");actions.style.cssText="display:flex;gap:8px;margin-top:16px";
+  var save=el("button","btn-green",t.id?"Save template":"Create template");save.style.flex="1";
+  save.onclick=function(){ saveMealDayTemplate(t); };
+  var cancel=el("button","btn-outline","Cancel");
+  cancel.onclick=function(){tmplMealEdit=null;renderTmplModal();};
+  actions.appendChild(save);actions.appendChild(cancel);
+  sec.appendChild(actions);
+  body.appendChild(sec);
+}
+
+async function saveMealDayTemplate(t){
+  var name=(t.name||"").trim();
+  if(!name){alert("Give the template a name.");return;}
+  var validMeals=t.meals.filter(function(m){return m.name&&m.name.trim();});
+  var id=t.id;
+  var header={name:name,calories:t.calories,protein:t.protein,carbs:t.carbs,fats:t.fats};
+  if(id){
+    await sb.from("meal_day_templates").update(header).eq("id",id);
+    await sb.from("meal_day_template_meals").delete().eq("template_id",id);
+  }else{
+    var ins=await sb.from("meal_day_templates").insert(header).select().single();
+    if(ins.error){alert("Couldn't save: "+ins.error.message);return;}
+    id=ins.data.id;
+  }
+  if(validMeals.length){
+    var rows=validMeals.map(function(m,i){return {template_id:id,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0};});
+    await sb.from("meal_day_template_meals").insert(rows);
+  }
+  tmplMealEdit=null;
+  await loadMealDayTemplates();
+  renderTmplModal();
+}
+
+async function deleteMealDayTemplate(id){
+  await sb.from("meal_day_templates").delete().eq("id",id);
+  await loadMealDayTemplates();
+  renderTmplModal();
+}
+
+// ---- inserting templates into a client's program/nutrition (add/edit modals + profile tabs) ----
+var tmplPickKind=null, tmplPickMode=null, tmplPickPrefix=null;
+
+function openTmplPicker(kind, mode, prefix){
+  tmplPickKind=kind; tmplPickMode=mode; tmplPickPrefix=prefix||"e";
+  var body=document.getElementById("tmpl-pick-body");
+  body.innerHTML='<div class="loader">Loading…</div>';
+  openModal("modal-tmpl-pick");
+  var loadP = kind==="meal" ? loadMealDayTemplates() : loadProgTemplates();
+  loadP.then(renderTmplPicker);
+}
+
+function renderTmplPicker(){
+  var body=document.getElementById("tmpl-pick-body");
+  body.innerHTML="";
+  var title=document.getElementById("tmpl-pick-title");
+  var items, empty, render;
+  if(tmplPickKind==="block"){
+    title.textContent="Insert a day block";
+    items=progTemplateBlocks;
+    empty="No day blocks yet — create one under Templates first.";
+    render=function(b){
+      var sub=[b.focus,b.exercises.length+" exercise"+(b.exercises.length===1?"":"s")].filter(Boolean).join(" · ");
+      return {title:b.name||"(untitled)", sub:sub, onUse:function(){ insertBlockIntoProgram(tmplPickMode,b); closeModal("modal-tmpl-pick"); }};
+    };
+  }else if(tmplPickKind==="week"){
+    title.textContent="Insert a week template";
+    items=progWeekTemplates;
+    empty="No week templates yet — create one under Templates first.";
+    render=function(w){
+      var names=w.blockIds.map(function(id){var b=progTemplateBlocks.find(function(x){return x.id===id;});return b?b.name:"(missing)";});
+      return {title:w.name||"(untitled)", sub:names.join(" → ")||"No days", onUse:function(){ insertWeekIntoProgram(tmplPickMode,w); closeModal("modal-tmpl-pick"); }};
+    };
+  }else{
+    title.textContent="Load a meal template";
+    items=mealDayTemplates;
+    empty="No meal templates yet — create one under Templates first.";
+    render=function(t){
+      var macros=[t.calories?t.calories+" kcal":null,t.protein?t.protein+"p":null,t.carbs?t.carbs+"c":null,t.fats?t.fats+"f":null].filter(Boolean).join(" · ");
+      var sub=[macros,t.meals.length+" meal"+(t.meals.length===1?"":"s")].filter(Boolean).join(" · ");
+      return {title:t.name||"(untitled)", sub:sub, onUse:function(){ insertMealTemplateInto(tmplPickMode,tmplPickPrefix,t); closeModal("modal-tmpl-pick"); }};
+    };
+  }
+  if(!items.length){ body.appendChild(el("div","wt-empty",empty)); return; }
+  items.forEach(function(it){
+    var d=render(it);
+    var row=el("button","tmpl-pick-row");row.type="button";
+    row.appendChild(el("div","tmpl-pick-title",d.title));
+    if(d.sub)row.appendChild(el("div","tmpl-pick-sub",d.sub));
+    row.onclick=d.onUse;
+    body.appendChild(row);
+  });
+}
+
+function insertBlockIntoProgram(mode, block){
+  var d = mode==="add"?addDays:editDays;
+  d.push({key:"d"+Date.now()+Math.floor(Math.random()*1000), label:"", focus:block.focus||"", sections:[{label:"Main", exercises:deep(block.exercises)}]});
+  progActiveDay = d.length-1;
+  renderDays(mode);
+}
+
+function insertWeekIntoProgram(mode, week){
+  var d = mode==="add"?addDays:editDays;
+  var WD_FULL=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var startIdx = d.length;
+  week.blockIds.forEach(function(bid,i){
+    var block=progTemplateBlocks.find(function(b){return b.id===bid;});
+    if(!block)return;
+    d.push({key:"d"+Date.now()+i+Math.floor(Math.random()*1000), label:WD_FULL[i]||"", focus:block.focus||"", sections:[{label:"Main", exercises:deep(block.exercises)}]});
+  });
+  progActiveDay = d.length ? Math.min(startIdx, d.length-1) : 0;
+  renderDays(mode);
+}
+
+function insertMealTemplateInto(mode, prefix, tmpl){
+  var M = mode==="add"?addMealDays:editMealDays;
+  var anyExisting = DAYS.some(function(day){return (M[day.k]||[]).length>0;});
+  if(anyExisting && !confirm('Replace all 7 days’ meals with "'+(tmpl.name||"this template")+'"? This overwrites what’s currently in the builder below (not saved yet, so Cancel is safe).'))return;
+  DAYS.forEach(function(day){ M[day.k]=deep(tmpl.meals); });
+  renderMealDays(mode);
+  var map={cal:tmpl.calories,pro:tmpl.protein,carb:tmpl.carbs,fat:tmpl.fats};
+  Object.keys(map).forEach(function(k){ if(map[k]==null)return; var elx=document.getElementById(prefix+"-"+k); if(elx)elx.value=map[k]; });
 }
 
 loadClients();

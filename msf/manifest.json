@@ -1,0 +1,13 @@
+{
+  "name": "Milan Scullino",
+  "short_name": "Milan Scullino",
+  "scope": "/client/",
+  "display": "standalone",
+  "background_color": "#C8622E",
+  "theme_color": "#C8622E",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

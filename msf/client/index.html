@@ -336,6 +336,28 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .fres-addbtn{margin-left:auto;padding:10px 22px;border:none;border-radius:10px;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer}
 .fres-calc{font-size:12px;color:var(--sage);font-weight:600;font-family:var(--display)}
 
+/* -- scan (barcode + photo estimate) -- */
+.scan-row{display:flex;gap:8px;margin-top:8px}
+.scan-btn{flex:1;padding:14px 8px;border:1px dashed var(--line-2);border-radius:14px;background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-weight:600;font-size:13px;cursor:pointer;text-align:center}
+.scan-btn:active{border-color:var(--sage);color:var(--ink)}
+.scan-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:24px}
+.scan-overlay.show{display:flex}
+.scan-video-wrap{position:relative;width:100%;max-width:420px}
+.scan-video{width:100%;border-radius:16px;background:#000;display:block}
+.scan-frame{border:3px solid var(--sage);border-radius:14px;width:74%;height:34%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.scan-x{position:absolute;top:18px;right:18px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);color:#fff;font-size:17px;cursor:pointer;z-index:2}
+.scan-status{color:rgba(255,255,255,.75);font-size:13.5px;margin-top:18px;text-align:center;max-width:300px;line-height:1.5}
+.photo-est-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:8px}
+.photo-est-name{font-size:14px;font-weight:700;margin-bottom:10px;letter-spacing:-.01em}
+.photo-est-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.photo-est-label{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.photo-est-input{width:74px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:8px;padding:8px;color:var(--ink);font-family:var(--display);font-weight:600;font-size:14px;text-align:center;outline:none}
+.photo-est-input:focus{border-color:var(--sage)}
+.photo-est-note{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.4}
+.photo-est-actions{display:flex;gap:8px;margin-top:12px}
+.photo-est-add{flex:1;padding:11px;border:none;border-radius:10px;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:700;font-size:14px;cursor:pointer}
+.photo-est-cancel{padding:11px 16px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface-2);color:var(--ink-2);font-family:var(--body);font-weight:600;font-size:13px;cursor:pointer}
+
 /* ===== FOOD (nutrition) ===== */
 .date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .date-btn{width:40px;height:40px;border:1px solid var(--line-2);border-radius:12px;background:var(--surface-2);
@@ -506,6 +528,15 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
   </div>
 
   <input type="file" accept="image/*" id="photo-input" style="display:none">
+  <input type="file" accept="image/*" capture="environment" id="food-photo-input" style="display:none">
+  <div class="scan-overlay" id="scan-overlay">
+    <button class="scan-x" onclick="closeBarcodeScan()">✕</button>
+    <div class="scan-video-wrap">
+      <video class="scan-video" id="scan-video" autoplay playsinline muted></video>
+      <div class="scan-frame"></div>
+    </div>
+    <div class="scan-status" id="scan-status">Loading scanner…</div>
+  </div>
   <div class="lb" id="lightbox">
     <button class="lb-x" onclick="closeLB()">✕</button>
     <img id="lb-img" alt="">
@@ -2302,6 +2333,13 @@ function renderFoodExtra(){
   var addBtn=el("button","addfood-btn","\uFF0B  Add food \u2014 search anything");
   addBtn.onclick=function(){var ps=document.getElementById("food-search");ps.classList.toggle("show");if(ps.classList.contains("show")){var fq=document.getElementById("food-q");if(fq)fq.focus();}};
   fx.appendChild(addBtn);
+  var scanRow=el("div","scan-row");
+  var scanBarcodeBtn=el("button","scan-btn","\uD83D\uDCF7 Scan barcode");
+  scanBarcodeBtn.onclick=function(){openBarcodeScan();};
+  var scanPhotoBtn=el("button","scan-btn","\uD83C\uDF7D\uFE0F Snap a photo");
+  scanPhotoBtn.onclick=function(){openPhotoEstimate();};
+  scanRow.appendChild(scanBarcodeBtn);scanRow.appendChild(scanPhotoBtn);
+  fx.appendChild(scanRow);
   var panel=el("div","food-search");panel.id="food-search";
   var inp=el("input");inp.className="food-q";inp.id="food-q";inp.type="text";inp.placeholder="Search any food\u2026";inp.setAttribute("autocomplete","off");
   var t=null;
@@ -2439,6 +2477,202 @@ async function removeFood(id){
   sync(true);
   await sb.from("food_logs").delete().eq("id",id);
   sync(false);
+  loadNutDay();
+}
+
+// -- barcode scan --
+var zxingMod=null, zxingControls=null;
+async function loadZXing(){
+  if(zxingMod)return zxingMod;
+  zxingMod=await import("https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/+esm");
+  return zxingMod;
+}
+
+async function openBarcodeScan(){
+  var ov=document.getElementById("scan-overlay");
+  var vid=document.getElementById("scan-video");
+  var status=document.getElementById("scan-status");
+  status.textContent="Loading scanner…";
+  ov.classList.add("show");
+  try{
+    var mod=await loadZXing();
+    var reader=new mod.BrowserMultiFormatReader();
+    status.textContent="Point your camera at the barcode";
+    zxingControls=await reader.decodeFromConstraints(
+      {video:{facingMode:{ideal:"environment"}}},
+      vid,
+      function(result,err,controls){
+        if(result){
+          controls.stop();
+          zxingControls=null;
+          closeBarcodeScan();
+          onBarcodeDecoded(result.getText());
+        }
+      }
+    );
+  }catch(e){
+    status.textContent="Couldn't access the camera. Check camera permissions for this app in Settings, or use search instead.";
+  }
+}
+
+function closeBarcodeScan(){
+  var ov=document.getElementById("scan-overlay");
+  ov.classList.remove("show");
+  if(zxingControls){try{zxingControls.stop();}catch(e){}zxingControls=null;}
+  var vid=document.getElementById("scan-video");
+  if(vid&&vid.srcObject){try{vid.srcObject.getTracks().forEach(function(t){t.stop();});}catch(e){}vid.srcObject=null;}
+}
+
+async function onBarcodeDecoded(code){
+  var panel=document.getElementById("food-search");
+  panel.classList.add("show");
+  var box=document.getElementById("food-results");
+  box.innerHTML='<div class="food-hint">Looking up barcode '+code+'…</div>';
+  try{
+    var url="https://world.openfoodfacts.org/api/v2/product/"+encodeURIComponent(code)+".json?fields=product_name,brands,nutriments";
+    var res=await fetch(url);
+    var data=await res.json();
+    if(data.status!==1||!data.product){
+      box.innerHTML='<div class="food-hint">No match for barcode '+code+'. Try searching by name instead.</div>';
+      return;
+    }
+    var p=data.product,n=p.nutriments||{};
+    var kcal=n["energy-kcal_100g"];
+    if(kcal==null||isNaN(kcal)){
+      box.innerHTML='<div class="food-hint">Found the product but it’s missing nutrition data. Try searching by name instead.</div>';
+      return;
+    }
+    var r={
+      name:(p.product_name||"Unknown product")+(p.brands?(" · "+p.brands.split(",")[0].trim()):""),
+      kcal100:Math.round(kcal),p100:Math.round(n.proteins_100g||0),
+      c100:Math.round(n.carbohydrates_100g||0),f100:Math.round(n.fat_100g||0)
+    };
+    box.innerHTML="";
+    var item=el("div","fres");
+    var head=el("div","fres-head");
+    var l=el("div","");
+    l.appendChild(el("div","fres-name",r.name));
+    l.appendChild(el("div","fres-meta",r.kcal100+" kcal · P"+r.p100+" C"+r.c100+" F"+r.f100+" per 100g"));
+    head.appendChild(l);
+    head.appendChild(el("div","fres-plus","＋"));
+    head.onclick=function(){toggleAddRow(item,r);};
+    item.appendChild(head);
+    box.appendChild(item);
+    toggleAddRow(item,r);
+  }catch(e){
+    box.innerHTML='<div class="food-hint">Couldn’t look up that barcode — check your connection and try again.</div>';
+  }
+}
+
+// -- photo estimate (AI) --
+function openPhotoEstimate(){
+  var inp=document.getElementById("food-photo-input");
+  inp.value="";
+  inp.onchange=function(){
+    if(inp.files&&inp.files[0])handlePhotoFile(inp.files[0]);
+  };
+  inp.click();
+}
+
+// Downscales a photo to at most maxDim on its longest edge and re-encodes as
+// JPEG before it ever leaves the phone. Phone camera photos can be 3000-4000px
+// and several MB — sending that straight to the vision API would balloon the
+// per-scan cost and be slow to upload on mobile data, and the model doesn't
+// need anywhere near that resolution to estimate a plate of food.
+function fileToBase64(file,maxDim){
+  maxDim=maxDim||1024;
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    var url=URL.createObjectURL(file);
+    img.onload=function(){
+      URL.revokeObjectURL(url);
+      var w=img.naturalWidth,h=img.naturalHeight;
+      var scale=Math.min(1,maxDim/Math.max(w,h));
+      var cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+      var canvas=document.createElement("canvas");
+      canvas.width=cw;canvas.height=ch;
+      var ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,cw,ch);
+      var dataUrl=canvas.toDataURL("image/jpeg",0.82);
+      var idx=dataUrl.indexOf(",");
+      resolve({base64:dataUrl.slice(idx+1),mediaType:"image/jpeg"});
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("Couldn't read that photo."));};
+    img.src=url;
+  });
+}
+
+async function handlePhotoFile(file){
+  var panel=document.getElementById("food-search");
+  panel.classList.add("show");
+  var box=document.getElementById("food-results");
+  box.innerHTML='<div class="food-hint">Estimating from photo…</div>';
+  try{
+    var img=await fileToBase64(file,1024);
+    var resp=await sb.functions.invoke("estimate-food",{body:{image_base64:img.base64,media_type:img.mediaType}});
+    if(resp.error){
+      box.innerHTML='<div class="food-hint">Couldn’t estimate that photo — '+(resp.error.message||"try again")+'.</div>';
+      return;
+    }
+    var est=resp.data;
+    if(!est||est.error){
+      box.innerHTML='<div class="food-hint">'+(est&&est.error?est.error:"Couldn’t estimate that photo. Try again.")+'</div>';
+      return;
+    }
+    if(!est.name){
+      box.innerHTML='<div class="food-hint">Couldn’t identify food in that photo. Try a clearer shot or search by name instead.</div>';
+      return;
+    }
+    box.innerHTML="";
+    box.appendChild(buildPhotoEstCard(est));
+  }catch(e){
+    box.innerHTML='<div class="food-hint">Couldn’t estimate that photo — check your connection and try again.</div>';
+  }
+}
+
+function buildPhotoEstCard(est){
+  var card=el("div","photo-est-card");
+  card.appendChild(el("div","photo-est-name",est.name+(est.confidence?(" · "+est.confidence+" confidence"):"")));
+  var fields=[["Calories (kcal)","calories"],["Protein (g)","protein"],["Carbs (g)","carbs"],["Fat (g)","fats"]];
+  var inputs={};
+  fields.forEach(function(f){
+    var row=el("div","photo-est-row");
+    row.appendChild(el("div","photo-est-label",f[0]));
+    var inp=el("input");inp.className="photo-est-input";inp.type="number";inp.inputMode="decimal";
+    inp.value=Math.round(est[f[1]]||0);
+    inputs[f[1]]=inp;
+    row.appendChild(inp);
+    card.appendChild(row);
+  });
+  if(est.note)card.appendChild(el("div","photo-est-note",est.note+" Adjust the numbers above if they look off before adding."));
+  else card.appendChild(el("div","photo-est-note","AI estimate — double check the numbers before adding."));
+  var actions=el("div","photo-est-actions");
+  var cancel=el("button","photo-est-cancel","Cancel");
+  cancel.onclick=function(){card.remove();};
+  var add=el("button","photo-est-add","Add to log");
+  add.onclick=function(){
+    addPhotoEstimate({
+      name:est.name,
+      calories:parseFloat(inputs.calories.value)||0,
+      protein:parseFloat(inputs.protein.value)||0,
+      carbs:parseFloat(inputs.carbs.value)||0,
+      fats:parseFloat(inputs.fats.value)||0
+    });
+    card.remove();
+  };
+  actions.appendChild(cancel);actions.appendChild(add);
+  card.appendChild(actions);
+  return card;
+}
+
+async function addPhotoEstimate(est){
+  sync(true);
+  var row={client_slug:CLIENT,logged_date:nutDate,name:est.name+" (AI estimate)",grams:null,
+    calories:Math.round(est.calories),protein:Math.round(est.protein),
+    carbs:Math.round(est.carbs),fats:Math.round(est.fats)};
+  var ins=await sb.from("food_logs").insert(row);
+  sync(false);
+  if(ins.error){alert("Couldn't add food: "+ins.error.message);return;}
   loadNutDay();
 }
 // ── END NUTRITION ────────────────────────────────────────────────────────────────────

@@ -58,6 +58,26 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .more-trigger{font-size:16px !important;line-height:1;padding:8px 12px !important}
 .more-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;padding:6px;min-width:140px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .more-menu.open{display:flex;flex-direction:column;gap:2px}
+
+.notepad-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 16px;margin:16px 0}
+.notepad-head{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.notepad-title{font-family:var(--display);font-weight:700;font-size:15px;display:flex;align-items:center;gap:7px}
+.notepad-count{font-size:11px;font-weight:700;color:var(--ink-3);background:var(--surface-2);border-radius:20px;padding:1px 8px}
+.notepad-chevron{font-size:18px;color:var(--ink-3);transition:transform .15s}
+.notepad-card.collapsed .notepad-chevron{transform:rotate(-90deg)}
+.notepad-card.collapsed .notepad-body{display:none}
+.notepad-body{margin-top:12px}
+.notepad-add{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px}
+.notepad-input{flex:1;background:var(--bg);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:13.5px;padding:9px 11px;outline:none;resize:none;min-height:38px;max-height:140px;line-height:1.4}
+.notepad-input:focus{border-color:var(--sage)}
+.notepad-add-btn{flex-shrink:0;padding:9px 14px;font-size:13px}
+.notepad-list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto}
+.notepad-item{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.notepad-item-text{font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.notepad-item-meta{font-size:10.5px;color:var(--ink-3);margin-top:4px}
+.notepad-item-x{flex-shrink:0;background:none;border:none;color:var(--ink-3);font-size:15px;cursor:pointer;line-height:1;padding:2px 4px}
+.notepad-item-x:hover{color:var(--bad)}
+.notepad-empty{font-size:13px;color:var(--ink-3);padding:6px 0}
 .more-item{background:none;border:none;color:var(--ink-2);font-family:var(--body);font-size:13.5px;font-weight:600;padding:9px 10px;border-radius:8px;text-align:left;cursor:pointer;white-space:nowrap}
 .more-item:hover{background:var(--surface-2);color:var(--ink)}
 /* ===== client profile (merged app, stage 1) ===== */
@@ -410,6 +430,19 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
   <div><div class="t-name">Admin panel</div><div class="t-sub">Manage clients &amp; programs</div></div>
 </div>
 <div style="padding:0 16px">
+  <div class="notepad-card" id="notepad-card">
+    <div class="notepad-head" id="notepad-head">
+      <div class="notepad-title">📝 Notepad <span class="notepad-count" id="notepad-count">0</span></div>
+      <div class="notepad-chevron">⌄</div>
+    </div>
+    <div class="notepad-body" id="notepad-body">
+      <div class="notepad-add">
+        <textarea class="notepad-input" id="notepad-input" placeholder="Thoughts, ideas, planning..." rows="1"></textarea>
+        <button class="btn-green notepad-add-btn" id="notepad-add-btn">Add</button>
+      </div>
+      <div class="notepad-list" id="notepad-list"><div class="notepad-empty">Loading...</div></div>
+    </div>
+  </div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 12px">
     <div style="font-size:16px;font-weight:700;color:var(--ink)">Clients</div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -4025,6 +4058,71 @@ function insertMealTemplateInto(mode, prefix, tmpl){
 }
 
 loadClients();
+loadNotepad();
+
+// ===== admin home notepad (thoughts / ideas / planning) =====
+(function(){
+  var head=document.getElementById("notepad-head");
+  var card=document.getElementById("notepad-card");
+  head.onclick=function(){
+    card.classList.toggle("collapsed");
+    try{ localStorage.setItem("notepad-collapsed", card.classList.contains("collapsed")?"1":"0"); }catch(e){}
+  };
+  try{ if(localStorage.getItem("notepad-collapsed")==="1") card.classList.add("collapsed"); }catch(e){}
+
+  var input=document.getElementById("notepad-input");
+  input.addEventListener("input",function(){
+    input.style.height="auto";
+    input.style.height=Math.min(140,input.scrollHeight)+"px";
+  });
+  input.addEventListener("keydown",function(e){
+    if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){ e.preventDefault(); addNote(); }
+  });
+  document.getElementById("notepad-add-btn").onclick=addNote;
+})();
+
+async function addNote(){
+  var input=document.getElementById("notepad-input");
+  var txt=(input.value||"").trim();
+  if(!txt)return;
+  var btn=document.getElementById("notepad-add-btn");
+  btn.disabled=true;
+  var r=await sb.from("admin_notes").insert({body:txt}).select().single();
+  btn.disabled=false;
+  if(r.error){ showErr("Couldn't save note: "+r.error.message); return; }
+  input.value="";
+  input.style.height="auto";
+  loadNotepad();
+}
+
+async function deleteNote(id){
+  if(!confirm("Delete this note?"))return;
+  await sb.from("admin_notes").delete().eq("id",id);
+  loadNotepad();
+}
+
+async function loadNotepad(){
+  var box=document.getElementById("notepad-list");
+  var countEl=document.getElementById("notepad-count");
+  var r=await sb.from("admin_notes").select("*").order("created_at",{ascending:false});
+  if(r.error){ box.innerHTML='<div class="notepad-empty">Couldn\'t load notes: '+esc(r.error.message)+'</div>'; return; }
+  var notes=r.data||[];
+  countEl.textContent=notes.length;
+  box.innerHTML="";
+  if(!notes.length){ box.innerHTML='<div class="notepad-empty">No notes yet — jot down a thought, idea, or plan.</div>'; return; }
+  notes.forEach(function(n){
+    var item=el("div","notepad-item");
+    var left=el("div");
+    left.style.minWidth="0";
+    left.appendChild(el("div","notepad-item-text",n.body));
+    left.appendChild(el("div","notepad-item-meta",new Date(n.created_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"})+" · "+new Date(n.created_at).toLocaleTimeString("en-AU",{hour:"numeric",minute:"2-digit"})));
+    item.appendChild(left);
+    var x=el("button","notepad-item-x","✕");
+    x.onclick=(function(id){return function(){ deleteNote(id); };})(n.id);
+    item.appendChild(x);
+    box.appendChild(item);
+  });
+}
 </script>
 </body>
 </html>

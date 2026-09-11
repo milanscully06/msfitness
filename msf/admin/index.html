@@ -1589,7 +1589,7 @@ document.getElementById("asl").oninput = function(){
 
 // ── LOAD CLIENTS ──
 var allClients = [], clientFolder = "active", rosterSearch = "";
-var lastGymBySlug = {}, lastFoodBySlug = {};
+var lastGymBySlug = {}, lastFoodBySlug = {}, lastDurationBySlug = {};
 
 async function loadClients() {
   var res = await sb.from("clients").select("*").order("created_at");
@@ -1602,14 +1602,24 @@ async function loadClients() {
   var sinceDateStr = sinceISO.slice(0,10);
   var rGym = await sb.from("lift_logs").select("client,logged_at").gte("logged_at",sinceISO);
   var rFood = await sb.from("nutrition_logs").select("client_slug,logged_date").gte("logged_date",sinceDateStr);
+  var rSessions = await sb.from("workout_sessions").select("client,session_date,started_at,last_active_at,ended_at,duration_seconds").gte("session_date",sinceDateStr);
 
-  lastGymBySlug = {}; lastFoodBySlug = {};
+  lastGymBySlug = {}; lastFoodBySlug = {}; lastDurationBySlug = {};
   (rGym.data||[]).forEach(function(r){
     var d = new Date(r.logged_at);
     if (!lastGymBySlug[r.client] || d > lastGymBySlug[r.client]) lastGymBySlug[r.client] = d;
   });
   (rFood.data||[]).forEach(function(r){
     if (!lastFoodBySlug[r.client_slug] || r.logged_date > lastFoodBySlug[r.client_slug]) lastFoodBySlug[r.client_slug] = r.logged_date;
+  });
+  // most recent workout_sessions row per client — duration_seconds if the
+  // client tapped "End", otherwise fall back to last_active − started so a
+  // session they forgot to end still shows a reasonable elapsed time
+  (rSessions.data||[]).forEach(function(r){
+    var prev = lastDurationBySlug[r.client];
+    if (prev && prev.session_date >= r.session_date) return;
+    var secs = r.duration_seconds!=null ? r.duration_seconds : Math.max(0,Math.round((new Date(r.last_active_at)-new Date(r.started_at))/1000));
+    lastDurationBySlug[r.client] = {session_date:r.session_date, minutes:Math.round(secs/60), finished:r.ended_at!=null};
   });
 
   renderClients();
@@ -1688,7 +1698,9 @@ function renderClients() {
       if (act.status==="new") {
         actLine.textContent = "New client — no activity logged yet";
       } else {
-        var gymTxt = act.gymDays==null ? "no session in 30+d" : (act.gymDays<=0?"trained today":"trained "+act.gymDays+"d ago");
+        var dur = lastDurationBySlug[c.slug];
+        var durTxt = (dur && dur.minutes>0) ? (" ("+dur.minutes+" min"+(dur.finished?"":", still going")+")") : "";
+        var gymTxt = act.gymDays==null ? "no session in 30+d" : (act.gymDays<=0?"trained today"+durTxt:"trained "+act.gymDays+"d ago"+durTxt);
         var foodTxt = act.foodDays==null ? "no food log in 30+d" : (act.foodDays<=0?"food today":"food "+act.foodDays+"d ago");
         var gymSpan = el("span",act.gymStale?("flag"+(act.gymDays!=null?" amber":"")):"",gymTxt);
         var sep = document.createTextNode(" · ");

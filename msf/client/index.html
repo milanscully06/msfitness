@@ -172,6 +172,14 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .di-name{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.025em;line-height:1.02}
 .di-focus{font-size:13px;color:var(--ink-2);margin-top:7px}
 
+.workout-timer{display:none;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 14px;margin:14px 0}
+.workout-timer.on{display:flex}
+.wt-dot{width:8px;height:8px;border-radius:50%;background:var(--sage);flex-shrink:0;animation:wtpulse 1.6s ease-in-out infinite}
+@keyframes wtpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.wt-clock{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.wt-label{font-size:11.5px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.wt-end{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
 .ex-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;margin-bottom:11px}
 .ex-card.ss{border-left:2px solid var(--sage)}
 .ex-head{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -1193,6 +1201,15 @@ function renderLog(){
   info.appendChild(el("div","di-focus",day.focus));
   vlog.appendChild(info);
 
+  var wt=el("div","workout-timer");wt.id="workout-timer";
+  var wtDot=el("span","wt-dot");
+  var wtClock=el("span","wt-clock","00:00");wtClock.id="wt-clock";
+  var wtLabel=el("span","wt-label","workout time");
+  var wtEnd=el("button","wt-end","End");wtEnd.id="wt-end-btn";wtEnd.type="button";
+  wtEnd.onclick=function(){endWorkoutTimer(curDay,true);};
+  wt.appendChild(wtDot);wt.appendChild(wtClock);wt.appendChild(wtLabel);wt.appendChild(wtEnd);
+  vlog.appendChild(wt);
+
   day.sections.forEach(function(sec){
     vlog.appendChild(el("div","sec-label",sec.label));
     sec.exercises.forEach(function(ex){
@@ -1248,6 +1265,7 @@ function renderLog(){
   vlog.appendChild(saveRow);
 
   loadCache();
+  initWorkoutTimer(curDay);
 }
 
 async function loadCache(){
@@ -1284,8 +1302,122 @@ async function loadCache(){
   banner.style.cssText="background:rgba(200,98,46,.1);color:#C8622E;border:1px solid rgba(200,98,46,.24);border-radius:12px;padding:10px 14px;font-size:12px;font-weight:600;margin-bottom:12px;";
   banner.textContent="Showing last session (" + new Date(prev.data[0].logged_at).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"}) + ") — beat these numbers";
   var vlog=document.getElementById("view-log");
-  vlog.insertBefore(banner,vlog.children[2]);
+  vlog.insertBefore(banner,vlog.children[3]);
   PROG[curDay].sections.forEach(function(sec){sec.exercises.forEach(function(ex){chk(ex.id);});});
+}
+
+// ===== workout timer + per-set autosave =====
+// Fixes two things at once: (1) clients said their mid-session weights/reps
+// vanished if they closed or backgrounded the app before hitting "Save
+// session" — because nothing was written to the DB until that final tap.
+// Now every set is saved to lift_logs the moment it's typed (debounced),
+// same as loadCache() already reads back. (2) a visible, persisted timer so
+// a coach can see how long a session actually ran, and reopening the app
+// mid-workout resumes the clock instead of resetting it to zero.
+var wtIntervalId=null;
+var wtState={running:false,day:null,dateKey:null,startedAtMs:null};
+var autosaveTimers={};
+
+function wtStorageKey(day,dateKey){return "wt_"+CLIENT+"_"+day+"_"+dateKey;}
+
+function initWorkoutTimer(day){
+  if(wtIntervalId){clearInterval(wtIntervalId);wtIntervalId=null;}
+  var dateKey=todayStr();
+  wtState={running:false,day:day,dateKey:dateKey,startedAtMs:null};
+  var raw=null;
+  try{raw=localStorage.getItem(wtStorageKey(day,dateKey));}catch(e){}
+  if(raw){
+    wtState.running=true;
+    wtState.startedAtMs=parseInt(raw,10);
+    showWorkoutTimer();
+    wtIntervalId=setInterval(renderTimerClock,1000);
+    renderTimerClock();
+  }
+  // reconcile with Supabase in the background (covers: cleared local storage,
+  // or the client picked this session back up on a different device)
+  sb.from("workout_sessions").select("started_at,ended_at").eq("client",CLIENT).eq("day",day).eq("session_date",dateKey).limit(1)
+    .then(function(res){
+      var row=res&&res.data&&res.data[0];
+      if(!row||row.ended_at)return; // no session yet, or it was already ended — nothing to resume
+      var remoteMs=new Date(row.started_at).getTime();
+      if(!wtState.running || remoteMs<wtState.startedAtMs){
+        wtState.running=true;wtState.startedAtMs=remoteMs;wtState.day=day;wtState.dateKey=dateKey;
+        try{localStorage.setItem(wtStorageKey(day,dateKey),String(remoteMs));}catch(e){}
+        showWorkoutTimer();
+        if(!wtIntervalId)wtIntervalId=setInterval(renderTimerClock,1000);
+        renderTimerClock();
+      }
+    });
+}
+
+function showWorkoutTimer(){
+  var wt=document.getElementById("workout-timer");
+  if(wt)wt.classList.add("on");
+}
+
+function renderTimerClock(){
+  var c=document.getElementById("wt-clock");
+  if(!c||!wtState.running||!wtState.startedAtMs)return;
+  var secs=Math.max(0,Math.floor((Date.now()-wtState.startedAtMs)/1000));
+  var h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  var pad=function(n){return n<10?"0"+n:""+n;};
+  c.textContent=(h>0?h+":"+pad(m):m)+":"+pad(s);
+}
+
+function ensureWorkoutStarted(){
+  if(wtState.running && wtState.day===curDay && wtState.dateKey===todayStr())return;
+  var dateKey=todayStr();
+  var nowMs=Date.now();
+  wtState={running:true,day:curDay,dateKey:dateKey,startedAtMs:nowMs};
+  try{localStorage.setItem(wtStorageKey(curDay,dateKey),String(nowMs));}catch(e){}
+  showWorkoutTimer();
+  if(wtIntervalId)clearInterval(wtIntervalId);
+  wtIntervalId=setInterval(renderTimerClock,1000);
+  renderTimerClock();
+  var nowIso=new Date(nowMs).toISOString();
+  // supabase-js query builders are lazy "thenables" — the request only fires
+  // once something awaits/then's them, so this can't be a bare fire-and-forget call
+  sb.from("workout_sessions").upsert({client:CLIENT,day:curDay,session_date:dateKey,started_at:nowIso,last_active_at:nowIso,ended_at:null,duration_seconds:null},{onConflict:"client,day,session_date"}).then(function(){});
+}
+
+async function touchWorkoutSession(){
+  if(!wtState.running)return;
+  await sb.from("workout_sessions").update({last_active_at:new Date().toISOString()}).eq("client",CLIENT).eq("day",wtState.day).eq("session_date",wtState.dateKey);
+}
+
+async function endWorkoutTimer(day,manual){
+  var dateKey=todayStr();
+  var wasRunning=wtState.running&&wtState.day===day&&wtState.dateKey===dateKey;
+  var durationSec=wasRunning?Math.max(0,Math.floor((Date.now()-wtState.startedAtMs)/1000)):null;
+  if(wtIntervalId){clearInterval(wtIntervalId);wtIntervalId=null;}
+  wtState={running:false,day:null,dateKey:null,startedAtMs:null};
+  try{localStorage.removeItem(wtStorageKey(day,dateKey));}catch(e){}
+  if(wasRunning){
+    await sb.from("workout_sessions").update({ended_at:new Date().toISOString(),duration_seconds:durationSec}).eq("client",CLIENT).eq("day",day).eq("session_date",dateKey);
+  }
+  if(manual)renderLog();
+}
+
+function queueAutosave(exId,i){
+  ensureWorkoutStarted();
+  var key=exId+"_"+i;
+  clearTimeout(autosaveTimers[key]);
+  autosaveTimers[key]=setTimeout(function(){autosaveSet(exId,i);},700);
+}
+
+async function autosaveSet(exId,i){
+  var ex=findEx(exId);if(!ex)return;
+  var wi=document.getElementById(exId+"_w"+i),ri=document.getElementById(exId+"_r"+i);
+  var w=wi?wi.value:"",r=ri?ri.value:"";
+  var today=new Date().toISOString().split("T")[0];
+  sync(true);
+  var del=await sb.from("lift_logs").delete().eq("client",CLIENT).eq("day",curDay).eq("ex_id",exId).eq("set_index",i).gte("logged_at",today+"T00:00:00");
+  if(del.error){sync(false);return;}
+  if(w||r){
+    await sb.from("lift_logs").insert({client:CLIENT,day:curDay,ex_id:exId,ex_name:ex.name,set_index:i,weight:w?parseFloat(w):null,reps:r?parseInt(r):null});
+  }
+  sync(false);
+  touchWorkoutSession();
 }
 
 function findEx(exId){var f=null;PROG[curDay].sections.forEach(function(s){s.exercises.forEach(function(e){if(e.id===exId)f=e;});});return f;}
@@ -1307,10 +1439,12 @@ function makeSetRow(ex,i){
   row.appendChild(lab);
   var wf=el("div","set-field");
   var wi=el("input");wi.className="set-input";wi.type="number";wi.inputMode="decimal";wi.min="0";wi.step="0.5";wi.id=ex.id+"_w"+i;wi.placeholder="kg";
+  wi.oninput=function(){queueAutosave(ex.id,i);};
   wf.appendChild(wi);row.appendChild(wf);
   var rf=el("div","set-field");
   var ri=el("input");ri.className="set-input";ri.type="number";ri.inputMode="numeric";ri.min="0";ri.step="1";ri.id=ex.id+"_r"+i;ri.placeholder="reps";
   ri.dataset.exid=ex.id;ri.onchange=function(){chk(this.dataset.exid);};
+  ri.oninput=function(){chk(this.dataset.exid);queueAutosave(ex.id,i);};
   rf.appendChild(ri);row.appendChild(rf);
   if(i>=ex._base){
     var x=el("button","set-remove","\u2715");
@@ -1398,12 +1532,18 @@ async function doSave(){
   var m=document.getElementById("sm");if(m){m.style.display="flex";setTimeout(function(){m.style.display="none";},2500);}
 }
 
-function clr(){
+async function clr(){
+  if(!confirm("Clear this session? This also removes anything already autosaved for today."))return;
   PROG[curDay].sections.forEach(function(sec){sec.exercises.forEach(function(ex){ex.sets.forEach(function(s,i){
     var wi=document.getElementById(ex.id+"_w"+i);var ri=document.getElementById(ex.id+"_r"+i);
     if(wi)wi.value="";if(ri)ri.value="";
     var al=document.getElementById("al_"+ex.id);if(al)al.className="alert-bar";
   });});});
+  // sets now autosave as they're typed, so clearing the form must also clear
+  // what's already been saved for today — otherwise it reappears on reload
+  var today=new Date().toISOString().split("T")[0];
+  await sb.from("lift_logs").delete().eq("client",CLIENT).eq("day",curDay).gte("logged_at",today+"T00:00:00");
+  endWorkoutTimer(curDay,true);
 }
 
 async function renderHistory(){

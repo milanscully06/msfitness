@@ -206,6 +206,11 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .set-remove{width:32px;height:32px;flex-shrink:0;background:none;border:1px solid var(--line-2);border-radius:9px;color:var(--ink-3);font-size:12px;cursor:pointer;padding:0}
 .set-remove:hover{border-color:var(--bad);color:var(--bad)}
 .add-set-btn{width:100%;background:none;border:1px dashed var(--line-2);border-radius:11px;color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:600;padding:11px;cursor:pointer;margin-top:3px}
+.form-check-btn{width:100%;background:none;border:1px dashed var(--line-2);border-radius:11px;color:var(--sage);font-family:var(--body);font-size:13px;font-weight:600;padding:11px;cursor:pointer;margin-top:8px}
+.fc-disclaimer{font-size:11.5px;color:var(--ink-3);line-height:1.5;background:var(--surface-2);border-radius:12px;padding:11px 13px;margin-bottom:14px}
+.fc-status{font-size:13.5px;color:var(--ink-2);text-align:center;padding:30px 10px}
+.fc-feedback{font-size:14px;color:var(--ink);line-height:1.65;white-space:pre-wrap}
+.fc-ex-name{font-family:var(--display);font-weight:700;font-size:17px;margin-bottom:10px}
 .add-set-btn:hover{border-color:var(--sage);color:var(--sage)}
 
 .alert-bar{display:none;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:12px;font-size:12.5px;font-weight:500;
@@ -272,6 +277,17 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .tday-focus{font-family:var(--display);font-weight:800;font-size:clamp(40px,13vw,54px);line-height:.92;letter-spacing:-.03em;margin-top:8px}
 .tday-focus .lt{color:var(--ink-3)}
 .tday-date{margin-top:14px;font-size:13px;color:var(--ink-2)}
+.streak-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(200,98,46,.12);color:var(--sage);font-size:12.5px;font-weight:700;border-radius:99px;padding:6px 13px;margin-top:12px}
+
+/* PR celebration toast */
+.pr-toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-140%);z-index:400;
+  background:var(--ink);color:#fff;border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.28);transition:transform .4s cubic-bezier(.34,1.56,.64,1);max-width:88vw}
+.pr-toast.show{transform:translateX(-50%) translateY(0)}
+.pr-toast-ic{font-size:20px;flex-shrink:0}
+.pr-toast-txt{min-width:0}
+.pr-toast-h{font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-toast-s{font-size:11.5px;font-weight:600;opacity:.72;margin-top:1px}
 
 /* status-card feed (replaces old tiles/weight blocks) */
 .tday-feed{margin-top:22px;display:flex;flex-direction:column;gap:12px}
@@ -307,6 +323,57 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
 .padd{aspect-ratio:3/4;border-radius:14px;border:1px dashed var(--line-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--ink-3);background:var(--surface)}
 .padd:active{border-color:var(--sage);color:var(--ink);transform:scale(.98)}
 .pp{font-size:11px;font-weight:600}
+.pcompare-btn{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:13.5px;font-weight:700;padding:11px;cursor:pointer;margin:2px 0 20px;display:flex;align-items:center;justify-content:center;gap:7px}
+.pcompare-btn:active{border-color:var(--sage)}
+.pc-picker-row{display:flex;gap:10px;margin-bottom:14px}
+.pc-picker{flex:1;min-width:0}
+.pc-picker-label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.pc-picker select{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:13px;padding:9px 10px}
+.pc-wrap{position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;overflow:hidden;background:var(--surface-2);user-select:none;touch-action:none}
+.pc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.pc-img.pc-before{clip-path:inset(0 50% 0 0)}
+.pc-tag{position:absolute;top:10px;font-size:10.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:99px;padding:4px 10px;letter-spacing:.03em;z-index:3}
+.pc-tag.left{left:10px}
+.pc-tag.right{right:10px}
+.pc-handle{position:absolute;top:0;bottom:0;left:50%;width:0;z-index:4;transform:translateX(-50%);pointer-events:none}
+.pc-handle-line{position:absolute;top:0;bottom:0;left:0;width:2px;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.4)}
+.pc-handle-grip{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--ink)}
+.pc-dates{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--ink-3);font-weight:600}
+
+/* in-app messaging */
+.chat-fab{position:fixed;right:16px;bottom:96px;z-index:60;width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;border:none;box-shadow:0 8px 22px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.chat-fab svg{width:23px;height:23px}
+.chat-fab-badge{position:absolute;top:-2px;right:-2px;min-width:19px;height:19px;border-radius:10px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;align-items:center;justify-content:center;padding:0 5px;border:2px solid var(--bg)}
+.chat-overlay{position:fixed;inset:0;background:var(--bg);z-index:300;display:none;flex-direction:column}
+.chat-overlay.show{display:flex}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-bottom:1px solid var(--line);flex-shrink:0}
+.chat-back{background:var(--surface-2);border:none;border-radius:10px;width:34px;height:34px;font-size:20px;color:var(--ink);cursor:pointer}
+.chat-head-title{font-family:var(--display);font-weight:700;font-size:16px;color:var(--ink)}
+.chat-thread{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-row{display:flex;flex-direction:column;max-width:78%}
+.chat-row.me{align-self:flex-end;align-items:flex-end}
+.chat-row.them{align-self:flex-start;align-items:flex-start}
+.chat-bubble{border-radius:16px;padding:10px 14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.chat-row.me .chat-bubble{background:var(--sage);color:#fff;border-bottom-right-radius:4px}
+.chat-row.them .chat-bubble{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:4px}
+.chat-meta{font-size:10.5px;color:var(--ink-3);margin-top:3px;padding:0 3px}
+.chat-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:40px 20px}
+.chat-composer{display:flex;gap:8px;align-items:flex-end;padding:12px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);flex-shrink:0}
+.chat-input{flex:1;resize:none;background:var(--surface);border:1px solid var(--line-2);border-radius:16px;color:var(--ink);font-family:var(--body);font-size:14px;padding:11px 15px;outline:none;max-height:120px}
+.chat-input:focus{border-color:var(--sage)}
+.chat-send{background:var(--sage);color:#fff;border:none;border-radius:50%;width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.chat-send svg{width:18px;height:18px}
+
+/* weekly check-in */
+.ci-q{margin-bottom:18px}
+.ci-q-label{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.ci-scale{display:flex;gap:6px}
+.ci-dot{flex:1;aspect-ratio:1;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ci-dot.on{background:var(--sage);border-color:var(--sage);color:#fff}
+.ci-scale-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-3);margin-top:4px}
+.ci-notes{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:12px;color:var(--ink);font-family:var(--body);font-size:14px;padding:12px 14px;outline:none;resize:vertical;min-height:70px}
+.ci-notes:focus{border-color:var(--sage)}
+.ci-submit{width:100%;background:var(--sage);color:#fff;border:none;border-radius:12px;font-family:var(--body);font-size:15px;font-weight:700;padding:14px;cursor:pointer;margin-top:6px}
 .lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:9999;align-items:center;justify-content:center;flex-direction:column;padding:24px}
 .lb.show{display:flex}
 .lb img{max-width:100%;max-height:76vh;border-radius:12px;object-fit:contain}
@@ -551,6 +618,83 @@ body{font-family:var(--body);color:var(--ink);-webkit-font-smoothing:antialiased
     <button class="lb-del" onclick="deletePhoto()">Delete photo</button>
   </div>
 
+  <button class="chat-fab" id="chat-fab" onclick="openChat()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    <span class="chat-fab-badge" id="chat-fab-badge" style="display:none">0</span>
+  </button>
+
+  <div class="chat-overlay" id="chat-overlay">
+    <div class="chat-head">
+      <button class="chat-back" onclick="closeChat()">‹</button>
+      <div class="chat-head-title">Milan</div>
+      <div style="width:34px"></div>
+    </div>
+    <div class="chat-thread" id="chat-thread"></div>
+    <div class="chat-composer">
+      <textarea class="chat-input" id="chat-input" rows="1" placeholder="Message Milan…" oninput="this.style.height='auto';this.style.height=Math.min(120,this.scrollHeight)+'px';" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendClientMessage();}"></textarea>
+      <button class="chat-send" id="chat-send-btn" onclick="sendClientMessage()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <input type="file" accept="video/*" capture="environment" id="form-check-input" style="display:none">
+
+  <div class="sl-overlay" id="form-check-panel">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title">Form check</div>
+        <button class="sl-x" onclick="closeFormCheck()">✕</button>
+      </div>
+      <div class="sl-body" id="fc-body"></div>
+    </div>
+  </div>
+
+  <div class="sl-overlay" id="checkin-panel">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title">Weekly check-in</div>
+        <button class="sl-x" onclick="closeCheckin()">✕</button>
+      </div>
+      <div class="sl-body" id="checkin-body"></div>
+    </div>
+  </div>
+
+  <div class="sl-overlay" id="compare-panel">
+    <div class="sl-panel">
+      <div class="sl-head">
+        <div class="sl-title">Compare progress</div>
+        <button class="sl-x" onclick="closeCompare()">✕</button>
+      </div>
+      <div class="sl-body">
+        <div class="pc-picker-row">
+          <div class="pc-picker">
+            <div class="pc-picker-label">Before</div>
+            <select id="pc-before-sel"></select>
+          </div>
+          <div class="pc-picker">
+            <div class="pc-picker-label">After</div>
+            <select id="pc-after-sel"></select>
+          </div>
+        </div>
+        <div class="pc-wrap" id="pc-wrap">
+          <img class="pc-img" id="pc-after-img" alt="After">
+          <img class="pc-img pc-before" id="pc-before-img" alt="Before">
+          <div class="pc-tag left">Before</div>
+          <div class="pc-tag right">After</div>
+          <div class="pc-handle" id="pc-handle">
+            <div class="pc-handle-line"></div>
+            <div class="pc-handle-grip">↔</div>
+          </div>
+        </div>
+        <div class="pc-dates">
+          <span id="pc-before-date"></span>
+          <span id="pc-after-date"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="sl-overlay" id="recipe-panel">
     <div class="sl-panel">
       <div class="sl-head">
@@ -654,6 +798,254 @@ async function init(){
   document.getElementById("loading").style.display="none";
   document.getElementById("main").style.display="block";
   renderToday();
+  startMessagePolling();
+}
+
+// ===== in-app messaging =====
+// No push/realtime infra in this stack (flagged to Milan), so this is
+// polling-based: the unread badge on the floating chat button refreshes
+// every 20s and on tab-foreground, and the open thread refreshes the same
+// way while it's on screen. A message only shows up next time the client's
+// app is open/foregrounded, not instantly like a push notification would.
+var clientMsgPollTimer=null,chatOpen=false;
+function fmtMsgTime(iso){return new Date(iso).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});}
+async function pollUnreadMessages(){
+  var r=await sb.from("messages").select("id",{count:"exact",head:true}).eq("client_slug",CLIENT).eq("sender","coach").eq("read_by_client",false);
+  var n=r.count||0;
+  var badge=document.getElementById("chat-fab-badge");
+  if(!badge)return;
+  if(n>0){badge.textContent=n>9?"9+":String(n);badge.style.display="flex";}
+  else{badge.style.display="none";}
+}
+function startMessagePolling(){
+  pollUnreadMessages();
+  clearInterval(clientMsgPollTimer);
+  clientMsgPollTimer=setInterval(function(){
+    pollUnreadMessages();
+    if(chatOpen)loadChatThread(true);
+  },20000);
+  document.addEventListener("visibilitychange",function(){
+    if(document.visibilityState==="visible"){pollUnreadMessages();if(chatOpen)loadChatThread(true);}
+  });
+}
+async function openChat(){
+  chatOpen=true;
+  document.getElementById("chat-overlay").classList.add("show");
+  await loadChatThread();
+}
+function closeChat(){
+  chatOpen=false;
+  document.getElementById("chat-overlay").classList.remove("show");
+}
+async function loadChatThread(silent){
+  var thread=document.getElementById("chat-thread");
+  if(!thread)return;
+  if(!silent)thread.innerHTML='<div class="loader">Loading…</div>';
+  var r=await sb.from("messages").select("*").eq("client_slug",CLIENT).order("created_at",{ascending:true});
+  var msgs=r.data||[];
+  var unread=msgs.filter(function(m){return m.sender==="coach"&&!m.read_by_client;});
+  if(unread.length){
+    await sb.from("messages").update({read_by_client:true}).eq("client_slug",CLIENT).eq("sender","coach").eq("read_by_client",false);
+    pollUnreadMessages();
+  }
+  thread.innerHTML="";
+  if(!msgs.length){thread.appendChild(el("div","chat-empty","No messages yet — say hi to Milan."));return;}
+  msgs.forEach(function(m){
+    var row=el("div","chat-row "+(m.sender==="client"?"me":"them"));
+    row.appendChild(el("div","chat-bubble",m.body));
+    row.appendChild(el("div","chat-meta",fmtMsgTime(m.created_at)));
+    thread.appendChild(row);
+  });
+  thread.scrollTop=thread.scrollHeight;
+}
+// ===== weekly check-in =====
+// A lightweight structured pulse-check (energy/sleep/soreness/motivation +
+// optional notes), once per calendar week (Monday-start). Shows as a status
+// card on Today, same pending/done pattern as training or weigh-in. The
+// coach sees the history + notes in the admin Coaching tab, and a
+// noticeably bad check-in (low energy/motivation or high soreness) flags on
+// the admin roster — the "at-risk alert" half of this feature is that
+// roster flag, not a push/email notification (no external alert service is
+// wired up in this stack yet).
+function weekStartStr(d){
+  d = d ? new Date(d) : new Date();
+  var day=d.getDay(); // 0=Sun..6=Sat
+  var diff=(day===0?-6:1-day); // days back to Monday
+  var mon=new Date(d);
+  mon.setDate(d.getDate()+diff);
+  mon.setHours(12,0,0,0);
+  return mon.getFullYear()+"-"+String(mon.getMonth()+1).padStart(2,"0")+"-"+String(mon.getDate()).padStart(2,"0");
+}
+var CHECKIN_QS=[
+  {key:"energy",label:"Energy levels this week"},
+  {key:"sleep",label:"Sleep quality"},
+  {key:"soreness",label:"Muscle soreness / fatigue"},
+  {key:"motivation",label:"Motivation to train"}
+];
+var checkinAnswers={},checkinWeekStart=null,checkinExisting=null;
+function openCheckin(wStart,existing){
+  checkinWeekStart=wStart;
+  checkinExisting=existing;
+  checkinAnswers=existing?{energy:existing.energy,sleep:existing.sleep,soreness:existing.soreness,motivation:existing.motivation}:{};
+  renderCheckinBody(existing&&existing.notes||"");
+  document.getElementById("checkin-panel").classList.add("show");
+}
+function closeCheckin(){document.getElementById("checkin-panel").classList.remove("show");}
+function renderCheckinBody(notesVal){
+  var body=document.getElementById("checkin-body");
+  body.innerHTML="";
+  CHECKIN_QS.forEach(function(q){
+    var wrap=el("div","ci-q");
+    wrap.appendChild(el("div","ci-q-label",q.label));
+    var scale=el("div","ci-scale");scale.id="ci-scale-"+q.key;
+    for(var i=1;i<=5;i++){
+      var dot=el("button","ci-dot"+(checkinAnswers[q.key]===i?" on":""),String(i));
+      dot.type="button";
+      dot.onclick=(function(key,val){return function(){
+        checkinAnswers[key]=val;
+        Array.prototype.forEach.call(document.querySelectorAll("#ci-scale-"+key+" .ci-dot"),function(d,idx){d.classList.toggle("on",idx+1===val);});
+      };})(q.key,i);
+      scale.appendChild(dot);
+    }
+    wrap.appendChild(scale);
+    var lbls=el("div","ci-scale-lbl");
+    lbls.appendChild(el("span","","Low"));lbls.appendChild(el("span","","High"));
+    wrap.appendChild(lbls);
+    body.appendChild(wrap);
+  });
+  var notesWrap=el("div","ci-q");
+  notesWrap.appendChild(el("div","ci-q-label","Anything your coach should know?"));
+  var notes=el("textarea","ci-notes");notes.id="ci-notes";notes.placeholder="Optional — injuries, schedule changes, wins, struggles…";notes.value=notesVal||"";
+  notesWrap.appendChild(notes);
+  body.appendChild(notesWrap);
+  var submitBtn=el("button","ci-submit",checkinExisting?"Update check-in":"Submit check-in");
+  submitBtn.type="button";
+  submitBtn.onclick=submitCheckin;
+  body.appendChild(submitBtn);
+}
+async function submitCheckin(){
+  var keys=CHECKIN_QS.map(function(q){return q.key;});
+  var missing=keys.filter(function(k){return !checkinAnswers[k];});
+  if(missing.length){alert("Please rate all four before submitting.");return;}
+  var notes=(document.getElementById("ci-notes").value||"").trim()||null;
+  var payload={client_slug:CLIENT,week_start:checkinWeekStart,energy:checkinAnswers.energy,sleep:checkinAnswers.sleep,soreness:checkinAnswers.soreness,motivation:checkinAnswers.motivation,notes:notes,submitted_at:new Date().toISOString()};
+  var up=await sb.from("check_ins").upsert(payload,{onConflict:"client_slug,week_start"});
+  if(up.error){alert("Couldn't submit — try again: "+up.error.message);return;}
+  closeCheckin();
+  renderToday();
+}
+
+// ===== AI form check =====
+// Honest scope: this is Claude's vision model looking at a handful of
+// frames pulled from the client's own video and giving qualitative,
+// plain-English cues. It is NOT frame-by-frame pose estimation or joint
+// tracking like a dedicated biomechanics product (e.g. Gymscore) does —
+// that needs a purpose-trained pose model, a different order of engineering
+// than anything else in this app, and is flagged to Milan as such rather
+// than oversold. No video is stored anywhere: frames are extracted in the
+// browser, sent once for analysis, and only the resulting text feedback is
+// saved (to form_checks) so the client and coach can look back at it.
+var fcExName=null;
+function openFormCheck(exName){
+  fcExName=exName;
+  var body=document.getElementById("fc-body");
+  body.innerHTML="";
+  body.appendChild(el("div","fc-ex-name",exName));
+  body.appendChild(el("div","fc-disclaimer","This is a general visual read from a few frames of your video — useful cues, not precise joint-by-joint tracking. Always defer to your coach."));
+  var pickBtn=el("button","form-check-btn","📹 Choose or record a video");
+  pickBtn.type="button";
+  pickBtn.onclick=function(){
+    var inp=document.getElementById("form-check-input");
+    inp.value="";
+    inp.onchange=function(){ if(inp.files&&inp.files[0]) runFormCheck(inp.files[0]); };
+    inp.click();
+  };
+  body.appendChild(pickBtn);
+  document.getElementById("form-check-panel").classList.add("show");
+}
+function closeFormCheck(){document.getElementById("form-check-panel").classList.remove("show");}
+
+// Grabs a handful of evenly-spaced frames from the video as base64 JPEGs,
+// downscaled the same way food photos are (fileToBase64) so a 30-60fps
+// phone video doesn't balloon the request — the model only needs a few
+// clear stills of key positions (setup / mid-rep / bottom or lockout), not
+// the full clip.
+function videoFileToFrames(file,maxDim,frameCount){
+  return new Promise(function(resolve,reject){
+    var video=document.createElement("video");
+    video.muted=true;video.playsInline=true;video.preload="auto";
+    var url=URL.createObjectURL(file);
+    var frames=[];
+    function cleanup(){ URL.revokeObjectURL(url); }
+    video.onloadedmetadata=function(){
+      var dur=video.duration;
+      if(!isFinite(dur)||dur<=0){cleanup();reject(new Error("Couldn't read that video's length."));return;}
+      var times=[];
+      for(var i=1;i<=frameCount;i++){ times.push(dur*i/(frameCount+1)); }
+      function captureAt(idx){
+        if(idx>=times.length){ cleanup(); resolve(frames); return; }
+        video.currentTime=times[idx];
+      }
+      video.onseeked=function(){
+        var w=video.videoWidth||480,h=video.videoHeight||640;
+        var scale=Math.min(1,maxDim/Math.max(w,h));
+        var cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+        var canvas=document.createElement("canvas");canvas.width=cw;canvas.height=ch;
+        canvas.getContext("2d").drawImage(video,0,0,cw,ch);
+        var dataUrl=canvas.toDataURL("image/jpeg",0.8);
+        frames.push(dataUrl.slice(dataUrl.indexOf(",")+1));
+        captureAt(frames.length);
+      };
+      captureAt(0);
+    };
+    video.onerror=function(){cleanup();reject(new Error("Couldn't read that video file."));};
+    video.src=url;
+  });
+}
+async function runFormCheck(file){
+  var body=document.getElementById("fc-body");
+  body.innerHTML="";
+  body.appendChild(el("div","fc-ex-name",fcExName));
+  body.appendChild(el("div","fc-status","Pulling frames from your video…"));
+  var frames;
+  try{
+    frames=await videoFileToFrames(file,900,4);
+  }catch(e){
+    body.innerHTML="";
+    body.appendChild(el("div","fc-ex-name",fcExName));
+    body.appendChild(el("div","fc-status",e.message||"Couldn't read that video — try a different file."));
+    return;
+  }
+  if(!frames.length){
+    body.innerHTML="";
+    body.appendChild(el("div","fc-ex-name",fcExName));
+    body.appendChild(el("div","fc-status","Couldn't pull any frames from that video — try a different clip."));
+    return;
+  }
+  body.innerHTML="";
+  body.appendChild(el("div","fc-ex-name",fcExName));
+  body.appendChild(el("div","fc-status","Claude is looking at your form… usually 15–30 seconds."));
+  var resp=await sb.functions.invoke("analyze-form",{body:{frames:frames,ex_name:fcExName}});
+  body.innerHTML="";
+  body.appendChild(el("div","fc-ex-name",fcExName));
+  if(resp.error||!resp.data||resp.data.error){
+    body.appendChild(el("div","fc-status",(resp.data&&resp.data.error)||"Couldn't analyse that video — try again."));
+    return;
+  }
+  var feedback=resp.data.feedback||"";
+  body.appendChild(el("div","fc-disclaimer","General visual read, not precise joint tracking — always defer to your coach."));
+  body.appendChild(el("div","fc-feedback",feedback));
+  sb.from("form_checks").insert({client_slug:CLIENT,ex_name:fcExName,feedback:feedback}).then(function(){});
+}
+
+async function sendClientMessage(){
+  var ta=document.getElementById("chat-input");
+  var txt=(ta.value||"").trim();
+  if(!txt)return;
+  ta.value="";ta.style.height="auto";
+  var ins=await sb.from("messages").insert({client_slug:CLIENT,sender:"client",body:txt,read_by_client:true,read_by_coach:false});
+  if(ins.error){alert("Couldn't send: "+ins.error.message);return;}
+  loadChatThread();
 }
 
 function buildProg(rows){
@@ -954,9 +1346,15 @@ async function renderToday(){
   var rLift=todayKey?await sb.from("lift_logs").select("id",{count:"exact",head:true}).eq("client",CLIENT).eq("day",todayKey).gte("logged_at",dStr+"T00:00:00"):{count:0};
   var rCondLog=await sb.from("conditioning_logs").select("id",{count:"exact",head:true}).eq("client_slug",CLIENT).eq("logged_date",dStr);
   var rCondPlan=await sb.from("conditioning_plan").select("*").eq("client_slug",CLIENT).eq("day_of_week",todayDow).order("item_order");
+  var rSessDates=await sb.from("workout_sessions").select("session_date").eq("client",CLIENT).order("session_date",{ascending:false}).limit(400);
+  var wStart=weekStartStr();
+  var rCheckin=await sb.from("check_ins").select("*").eq("client_slug",CLIENT).eq("week_start",wStart).maybeSingle();
   var body=await loadBody();
 
   vt.innerHTML="";
+  workoutDatesCache={};
+  (rSessDates.data||[]).forEach(function(r){ workoutDatesCache[r.session_date]=true; });
+  var wStreak=workoutStreak();
 
   // greeting + focus
   vt.appendChild(el("div","tday-hi",greeting()+", "+firstName()));
@@ -974,6 +1372,11 @@ async function renderToday(){
   }
   vt.appendChild(head);
   vt.appendChild(el("div","tday-date",new Date().toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"})));
+  if(wStreak>0){
+    var sBadge=el("div","streak-badge");
+    sBadge.innerHTML="🔥 "+wStreak+"-day streak";
+    vt.appendChild(sBadge);
+  }
 
   // status-card feed
   var feed=el("div","tday-feed");
@@ -1048,6 +1451,14 @@ async function renderToday(){
   }else{
     feed.appendChild(statusCard({state:"pending",tone:"brand",title:"Weigh-in",sub:"No weigh-ins yet \u2014 tap to log",onClick:function(){goTab("progress");}}));
   }
+
+  // -- weekly check-in --
+  var checkinDone=rCheckin.data;
+  feed.appendChild(statusCard({
+    state:checkinDone?"done":"pending",tone:checkinDone?"good":"brand",title:"Weekly check-in",
+    sub:checkinDone?"Submitted this week \u00b7 tap to update":"Takes 30 seconds \u2014 how's your week going?",
+    onClick:function(){openCheckin(wStart,checkinDone);}
+  }));
 
   vt.appendChild(feed);
 
@@ -1130,6 +1541,20 @@ function statusCard(opts){
   if(opts.sub)card.appendChild(el("div","scard-sub",opts.sub));
   if(opts.onClick)card.onclick=opts.onClick;
   return card;
+}
+
+var workoutDatesCache={};
+function workoutStreak(){
+  // Consecutive calendar days (today backward, no gap tolerance) with a
+  // logged workout_sessions row — same walk-backward pattern as habitStreak,
+  // just sourced from training sessions instead of habit check-ins.
+  var n=0,d=new Date();d.setHours(12,0,0,0);
+  for(var i=0;i<400;i++){
+    var ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(workoutDatesCache[ds]){n++;d.setDate(d.getDate()-1);}
+    else break;
+  }
+  return n;
 }
 
 var habitLogsCache={};
@@ -1239,6 +1664,11 @@ function renderLog(){
       var addBtn=el("button","add-set-btn","+ Add set");
       addBtn.onclick=(function(exId){return function(){addSet(exId);};})(ex.id);
       body.appendChild(addBtn);
+
+      var fcBtn=el("button","form-check-btn","📹 Get form feedback on a video");
+      fcBtn.type="button";
+      fcBtn.onclick=(function(exName){return function(){openFormCheck(exName);};})(ex.name);
+      body.appendChild(fcBtn);
 
       var alert=el("div","alert-bar");alert.id="al_"+ex.id;
       body.appendChild(alert);
@@ -1415,9 +1845,49 @@ async function autosaveSet(exId,i){
   if(del.error){sync(false);return;}
   if(w||r){
     await sb.from("lift_logs").insert({client:CLIENT,day:curDay,ex_id:exId,ex_name:ex.name,set_index:i,weight:w?parseFloat(w):null,reps:r?parseInt(r):null});
+    if(w)checkForPR(exId,ex.name,parseFloat(w));
   }
   sync(false);
   touchWorkoutSession();
+}
+
+// ===== PR celebration =====
+// v1 scope, deliberately kept simple: a PR is "heavier than any weight this
+// client has ever logged on this exercise on a previous day." Same-session
+// warmup-to-working-set jumps only celebrate once per exercise per session
+// (prSeenToday), and rep-only PRs (same weight, more reps) aren't detected —
+// weight is the one unambiguous signal without getting into 1RM-estimate
+// guesswork. Fires only from live typing (autosaveSet), never from loadCache
+// re-hydrating old numbers on page load.
+var prSeenToday={};
+async function checkForPR(exId,exName,weight){
+  if(!weight||weight<=0||prSeenToday[exId])return;
+  var today=new Date().toISOString().split("T")[0];
+  var best=await sb.from("lift_logs").select("weight").eq("client",CLIENT).eq("ex_id",exId).lt("logged_at",today+"T00:00:00").order("weight",{ascending:false}).limit(1);
+  if(best.error)return;
+  var row=best.data&&best.data[0];
+  var priorBest=row&&row.weight!=null?parseFloat(row.weight):null;
+  if(priorBest!=null&&weight>priorBest){
+    prSeenToday[exId]=true;
+    showPRToast(exName,weight,priorBest);
+  }
+}
+function showPRToast(exName,weight,priorBest){
+  var t=document.getElementById("pr-toast");
+  if(!t){
+    t=el("div","pr-toast");t.id="pr-toast";
+    t.appendChild(el("div","pr-toast-ic","🏆"));
+    var txt=el("div","pr-toast-txt");
+    txt.appendChild(el("div","pr-toast-h"));
+    txt.appendChild(el("div","pr-toast-s"));
+    t.appendChild(txt);
+    document.body.appendChild(t);
+  }
+  t.querySelector(".pr-toast-h").textContent="New PR — "+exName;
+  t.querySelector(".pr-toast-s").textContent=weight+"kg, up from "+priorBest+"kg";
+  t.classList.add("show");
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(function(){t.classList.remove("show");},3600);
 }
 
 function findEx(exId){var f=null;PROG[curDay].sections.forEach(function(s){s.exercises.forEach(function(e){if(e.id===exId)f=e;});});return f;}
@@ -1670,6 +2140,72 @@ async function deletePhoto(){
   renderProgress();
 }
 
+// ===== before/after photo comparison =====
+// Reuses the photo list + signed URLs renderProgress() already fetched
+// (progressPhotosCache/progressPhotoUrlMap), so opening the comparator is
+// instant — no extra round trip. photos are ordered taken_date desc, so
+// index 0 is newest and the last index is oldest.
+var progressPhotosCache=[],progressPhotoUrlMap={};
+function fmtPhotoDate(d){return new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});}
+function openCompare(){
+  if(progressPhotosCache.length<2)return;
+  var beforeSel=document.getElementById("pc-before-sel"),afterSel=document.getElementById("pc-after-sel");
+  beforeSel.innerHTML="";afterSel.innerHTML="";
+  progressPhotosCache.forEach(function(p,idx){
+    var label=fmtPhotoDate(p.taken_date);
+    var o1=el("option","",label);o1.value=idx;beforeSel.appendChild(o1);
+    var o2=el("option","",label);o2.value=idx;afterSel.appendChild(o2);
+  });
+  beforeSel.value=progressPhotosCache.length-1; // oldest
+  afterSel.value=0; // newest
+  beforeSel.onchange=renderCompareImages;
+  afterSel.onchange=renderCompareImages;
+  renderCompareImages();
+  setCompareSlider(50);
+  document.getElementById("compare-panel").classList.add("show");
+}
+function closeCompare(){document.getElementById("compare-panel").classList.remove("show");}
+function renderCompareImages(){
+  var bIdx=parseInt(document.getElementById("pc-before-sel").value,10);
+  var aIdx=parseInt(document.getElementById("pc-after-sel").value,10);
+  var bPhoto=progressPhotosCache[bIdx],aPhoto=progressPhotosCache[aIdx];
+  if(!bPhoto||!aPhoto)return;
+  document.getElementById("pc-before-img").src=progressPhotoUrlMap[bPhoto.storage_path]||"";
+  document.getElementById("pc-after-img").src=progressPhotoUrlMap[aPhoto.storage_path]||"";
+  document.getElementById("pc-before-date").textContent=fmtPhotoDate(bPhoto.taken_date);
+  document.getElementById("pc-after-date").textContent=fmtPhotoDate(aPhoto.taken_date);
+}
+function setCompareSlider(pct){
+  pct=Math.max(0,Math.min(100,pct));
+  document.getElementById("pc-before-img").style.clipPath="inset(0 "+(100-pct)+"% 0 0)";
+  document.getElementById("pc-handle").style.left=pct+"%";
+}
+(function(){
+  // Pointer Events cover mouse + touch + pen in one listener, so dragging
+  // the divider works the same on the client's phone as it does in a
+  // desktop browser. #pc-wrap is static markup present from page load.
+  var dragging=false;
+  function pct(e){
+    var wrap=document.getElementById("pc-wrap");
+    var rect=wrap.getBoundingClientRect();
+    var x=e.clientX-rect.left;
+    return (x/rect.width)*100;
+  }
+  document.addEventListener("pointerdown",function(e){
+    var wrap=document.getElementById("pc-wrap");
+    if(!wrap||!wrap.contains(e.target))return;
+    dragging=true;
+    setCompareSlider(pct(e));
+    e.preventDefault();
+  });
+  document.addEventListener("pointermove",function(e){
+    if(!dragging)return;
+    setCompareSlider(pct(e));
+  });
+  document.addEventListener("pointerup",function(){dragging=false;});
+  document.addEventListener("pointercancel",function(){dragging=false;});
+})();
+
 async function renderProgress(){
   var vp=document.getElementById("view-progress");
   vp.innerHTML="";
@@ -1721,12 +2257,13 @@ async function renderProgress(){
   addTile.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="pp">Add photo</span>';
   addTile.onclick=function(){var pi=document.getElementById("photo-input");pi.onchange=function(){if(pi.files&&pi.files[0]){uploadPhoto(pi.files[0]);pi.value="";}};pi.click();};
   grid.appendChild(addTile);
+  progressPhotosCache=photos;progressPhotoUrlMap={};
   if(photos.length){
     var su=await sb.storage.from("progress-photos").createSignedUrls(photos.map(function(p){return p.storage_path;}),3600);
-    var umap={};if(su.data)su.data.forEach(function(s){umap[s.path]=s.signedUrl;});
+    if(su.data)su.data.forEach(function(s){progressPhotoUrlMap[s.path]=s.signedUrl;});
     photos.forEach(function(p){
       var tile=el("div","ptile");
-      var url=umap[p.storage_path];
+      var url=progressPhotoUrlMap[p.storage_path];
       if(url)tile.style.backgroundImage="url('"+url+"')";
       tile.appendChild(el("div","pdate",new Date(p.taken_date+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"})));
       tile.onclick=function(){openLB(url,p.storage_path);};
@@ -1734,6 +2271,13 @@ async function renderProgress(){
     });
   }
   vp.appendChild(grid);
+  if(photos.length>=2){
+    var cmpBtn=el("button","pcompare-btn");
+    cmpBtn.type="button";
+    cmpBtn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v18M16 3v18M3 8l-2 4 2 4M21 8l2 4-2 4"/></svg><span>Compare before/after</span>';
+    cmpBtn.onclick=openCompare;
+    vp.appendChild(cmpBtn);
+  }
 
   // ===== Strength (existing lift chart) =====
   var allEx=[];

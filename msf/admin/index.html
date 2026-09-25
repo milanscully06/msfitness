@@ -203,8 +203,29 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 .note-when{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
 .note-del{background:none;border:none;color:var(--ink-3);font-size:13px;cursor:pointer;padding:0 2px}
 .note-txt{font-size:13.5px;color:var(--ink-2);line-height:1.55;white-space:pre-wrap}
+.ci-stats{font-size:12px;font-weight:600;color:var(--ink-2);margin:2px 0 6px}
+.ai-recipe-box{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:14px;margin-bottom:18px}
+.ai-recipe-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.ai-recipe-row{display:flex;gap:8px;align-items:center}
+.ai-recipe-row input{width:64px;flex-shrink:0}
+.ai-recipe-count-lbl{font-size:12px;color:var(--ink-3);flex-shrink:0}
+.ai-recipe-row .btn-green{margin-left:auto}
 .sec-label{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:26px 0 12px}
 .wt-empty{font-size:13px;color:var(--ink-3);text-align:center;padding:14px 10px}
+.msg-wrap{display:flex;flex-direction:column;height:calc(100vh - 260px);min-height:360px}
+.msg-thread{flex:1;overflow-y:auto;padding:4px 2px;display:flex;flex-direction:column;gap:10px}
+.msg-row{display:flex;flex-direction:column;max-width:78%}
+.msg-row.me{align-self:flex-end;align-items:flex-end}
+.msg-row.them{align-self:flex-start;align-items:flex-start}
+.msg-bubble{border-radius:16px;padding:10px 14px;font-size:13.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.msg-row.me .msg-bubble{background:var(--ink);color:var(--bg);border-bottom-right-radius:4px}
+.msg-row.them .msg-bubble{background:var(--surface);border:1px solid var(--line);color:var(--ink);border-bottom-left-radius:4px}
+.msg-meta{font-size:10px;color:var(--ink-3);margin-top:3px;padding:0 3px}
+.msg-composer{display:flex;gap:8px;align-items:flex-end;border-top:1px solid var(--line);padding-top:12px;margin-top:10px}
+.msg-input{flex:1;resize:none;background:var(--surface);border:1px solid var(--line-2);border-radius:14px;color:var(--ink);font-family:var(--body);font-size:13.5px;padding:10px 14px;outline:none;max-height:120px}
+.msg-input:focus{border-color:var(--sage)}
+.msg-send{background:var(--ink);color:var(--bg);border:none;border-radius:12px;font-family:var(--body);font-size:13.5px;font-weight:700;padding:11px 18px;cursor:pointer;flex-shrink:0}
+.msg-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;padding:0 5px;margin-left:6px}
 .folder-tab{flex:1;padding:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-family:var(--body);font-size:13px;font-weight:700;cursor:pointer}
 .folder-tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .cli-right{display:flex;align-items:center;gap:10px}
@@ -591,6 +612,17 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 <div class="modal-box">
   <div class="modal-title">Recipe library</div>
   <div class="modal-sub">Shared with every client — they can browse these and request one in their plan</div>
+  <div class="ai-recipe-box">
+    <div class="ai-recipe-title">✨ AI generate recipes</div>
+    <div class="pf-hint2" style="margin-bottom:8px">Describe what you want — Claude drafts the ingredients, instructions and macros. No photo is attached; add one below afterward if you'd like.</div>
+    <textarea class="form-input" id="ai-rec-brief" style="min-height:70px;margin-bottom:8px" placeholder="e.g. 4 high-protein breakfasts under 500 kcal, quick to make, no dairy"></textarea>
+    <div class="ai-recipe-row">
+      <input class="form-input" type="number" id="ai-rec-count" value="4" min="1" max="8">
+      <span class="ai-recipe-count-lbl">recipes</span>
+      <button class="btn-green" id="ai-rec-go-btn">Generate</button>
+    </div>
+    <div id="ai-rec-status" class="wt-empty" style="display:none"></div>
+  </div>
   <div class="clone-box">
     <div class="form-group"><label class="form-label">Recipe name</label><input class="form-input" id="rc-title" placeholder="e.g. High-protein chicken pesto pasta"></div>
     <div class="pkg-row">
@@ -815,6 +847,19 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
 </div>
 </div>
 
+<div class="modal-overlay" id="modal-ai-program">
+<div class="modal-box">
+  <div class="modal-title">✨ AI draft a training week</div>
+  <div class="pf-hint2" style="margin-bottom:12px">Describe goals, equipment, days/week, and anything to avoid. Claude drafts full days using this app's own exercise/set format — added to the program below for you to review and edit, same as inserting a template. Nothing saves until you tap "Save training".</div>
+  <textarea class="note-in" id="ai-prog-brief" placeholder="e.g. 4 days/week, dumbbells + bands only, upper body hypertrophy focus, avoid overhead pressing (shoulder issue)" style="min-height:100px"></textarea>
+  <div id="ai-prog-status" class="wt-empty" style="display:none"></div>
+  <div class="modal-actions" style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn-outline" style="width:100%" id="ai-prog-cancel-btn">Cancel</button>
+    <button class="btn-green" style="width:100%" id="ai-prog-go-btn">Generate</button>
+  </div>
+</div>
+</div>
+
 
 <script>
 var sb = supabase.createClient("https://idlwqbgsnjoikoyhifbr.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlkbHdxYmdzbmpvaWtveWhpZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0NjI5MDksImV4cCI6MjA5NzAzODkwOX0.K6axtuPPxVHn5CtZ5kplw20P5YtLd7kpAAkylhk-QNg");
@@ -841,6 +886,7 @@ function closeModal(id){document.getElementById(id).classList.remove("show");}
 document.getElementById("add-btn").onclick = openAdd;
 document.getElementById("rec-btn").onclick = openRecipes;
 document.getElementById("rc-close-btn").onclick = function(){closeModal("modal-recipes");};
+document.getElementById("ai-rec-go-btn").onclick = generateAiRecipes;
 document.getElementById("rc-save-btn").onclick = saveRec;
 document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
@@ -848,6 +894,8 @@ document.getElementById("res-btn").onclick = openResources;
 document.getElementById("tmpl-btn").onclick = openTemplates;
 document.getElementById("tmpl-close-btn").onclick = function(){closeModal("modal-templates");};
 document.getElementById("tmpl-pick-close-btn").onclick = function(){closeModal("modal-tmpl-pick");};
+document.getElementById("ai-prog-cancel-btn").onclick = function(){closeModal("modal-ai-program");};
+document.getElementById("ai-prog-go-btn").onclick = generateAiProgram;
 document.addEventListener("click", function(e){
   var t = e.target.closest ? e.target.closest("[data-jump]") : null;
   if(!t) return;
@@ -1440,6 +1488,49 @@ async function uploadRecPhoto(f){
   recPreview(uploadedRecPhoto);
 }
 
+// ===== AI-generated recipes =====
+// Same generate-*-calls-Anthropic pattern as the program builder and the
+// client app's food-photo estimator. Drafts land straight in the shared
+// recipe library with no photo attached — Milan attaches one manually the
+// same way he already does for hand-typed recipes (no image-generation
+// integration exists in this stack; that's a separate cost/API decision,
+// not something switched on silently here). Once in the library they work
+// with the existing "place recipe into a client's plan" flow untouched.
+async function generateAiRecipes(){
+  var brief=(document.getElementById("ai-rec-brief").value||"").trim();
+  if(!brief){alert("Describe what you want first.");return;}
+  var count=parseInt(document.getElementById("ai-rec-count").value,10)||4;
+  count=Math.max(1,Math.min(8,count));
+  var go=document.getElementById("ai-rec-go-btn");
+  var st=document.getElementById("ai-rec-status");
+  go.disabled=true;go.textContent="Generating…";
+  st.style.display="block";st.textContent="Claude is drafting "+count+" recipe"+(count===1?"":"s")+" — usually 20–40 seconds.";
+  var res=await sb.functions.invoke("generate-recipes",{body:{brief:brief,count:count}});
+  go.disabled=false;go.textContent="Generate";
+  if(res.error||!res.data||!res.data.recipes||!res.data.recipes.length){
+    st.textContent="Couldn't generate recipes — try rephrasing the brief, or try again in a moment.";
+    return;
+  }
+  var validCats=["Breakfast","Lunch","Dinner","Snack","Dessert","Other"];
+  var rows=res.data.recipes.map(function(r){
+    return {
+      title:r.title||"Untitled recipe",
+      category:validCats.indexOf(r.category)!==-1?r.category:"Other",
+      photo_url:null,
+      ingredients:Array.isArray(r.ingredients)?r.ingredients.join("\n"):(r.ingredients||""),
+      instructions:Array.isArray(r.instructions)?r.instructions.join("\n"):(r.instructions||""),
+      calories:r.calories||0, protein:r.protein||0, carbs:r.carbs||0, fats:r.fats||0,
+      servings:r.servings||1
+    };
+  });
+  var ins=await sb.from("recipes").insert(rows);
+  if(ins.error){st.textContent="Generated, but couldn't save them: "+ins.error.message;return;}
+  st.style.display="none";
+  document.getElementById("ai-rec-brief").value="";
+  showSucc("Added "+rows.length+" AI-drafted recipe"+(rows.length===1?"":"s")+" to the library below — add a photo to any of them if you'd like one.");
+  loadRecipes();
+}
+
 async function saveRec(){
   var title=document.getElementById("rc-title").value.trim();
   if(!title){alert("Give the recipe a name");return;}
@@ -1589,7 +1680,7 @@ document.getElementById("asl").oninput = function(){
 
 // ── LOAD CLIENTS ──
 var allClients = [], clientFolder = "active", rosterSearch = "";
-var lastGymBySlug = {}, lastFoodBySlug = {}, lastDurationBySlug = {};
+var lastGymBySlug = {}, lastFoodBySlug = {}, lastDurationBySlug = {}, unreadMsgBySlug = {}, lowCheckinBySlug = {};
 
 async function loadClients() {
   var res = await sb.from("clients").select("*").order("created_at");
@@ -1603,8 +1694,24 @@ async function loadClients() {
   var rGym = await sb.from("lift_logs").select("client,logged_at").gte("logged_at",sinceISO);
   var rFood = await sb.from("nutrition_logs").select("client_slug,logged_date").gte("logged_date",sinceDateStr);
   var rSessions = await sb.from("workout_sessions").select("client,session_date,started_at,last_active_at,ended_at,duration_seconds").gte("session_date",sinceDateStr);
+  var rUnread = await sb.from("messages").select("client_slug").eq("sender","client").eq("read_by_coach",false);
+  var rCheckins = await sb.from("check_ins").select("client_slug,week_start,energy,soreness,motivation").gte("week_start",sinceDateStr);
 
-  lastGymBySlug = {}; lastFoodBySlug = {}; lastDurationBySlug = {};
+  lastGymBySlug = {}; lastFoodBySlug = {}; lastDurationBySlug = {}; unreadMsgBySlug = {}; lowCheckinBySlug = {};
+  (rUnread.data||[]).forEach(function(r){ unreadMsgBySlug[r.client_slug] = (unreadMsgBySlug[r.client_slug]||0) + 1; });
+  // surface the most recent check-in per client, then flag it if energy/motivation
+  // are low or soreness is high — this is the "at-risk alert" half of check-ins:
+  // no external push/email service is wired up, so it shows as a roster flag
+  // the coach will see next time they open the admin panel, not an instant ping.
+  var latestCheckinBySlug = {};
+  (rCheckins.data||[]).forEach(function(r){
+    var prev = latestCheckinBySlug[r.client_slug];
+    if (!prev || r.week_start > prev.week_start) latestCheckinBySlug[r.client_slug] = r;
+  });
+  Object.keys(latestCheckinBySlug).forEach(function(slug){
+    var ci = latestCheckinBySlug[slug];
+    if ((ci.energy+ci.motivation)/2<=2 || ci.soreness>=4) lowCheckinBySlug[slug]=true;
+  });
   (rGym.data||[]).forEach(function(r){
     var d = new Date(r.logged_at);
     if (!lastGymBySlug[r.client] || d > lastGymBySlug[r.client]) lastGymBySlug[r.client] = d;
@@ -1706,12 +1813,17 @@ function renderClients() {
         var sep = document.createTextNode(" · ");
         var foodSpan = el("span",act.foodStale?("flag"+(act.foodDays!=null?" amber":"")):"",foodTxt);
         actLine.appendChild(gymSpan); actLine.appendChild(sep); actLine.appendChild(foodSpan);
+        if (lowCheckinBySlug[c.slug]) {
+          actLine.appendChild(document.createTextNode(" · "));
+          actLine.appendChild(el("span","flag","⚠️ low check-in"));
+        }
       }
       info.appendChild(actLine);
     }
     left.appendChild(avWrap); left.appendChild(info);
     item.appendChild(left);
     var right = el("div","cli-right");
+    if (unreadMsgBySlug[c.slug]) right.appendChild(el("span","msg-badge",String(unreadMsgBySlug[c.slug])));
     var isActive = c.active!==false;
     var tog = el("button","folder-move-btn", isActive?"Archive":"Restore");
     tog.onclick = (function(slug,mk){ return function(ev){ toggleActive(slug,mk,ev); }; })(c.slug,!isActive);
@@ -1742,7 +1854,7 @@ var condActiveDay="mon";
 var habitCont="edit-habits", habitInputId="ehab-new";
 var weighInCont="edit-weighins", wiDateId="wi-date", wiKgId="wi-kg";
 var profileSlug=null, profileTabName="overview";
-var PF_TABS=[["overview","Overview"],["program","Program"],["conditioning","Conditioning"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"]];
+var PF_TABS=[["overview","Overview"],["program","Program"],["conditioning","Conditioning"],["nutrition","Nutrition"],["habits","Habits"],["progress","Progress"],["coaching","Coaching"],["messages","Messages"]];
 
 function openProfile(slug){
   var c=allClients.find(function(x){return x.slug===slug;});
@@ -1757,6 +1869,7 @@ function openProfile(slug){
   var tb=document.getElementById("pf-tabs"); tb.innerHTML="";
   PF_TABS.forEach(function(t){
     var b=el("button","pf-tab"+(t[0]==="overview"?" on":""),t[1]);
+    if(t[0]==="messages"&&unreadMsgBySlug[slug]) b.appendChild(el("span","msg-badge",String(unreadMsgBySlug[slug])));
     b.onclick=(function(nm){return function(){ switchPfTab(nm); };})(t[0]);
     tb.appendChild(b);
   });
@@ -1770,12 +1883,13 @@ function switchPfTab(name){
   Array.prototype.forEach.call(tb.children,function(b,i){ b.classList.toggle("on",PF_TABS[i][0]===name); });
   renderPfTab();
 }
-function closeProfile(){ document.getElementById("profile").classList.remove("show"); }
+function closeProfile(){ document.getElementById("profile").classList.remove("show"); clearInterval(_pfMsgPollTimer); }
 
 function renderPfTab(){
   var b=document.getElementById("pf-body"); b.innerHTML="";
   var c=allClients.find(function(x){return x.slug===profileSlug;});
   if(!c)return;
+  if(profileTabName!=="messages") clearInterval(_pfMsgPollTimer);
   if(profileTabName==="overview"){ pfOverview(b,c); return; }
   if(profileTabName==="program"){ pfProgram(b,c); return; }
   if(profileTabName==="conditioning"){ pfConditioning(b,c); return; }
@@ -1783,6 +1897,7 @@ function renderPfTab(){
   if(profileTabName==="habits"){ pfHabits(b,c); return; }
   if(profileTabName==="progress"){ pfProgress(b,c); return; }
   if(profileTabName==="coaching"){ pfCoaching(b,c); return; }
+  if(profileTabName==="messages"){ pfMessages(b,c); return; }
 }
 
 // ===== ported from trainer dashboard: coach notes + requests + recipe placement =====
@@ -1928,14 +2043,108 @@ async function resolveReq(id,slug){
   renderPfTab();
 }
 
+// ===== in-app messaging =====
+// No push/realtime infra in this stack, so this is polling-based: the thread
+// refetches every 8s while its tab is open, and the roster's unread badge
+// refreshes on the normal 30s client-list reload. A client only sees a new
+// message next time they have the app open — flagged to Milan as the
+// tradeoff of skipping a push-notification service for now.
+var _pfMsgPollTimer=null;
+async function pfMessages(b,c){
+  b.innerHTML="";
+  var wrap=el("div","msg-wrap");
+  var thread=el("div","msg-thread");thread.id="msg-thread";
+  wrap.appendChild(thread);
+  var composer=el("div","msg-composer");
+  var ta=el("textarea","msg-input");ta.id="msg-input";ta.placeholder="Message "+(c.name||"client")+"…";ta.rows=1;
+  ta.oninput=function(){this.style.height="auto";this.style.height=Math.min(120,this.scrollHeight)+"px";};
+  ta.onkeydown=function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendCoachMessage(c.slug);}};
+  var sendBtn=el("button","msg-send","Send");sendBtn.type="button";
+  sendBtn.onclick=function(){sendCoachMessage(c.slug);};
+  composer.appendChild(ta);composer.appendChild(sendBtn);
+  wrap.appendChild(composer);
+  b.appendChild(wrap);
+  await loadMessageThread(c.slug);
+  clearInterval(_pfMsgPollTimer);
+  _pfMsgPollTimer=setInterval(function(){
+    if(profileTabName==="messages"&&profileSlug===c.slug) loadMessageThread(c.slug,true);
+    else clearInterval(_pfMsgPollTimer);
+  },8000);
+}
+async function loadMessageThread(slug,silent){
+  var thread=document.getElementById("msg-thread");
+  if(!thread)return;
+  if(!silent)thread.innerHTML='<div class="loader">Loading…</div>';
+  var r=await sb.from("messages").select("*").eq("client_slug",slug).order("created_at",{ascending:true});
+  var msgs=r.data||[];
+  var unread=msgs.filter(function(m){return m.sender==="client"&&!m.read_by_coach;});
+  if(unread.length){
+    await sb.from("messages").update({read_by_coach:true}).eq("client_slug",slug).eq("sender","client").eq("read_by_coach",false);
+    delete unreadMsgBySlug[slug];
+    var badge=document.querySelector(".pf-tab .msg-badge");
+    if(badge)badge.remove();
+    renderClients();
+  }
+  thread.innerHTML="";
+  if(!msgs.length){thread.appendChild(el("div","wt-empty","No messages yet. Say hi."));return;}
+  msgs.forEach(function(m){
+    var row=el("div","msg-row "+(m.sender==="coach"?"me":"them"));
+    row.appendChild(el("div","msg-bubble",m.body));
+    row.appendChild(el("div","msg-meta",new Date(m.created_at).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})));
+    thread.appendChild(row);
+  });
+  thread.scrollTop=thread.scrollHeight;
+}
+async function sendCoachMessage(slug){
+  var ta=document.getElementById("msg-input");
+  var txt=(ta.value||"").trim();
+  if(!txt)return;
+  ta.value="";ta.style.height="auto";
+  var ins=await sb.from("messages").insert({client_slug:slug,sender:"coach",body:txt,read_by_coach:true,read_by_client:false});
+  if(ins.error){alert("Couldn't send: "+ins.error.message);return;}
+  loadMessageThread(slug);
+}
+
 async function pfCoaching(b,c){
   editSlug=c.slug;
   b.appendChild(el("div","loader","Loading\u2026"));
   var rcr=await sb.from("change_requests").select("*").eq("client_slug",c.slug).eq("status","open").order("created_at",{ascending:false});
   var rcn=await sb.from("coach_notes").select("*").eq("client_slug",c.slug).order("note_date",{ascending:false}).order("created_at",{ascending:false});
   var rsw=await sb.from("meal_swaps").select("*").eq("client_slug",c.slug).order("created_at",{ascending:false});
-  var creqs=rcr.data||[], cnotes=rcn.data||[], swaps=rsw.data||[];
+  var rci=await sb.from("check_ins").select("*").eq("client_slug",c.slug).order("week_start",{ascending:false}).limit(12);
+  var rfc=await sb.from("form_checks").select("*").eq("client_slug",c.slug).order("created_at",{ascending:false}).limit(10);
+  var creqs=rcr.data||[], cnotes=rcn.data||[], swaps=rsw.data||[], checkins=rci.data||[], formChecks=rfc.data||[];
   b.innerHTML="";
+
+  if(formChecks.length){
+    b.appendChild(el("div","pf-sub","AI form checks"));
+    var fcbox=el("div","req-box");
+    formChecks.forEach(function(fc){
+      var item=el("div","note-card");
+      var h=el("div","note-head");
+      h.appendChild(el("div","note-when",fc.ex_name+" · "+daysAgo(new Date(fc.created_at).getTime())+"d ago"));
+      item.appendChild(h);
+      item.appendChild(el("div","note-txt",fc.feedback));
+      fcbox.appendChild(item);
+    });
+    b.appendChild(fcbox);
+  }
+
+  if(checkins.length){
+    b.appendChild(el("div","pf-sub","Weekly check-ins"));
+    var cibox=el("div","req-box");
+    checkins.forEach(function(ci){
+      var item=el("div","note-card");
+      var h=el("div","note-head");
+      var lowFlag=(ci.energy+ci.motivation)/2<=2||ci.soreness>=4;
+      h.appendChild(el("div","note-when",(lowFlag?"\u26a0\ufe0f ":"")+"Week of "+new Date(ci.week_start+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"})));
+      item.appendChild(h);
+      item.appendChild(el("div","ci-stats","Energy "+ci.energy+"/5 \u00b7 Sleep "+ci.sleep+"/5 \u00b7 Soreness "+ci.soreness+"/5 \u00b7 Motivation "+ci.motivation+"/5"));
+      if(ci.notes)item.appendChild(el("div","note-txt",ci.notes));
+      cibox.appendChild(item);
+    });
+    b.appendChild(cibox);
+  }
 
   if(swaps.length){
     b.appendChild(el("div","pf-sub","Recent meal swaps"));
@@ -2246,6 +2455,9 @@ async function pfProgram(b,c){  editSlug=c.slug;
   var insWkBtn=el("button","add-btn","\uD83D\uDCC5 Insert week");
   insWkBtn.onclick=function(){ openTmplPicker("week","edit"); };
   progBtnRow.appendChild(insWkBtn);
+  var aiBtn=el("button","add-btn","\u2728 AI draft");
+  aiBtn.onclick=function(){ openAiProgram(c.slug); };
+  progBtnRow.appendChild(aiBtn);
   gsec.appendChild(progBtnRow);
 
   var gpsec=el("div","pf-nut-sec");gpsec.style.marginTop="26px";
@@ -4032,6 +4244,54 @@ function insertWeekIntoProgram(mode, week){
   });
   progActiveDay = d.length ? Math.min(startIdx, d.length-1) : 0;
   renderDays(mode);
+}
+
+// ===== AI-assisted program builder =====
+// Same Edge-Function-calls-Anthropic pattern as the client app's food-photo
+// estimator (generate-program, same ANTHROPIC_API_KEY, same
+// claude-haiku-4-5-20251001 model already provisioned — no new cost
+// decision needed to turn this on). The draft is appended to editDays
+// exactly like inserting a day-block/week template: nothing is saved until
+// Milan reviews it in the normal day editor and taps "Save training".
+var aiProgramSlug=null;
+function openAiProgram(slug){
+  aiProgramSlug=slug;
+  document.getElementById("ai-prog-brief").value="";
+  var st=document.getElementById("ai-prog-status");st.style.display="none";
+  var go=document.getElementById("ai-prog-go-btn");go.disabled=false;go.textContent="Generate";
+  openModal("modal-ai-program");
+}
+async function generateAiProgram(){
+  var brief=(document.getElementById("ai-prog-brief").value||"").trim();
+  if(!brief){alert("Describe what you want first.");return;}
+  var go=document.getElementById("ai-prog-go-btn");
+  var st=document.getElementById("ai-prog-status");
+  go.disabled=true;go.textContent="Drafting…";
+  st.style.display="block";st.textContent="Claude is drafting a week — usually 15–30 seconds.";
+  var c=allClients.find(function(x){return x.slug===aiProgramSlug;});
+  var res=await sb.functions.invoke("generate-program",{body:{brief:brief, client_name:(c&&c.name)||"", client_goal:(c&&c.goal)||""}});
+  go.disabled=false;go.textContent="Generate";
+  if(res.error||!res.data||!res.data.days||!res.data.days.length){
+    st.textContent="Couldn't generate a draft — try rephrasing the brief, or try again in a moment.";
+    return;
+  }
+  res.data.days.forEach(function(d,i){
+    editDays.push({
+      key:"ai"+Date.now()+i+Math.floor(Math.random()*1000),
+      label:d.day_label||d.label||("Day "+(i+1)),
+      focus:d.day_focus||d.focus||"",
+      sections:(d.sections||[{label:"Main",exercises:[]}]).map(function(s){
+        return {label:s.label||"Main", exercises:(s.exercises||[]).map(function(e){
+          var sets=(e.sets&&e.sets.length?e.sets:[{tag:"8-10",top:10,bot:8}]);
+          return {name:e.name||"Exercise", ss:!!e.superset, note:e.note||"", sets:sets.map(function(s2){return {tag:s2.tag||"",top:s2.top||8,bot:s2.bot||6};})};
+        })};
+      })
+    });
+  });
+  progActiveDay=editDays.length-1;
+  renderDays("edit");
+  closeModal("modal-ai-program");
+  showSucc("AI draft added "+res.data.days.length+" day"+(res.data.days.length===1?"":"s")+" — review below, then tap \"Save training\" to keep it.");
 }
 
 function insertCondTemplateInto(mode, tmpl){

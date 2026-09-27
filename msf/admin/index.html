@@ -1550,6 +1550,50 @@ async function handleRecipePhoto(file){
   st.textContent="Extracted \u2713 \u2014 check the numbers below, then tap Add recipe.";
 }
 
+// ===== Add a meal-card photo straight into ONE client's meal plan =====
+// Same upload + extract-recipe-photo pattern as handleRecipePhoto above, but
+// this skips the shared recipe library entirely: the extracted meal is
+// pushed straight into that day's meal list in the plan builder Milan is
+// already looking at, using the exact same {name,ingredients,instructions,
+// calories,protein,carbs,fats,photo_url,photo_path} shape as every other
+// meal there. Review happens for free \u2014 the new meal block appears with
+// its normal editable name/ingredients/instructions/macro fields (and its
+// photo thumbnail) right in the list, so Milan can fix anything the photo
+// read wrong before tapping "Save nutrition" like any other edit. Nothing
+// is saved to the recipes table and nothing is saved to Supabase until that
+// save button is pressed \u2014 same as typing a meal in by hand.
+async function handleMealPhotoDirect(dayKey, mode, file){
+  var st=document.getElementById("mp-status");
+  st.style.display="block";
+  st.textContent="Uploading photo\u2026";
+  var blob=await recResize(file,1100,0.85);
+  var rid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2));
+  var path=rid+".jpg";
+  var up=await sb.storage.from("recipe-photos").upload(path,blob,{contentType:"image/jpeg"});
+  if(up.error){ st.textContent="Upload failed: "+up.error.message; return; }
+  var photoPath=path;
+  var photoUrl=sb.storage.from("recipe-photos").getPublicUrl(path).data.publicUrl;
+  st.textContent="Reading the macros, ingredients and method off the photo \u2014 usually 15\u201330 seconds\u2026";
+  var meal={name:"",ingredients:"",instructions:"",calories:0,protein:0,carbs:0,fats:0,photo_url:photoUrl,photo_path:photoPath};
+  var b64,res;
+  try{ b64=await blobToBase64(blob); res=await sb.functions.invoke("extract-recipe-photo",{body:{image_b64:b64,mime:"image/jpeg"}}); }catch(e){ res=null; }
+  if(res&&!res.error&&res.data&&res.data.title){
+    var d=res.data;
+    meal.name=d.title||"";
+    meal.ingredients=Array.isArray(d.ingredients)?d.ingredients.join("\n"):(d.ingredients||"");
+    meal.instructions=Array.isArray(d.instructions)?d.instructions.join("\n"):(d.instructions||"");
+    meal.calories=d.calories||0; meal.protein=d.protein||0; meal.carbs=d.carbs||0; meal.fats=d.fats||0;
+  }
+  var meals2=mode==="add"?addMealDays:editMealDays;
+  if(!meals2[dayKey])meals2[dayKey]=[];
+  meals2[dayKey].push(meal);
+  mealActiveDay=dayKey;
+  renderMealDays(mode);
+  if(!res||res.error||!res.data||!res.data.title){
+    alert("Photo added \u2014 couldn't read the details automatically, so fill in the name/macros/ingredients by hand below.");
+  }
+}
+
 // ===== AI-generated recipes =====
 // Same generate-*-calls-Anthropic pattern as the program builder and the
 // client app's food-photo estimator. Drafts land straight in the shared
@@ -3369,6 +3413,15 @@ function renderMealDays(mode) {
   var libB=el("button","add-btn lib-add-btn","\uFF0B From library");
   libB.onclick=(function(d2,m){return function(){ openMealLib(d2,m); };})(day.k,mode);
   block.appendChild(libB);
+  var mpFile=el("input");mpFile.type="file";mpFile.accept="image/*";mpFile.style.display="none";mpFile.id="mp-file";
+  mpFile.onchange=(function(d2,m){return function(){ if(this.files&&this.files[0])handleMealPhotoDirect(d2,m,this.files[0]); this.value=""; };})(day.k,mode);
+  block.appendChild(mpFile);
+  var photoB=el("button","add-btn lib-add-btn","\uD83D\uDCF7 From photo");
+  photoB.type="button";
+  photoB.onclick=function(){ mpFile.click(); };
+  block.appendChild(photoB);
+  var mpStatus=el("div","wt-empty");mpStatus.id="mp-status";mpStatus.style.display="none";
+  block.appendChild(mpStatus);
   container.appendChild(block);
 
   updateMealTotal(mode);

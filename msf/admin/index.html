@@ -623,6 +623,13 @@ body{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:10
     </div>
     <div id="ai-rec-status" class="wt-empty" style="display:none"></div>
   </div>
+  <div class="ai-recipe-box">
+    <div class="ai-recipe-title">📷 Add from a photo</div>
+    <div class="pf-hint2" style="margin-bottom:8px">Upload a meal-card photo — Claude reads the title, macros, ingredients and method straight off it and fills in the form below for you to check before saving.</div>
+    <input type="file" id="pr-file" accept="image/*" style="display:none">
+    <button class="btn-green" id="pr-pick-btn" type="button">Choose photo</button>
+    <div id="pr-status" class="wt-empty" style="display:none"></div>
+  </div>
   <div class="clone-box">
     <div class="form-group"><label class="form-label">Recipe name</label><input class="form-input" id="rc-title" placeholder="e.g. High-protein chicken pesto pasta"></div>
     <div class="pkg-row">
@@ -887,6 +894,8 @@ document.getElementById("add-btn").onclick = openAdd;
 document.getElementById("rec-btn").onclick = openRecipes;
 document.getElementById("rc-close-btn").onclick = function(){closeModal("modal-recipes");};
 document.getElementById("ai-rec-go-btn").onclick = generateAiRecipes;
+document.getElementById("pr-pick-btn").onclick = function(){ document.getElementById("pr-file").click(); };
+document.getElementById("pr-file").onchange = function(){ if(this.files&&this.files[0])handleRecipePhoto(this.files[0]); this.value=""; };
 document.getElementById("rc-save-btn").onclick = saveRec;
 document.getElementById("rc-file").onchange = function(){ if(this.files&&this.files[0])uploadRecPhoto(this.files[0]); };
 document.getElementById("rc-photo").oninput = function(){ if(!uploadedRecPhoto)recPreview(this.value.trim()); };
@@ -966,7 +975,7 @@ function drawMealibChips(){
 async function loadMealLibMine(){
   var box=document.getElementById("mealib-list");
   box.innerHTML='<div class="loader">Loading\u2026</div>';
-  var r=await sb.from("meal_templates").select("meal_name,ingredients,instructions,calories,protein,carbs,fats");
+  var r=await sb.from("meal_templates").select("meal_name,ingredients,instructions,calories,protein,carbs,fats,photo_url,photo_path");
   if(r.error){ box.innerHTML='<div style="color:var(--bad);font-size:13px">Couldn\'t load meals: '+r.error.message+'</div>'; return; }
   var seen={}, lib=[];
   (r.data||[]).forEach(function(m){
@@ -1053,7 +1062,7 @@ function renderMealLibRecipes(q){
 function addFromLib(m){
   var M=mealibMode==="add"?addMealDays:editMealDays;
   if(!M[mealibTarget])M[mealibTarget]=[];
-  M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+  M[mealibTarget].push({name:m.meal_name||m.title||"",ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,photo_url:m.photo_url||null,photo_path:m.photo_path||null});
   closeModal("modal-mealib");
   renderMealDays(mealibMode);
 }
@@ -1446,6 +1455,7 @@ function resetRecForm(){
   document.getElementById("rc-cat").value="Dinner";
   document.getElementById("rc-file").value="";
   document.getElementById("rc-file-status").textContent="";
+  var prSt=document.getElementById("pr-status"); prSt.style.display="none"; prSt.textContent="";
   var pv=document.getElementById("rc-preview"); pv.style.display="none"; pv.src="";
   document.getElementById("rc-save-btn").textContent="Add recipe";
   document.getElementById("rc-edit-note").style.display="none";
@@ -1486,6 +1496,58 @@ async function uploadRecPhoto(f){
   uploadedRecPhoto=sb.storage.from("recipe-photos").getPublicUrl(path).data.publicUrl;
   st.textContent="Photo ready \u2713";
   recPreview(uploadedRecPhoto);
+}
+
+// ===== Add a recipe from a photo (meal-card style image) =====
+// Uploads the photo to the same recipe-photos bucket the manual form uses,
+// then asks the extract-recipe-photo Edge Function (same Claude vision +
+// ANTHROPIC_API_KEY pattern as analyze-form/estimate-food, no new cost/key
+// setup) to read title/macros/ingredients/method off it. Result fills the
+// manual form below for Milan to check before tapping "Add recipe" \u2014
+// nothing is saved automatically, since a misread macro or quantity would
+// otherwise go straight into a client's plan unreviewed. If reading fails,
+// the photo is still attached and the form is just left blank to fill by hand.
+function blobToBase64(blob){
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onloadend=function(){ resolve((reader.result||"").toString().split(",")[1]||""); };
+    reader.onerror=function(){reject(new Error("Couldn't read the file."));};
+    reader.readAsDataURL(blob);
+  });
+}
+async function handleRecipePhoto(file){
+  resetRecForm();
+  var st=document.getElementById("pr-status");
+  st.style.display="block";
+  st.textContent="Uploading photo\u2026";
+  var blob=await recResize(file,1100,0.85);
+  var rid=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+"-"+Math.random().toString(36).slice(2));
+  var path=rid+".jpg";
+  var up=await sb.storage.from("recipe-photos").upload(path,blob,{contentType:"image/jpeg"});
+  if(up.error){ st.textContent="Upload failed: "+up.error.message; return; }
+  uploadedRecPath=path;
+  uploadedRecPhoto=sb.storage.from("recipe-photos").getPublicUrl(path).data.publicUrl;
+  recPreview(uploadedRecPhoto);
+  st.textContent="Reading the macros, ingredients and method off the photo \u2014 usually 15\u201330 seconds\u2026";
+  var b64;
+  try{ b64=await blobToBase64(blob); }
+  catch(e){ st.textContent="Photo attached, but couldn't process it for reading \u2014 fill in the rest by hand below."; return; }
+  var res=await sb.functions.invoke("extract-recipe-photo",{body:{image_b64:b64,mime:"image/jpeg"}});
+  if(res.error||!res.data||!res.data.title){
+    st.textContent="Couldn't read the details automatically \u2014 the photo's attached below, just fill in the rest by hand.";
+    return;
+  }
+  var d=res.data;
+  document.getElementById("rc-title").value=d.title||"";
+  document.getElementById("rc-cat").value=d.category||"Other";
+  document.getElementById("rc-serv").value=d.servings||1;
+  document.getElementById("rc-ing").value=Array.isArray(d.ingredients)?d.ingredients.join("\n"):(d.ingredients||"");
+  document.getElementById("rc-inst").value=Array.isArray(d.instructions)?d.instructions.join("\n"):(d.instructions||"");
+  document.getElementById("rc-cal").value=d.calories||0;
+  document.getElementById("rc-pro").value=d.protein||0;
+  document.getElementById("rc-carb").value=d.carbs||0;
+  document.getElementById("rc-fat").value=d.fats||0;
+  st.textContent="Extracted \u2713 \u2014 check the numbers below, then tap Add recipe.";
 }
 
 // ===== AI-generated recipes =====
@@ -2023,7 +2085,7 @@ async function placeRecipe(targetMeal,mode){
     ? ("Replace "+dayName+" \u00b7 "+(targetMeal.meal_name||"meal")+" with \""+rec.title+"\"?\n\nTheir current meal will be overwritten.")
     : ("Add \""+rec.title+"\" as an extra meal on "+dayName+"?\n\nThis adds "+(rec.calories||0)+" kcal to that day.");
   if(!confirm(msg))return;
-  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", instructions:rec.instructions||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0 };
+  var payload={ meal_name:rec.title, ingredients:rec.ingredients||"", instructions:rec.instructions||"", calories:rec.calories||0, protein:rec.protein||0, carbs:rec.carbs||0, fats:rec.fats||0, photo_url:rec.photo_url||null, photo_path:rec.photo_path||null };
   if(mode==="replace"){
     var u=await sb.from("meal_templates").update(payload).eq("id",targetMeal.id);
     if(u.error){alert("Couldn't update that meal: "+u.error.message);return;}
@@ -3245,6 +3307,17 @@ function renderMealDays(mode) {
     mn.style.marginBottom="8px";
     mn.oninput=(function(d2,i,m){return function(){(m==="add"?addMealDays:editMealDays)[d2][i].name=this.value;};})(day.k,mi,mode);
     mb.appendChild(mn);
+    if(meal.photo_url){
+      var phRow=el("div","");phRow.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:8px";
+      var phImg=el("img");phImg.src=meal.photo_url;phImg.style.cssText="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0";
+      phRow.appendChild(phImg);
+      phRow.appendChild(el("div","",  "Photo attached"));
+      phRow.lastChild.style.cssText="font-size:12px;color:var(--ink-3);flex:1";
+      var phRm=el("button","clip-btn","Remove photo");
+      phRm.onclick=(function(d2,i,m){return function(){var mm=(m==="add"?addMealDays:editMealDays)[d2][i];mm.photo_url=null;mm.photo_path=null;renderMealDays(m);};})(day.k,mi,mode);
+      phRow.appendChild(phRm);
+      mb.appendChild(phRow);
+    }
     var il=el("div","nut-label","Ingredients (one per line)"); il.style.marginBottom="4px"; mb.appendChild(il);
     var ta=el("textarea","form-input"); ta.style.cssText="min-height:80px;resize:vertical;font-family:inherit;margin-bottom:8px";
     ta.placeholder="e.g. 120g oats, 250g Greek yoghurt (one per line)"; ta.value=meal.ingredients||"";
@@ -3515,7 +3588,7 @@ async function saveNutrition(slug, prefix, mealDays) {
     var dayMeals=mealDays[day.k]||[];
     dayMeals.forEach(function(m,i){
       if(!m.name)return;
-      rows.push({client_slug:slug,day_of_week:day.k,option_num:1,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0});
+      rows.push({client_slug:slug,day_of_week:day.k,option_num:1,meal_order:i,meal_name:m.name,ingredients:m.ingredients||"",instructions:m.instructions||"",calories:m.calories||0,protein:m.protein||0,carbs:m.carbs||0,fats:m.fats||0,photo_url:m.photo_url||null,photo_path:m.photo_path||null});
     });
   });
   if(rows.length) await sb.from("meal_templates").insert(rows);
